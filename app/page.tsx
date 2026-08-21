@@ -59,17 +59,23 @@ export default function HomePage() {
 
         {/* floating stickers */}
         <div className="hidden lg:block">
-          <Sticker className="top-[70px] right-[60px] bg-pink text-[#1A1440] rotate-[7deg]">
+          <Sticker className="top-[70px] right-[40px] bg-pink text-[#1A1440] rotate-[6deg]">
             p99 ↓ 40× 🚀
           </Sticker>
-          <Sticker className="top-[210px] right-[220px] bg-sky text-[#1A1440] -rotate-[8deg]">
+          <Sticker className="top-[145px] right-[210px] bg-peach text-[#1A1440] -rotate-[5deg]">
+            no clickbait 🚫
+          </Sticker>
+          <Sticker className="top-[210px] right-[20px] bg-sky text-[#1A1440] rotate-[4deg]">
+            real engineers
+          </Sticker>
+          <Sticker className="top-[290px] right-[200px] bg-lime text-[#1A1440] -rotate-[6deg]">
+            evals &gt; vibes 📊
+          </Sticker>
+          <Sticker className="top-[365px] right-[40px] bg-sky text-[#1A1440] rotate-[5deg]">
             ✦ Rust
           </Sticker>
-          <Sticker className="top-[330px] right-[30px] bg-peach text-[#1A1440] rotate-[5deg]">
+          <Sticker className="top-[435px] right-[180px] bg-peach text-[#1A1440] -rotate-[4deg]">
             no paywall 🎉
-          </Sticker>
-          <Sticker className="top-[150px] right-0 bg-lime text-[#1A1440] -rotate-[4deg]">
-            real engineers
           </Sticker>
         </div>
       </header>

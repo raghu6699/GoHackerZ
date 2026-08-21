@@ -59,7 +59,7 @@ export function Footer() {
             ))}
           </div>
           <div className="flex flex-col sm:flex-row justify-between gap-2 pt-6 border-t-2 border-[#392E6B] font-mono text-[12px] text-[#A69ECB]">
-            <span>© 2026 Lore — made with ♥ by builders</span>
+            <span>© 2026 Lore — made with ♥ by ud.ai</span>
             <span>Privacy · Terms · RSS</span>
           </div>
         </div>
