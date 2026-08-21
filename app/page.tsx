@@ -186,19 +186,16 @@ export default function HomePage() {
         {/* ── Newsletter ── */}
         <SectionHead title="The Weekly Compile" note="// every friday" />
         <section className="relative overflow-hidden bg-lime text-[#1A1440] border-2 border-ink rounded-3xl shadow-pop-lg p-11 grid md:grid-cols-[1fr_auto] gap-8 items-center">
-          <span className="absolute -bottom-5 left-5 text-[120px] text-ink/10 pointer-events-none">
-            ✦
-          </span>
-          <div className="relative">
+          <div className="relative z-10">
             <h2 className="text-[36px] font-bold leading-none mb-2.5 text-[#1A1440]">
               Five sharp reads. Zero spam. ✦
             </h2>
-            <p className="text-[16px] font-medium max-w-[400px] text-[#1A1440]">
+            <p className="text-[16px] font-medium max-w-[420px] text-[#1A1440] leading-relaxed">
               Hand-picked by humans, delivered every Friday. Join 190,000
               engineers who actually open it.
             </p>
           </div>
-          <div className="relative">
+          <div className="relative z-10">
             <NewsletterForm variant="lime" />
           </div>
         </section>
