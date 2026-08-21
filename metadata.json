@@ -1,0 +1,6 @@
+{
+  "name": "Lore",
+  "description": "Honest engineering essays, teardowns and post-mortems from engineers who ship.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

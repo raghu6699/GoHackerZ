@@ -1,0 +1,153 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --color-bg: #EEF1FF;
+    --color-card: #FFFFFF;
+    --color-ink: #1A1440;
+    --color-body: #2A2450;
+    --color-muted: #565080;
+    --color-subtle: #8B85AD;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    --color-bg: #0C081A;
+    --color-card: #181232;
+    --color-ink: #F4F1FF;
+    --color-body: #E3DEFB;
+    --color-muted: #B8B2DE;
+    --color-subtle: #8F88B8;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    transition: background-color 350ms cubic-bezier(0.4, 0, 0.2, 1),
+                color 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Smooth cross-fade transition on theme-reactive UI containers and text */
+  body,
+  .card,
+  .btn,
+  .chip,
+  nav,
+  input,
+  textarea,
+  .tlink {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 350ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::selection {
+    background: #c6ff3d;
+    color: #1a1440;
+  }
+  /* Chunky focus ring that matches the sticker aesthetic */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 3px solid #7c5cff;
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+}
+
+@layer components {
+  /* ── Sticker button: chunky border + hard offset shadow ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-[15px]
+           border-2 border-ink rounded-xl px-[18px] py-[10px] bg-card text-ink
+           shadow-pop transition-transform duration-100 select-none;
+  }
+  .btn:hover {
+    @apply -translate-x-[2px] -translate-y-[2px] shadow-pop-lg;
+  }
+  .btn:active {
+    @apply translate-x-[2px] translate-y-[2px] shadow-[1px_1px_0_#1A1440];
+  }
+  .btn-purple {
+    @apply bg-purple text-white;
+  }
+  .btn-lime {
+    @apply bg-lime text-[#1A1440];
+  }
+  .btn-sm {
+    @apply text-[13px] px-3 py-2 rounded-lg;
+  }
+
+  /* ── Text link ── */
+  .tlink {
+    @apply font-semibold text-[15px] px-1 py-2 transition-colors;
+  }
+  .tlink:hover {
+    @apply text-purple;
+  }
+
+  /* ── Highlighter marker (always dark text on yellow-green) ── */
+  .hl {
+    @apply bg-lime text-[#1A1440] rounded px-[0.12em];
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* ── Chips / pills ── */
+  .chip {
+    @apply inline-flex items-center gap-1 font-mono text-[11px] font-bold
+           border-2 border-ink rounded-full px-[10px] py-1 bg-card text-ink;
+  }
+  .chip.bg-lime,
+  .chip.bg-sky,
+  .chip.bg-pink,
+  .chip.bg-peach {
+    @apply text-[#1A1440];
+  }
+
+  /* ── Card ── */
+  .card {
+    @apply bg-card border-2 border-ink rounded-2xl shadow-pop transition-transform duration-150;
+  }
+  .card-hover:hover {
+    @apply -translate-x-[3px] -translate-y-[3px] shadow-pop-xl;
+  }
+
+  /* ── Section container ── */
+  .wrap {
+    @apply mx-auto max-w-[1200px] px-6;
+  }
+
+  /* ── Avatar ── */
+  .avatar {
+    @apply grid place-items-center font-bold border-2 border-ink rounded-xl text-white shrink-0;
+  }
+}
+
+@layer utilities {
+  .dotgrid {
+    background-image: radial-gradient(
+      circle,
+      rgba(26, 20, 64, 0.08) 2px,
+      transparent 2px
+    );
+    background-size: 26px 26px;
+  }
+  .dotgrid-light {
+    background-image: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.16) 2px,
+      transparent 2px
+    );
+    background-size: 26px 26px;
+  }
+}
