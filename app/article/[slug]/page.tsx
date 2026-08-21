@@ -26,8 +26,8 @@ export function generateMetadata({
   params: { slug: string };
 }): Metadata {
   const article = getArticle(params.slug);
-  if (!article) return { title: "Not found — Lore" };
-  return { title: `${article.title} — Lore`, description: article.dek };
+  if (!article) return { title: "Not found — GoHackerz" };
+  return { title: `${article.title} — GoHackerz`, description: article.dek };
 }
 
 export default function ArticlePage({

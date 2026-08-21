@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/context/ToastContext";
 
 export const metadata: Metadata = {
-  title: "Lore — Where builders actually write",
+  title: "GoHackerz — Where builders actually write",
   description:
     "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship. No sludge, no listicles.",
 };

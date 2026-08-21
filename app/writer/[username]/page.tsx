@@ -20,8 +20,8 @@ export function generateMetadata({
   params: { username: string };
 }): Metadata {
   const author = getAuthor(params.username);
-  if (!author) return { title: "Not found — Lore" };
-  return { title: `${author.name} — Lore`, description: author.bio };
+  if (!author) return { title: "Not found — GoHackerz" };
+  return { title: `${author.name} — GoHackerz`, description: author.bio };
 }
 
 export default function WriterPage({

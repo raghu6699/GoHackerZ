@@ -19,8 +19,8 @@ export function generateMetadata({
   params: { slug: string };
 }): Metadata {
   const topic = getTopic(params.slug);
-  if (!topic) return { title: "Not found — Lore" };
-  return { title: `${topic.name} — Lore`, description: topic.description };
+  if (!topic) return { title: "Not found — GoHackerz" };
+  return { title: `${topic.name} — GoHackerz`, description: topic.description };
 }
 
 export default function TopicPage({

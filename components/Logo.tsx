@@ -15,13 +15,13 @@ export function Logo({
       } ${className}`}
     >
       <span
-        className={`grid place-items-center w-[30px] h-[30px] rounded-[9px] border-2 border-ink shadow-pop-sm -rotate-6 text-[16px] ${
+        className={`grid place-items-center w-[30px] h-[30px] rounded-[9px] border-2 border-ink shadow-pop-sm -rotate-6 text-[16px] font-black ${
           light ? "bg-lime text-ink" : "bg-purple text-white"
         }`}
       >
-        L
+        G
       </span>
-      Lore
+      GoHackerz
     </Link>
   );
 }
