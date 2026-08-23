@@ -1,4 +1,4 @@
-# Lore — MVP
+# GoHackerz — MVP
 
 The **Design-6 "Playful"** direction, built as a real Next.js 14 app.
 
@@ -37,7 +37,7 @@ mock state — no backend needed to demo the full experience.
 > or point npm at your company's mirror first.
 
 ```bash
-cd lore-mvp
+cd GOHACKERZ
 npm install
 npm run dev
 ```
@@ -69,7 +69,7 @@ remaining blocker was the registry returning `503`. Options:
 ## Project layout
 
 ```
-lore-mvp/
+GOHACKERZ/
 ├─ app/
 │  ├─ layout.tsx            # nav + footer shell, fonts
 │  ├─ page.tsx              # home feed

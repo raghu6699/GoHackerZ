@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { ArticleCard } from "@/components/ArticleCard";
+import { SponsoredCard } from "@/components/SponsoredCard";
 import { SectionHead } from "@/components/SectionHead";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import {
@@ -9,16 +10,41 @@ import {
   getTrending,
   getAuthor,
   getTopic,
-  topics,
-  formatCount,
-} from "@/lib/data";
+  getAllTopics,
+} from "@/lib/queries";
+import { formatCount } from "@/lib/data";
+import { notFound } from "next/navigation";
 
-export default function HomePage() {
-  const featured = getFeatured();
-  const featuredAuthor = getAuthor(featured.authorUsername)!;
-  const featuredTopic = getTopic(featured.topicSlug)!;
-  const latest = getLatest().filter((a) => !a.featured).slice(0, 3);
-  const trending = getTrending(4);
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
+  const featured = await getFeatured();
+  if (!featured) notFound();
+
+  const featuredAuthor = (await getAuthor(featured.authorUsername))!;
+  const allTopics = await getAllTopics();
+  const latest = (await getLatest(3)).filter((a) => !a.featured);
+  const trending = await getTrending(4);
+
+  // Dense "more stories" feed with pagination
+  const all = await getLatest();
+  const shownSlugs = new Set([featured.slug, ...all.slice(0, 3).map((a) => a.slug), ...trending.map((a) => a.slug)]);
+  const pool = all.filter((a) => !shownSlugs.has(a.slug));
+  const PAGE_SIZE = 6;
+  const pageNum = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
+  const totalPages = Math.max(1, Math.ceil(pool.length / PAGE_SIZE));
+  const page = Math.min(pageNum, totalPages);
+  const moreStories = pool.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const trendingRows = await Promise.all(
+    trending.map(async (a) => ({
+      a,
+      author: (await getAuthor(a.authorUsername))!,
+      topic: (await getTopic(a.topicSlug))!,
+    }))
+  );
 
   return (
     <>
@@ -34,7 +60,7 @@ export default function HomePage() {
         <p className="text-[20px] leading-relaxed max-w-[520px] font-medium text-muted mb-8">
           Honest engineering essays, teardowns and post-mortems.{" "}
           <span className="hl">No sludge, no listicles</span> — just the real
-          stuff you&apos;ll want to save.
+          stuff you'll want to save.
         </p>
         <div className="flex gap-3.5 items-center flex-wrap">
           <Link href="/signup" className="btn btn-purple">
@@ -131,7 +157,7 @@ export default function HomePage() {
 
         {/* ── Fresh drops ── */}
         <SectionHead title="Fresh drops" note="// updated live" />
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 anim-stagger">
           {latest.map((a) => (
             <ArticleCard key={a.slug} article={a} />
           ))}
@@ -140,9 +166,7 @@ export default function HomePage() {
         {/* ── Trending ── */}
         <SectionHead title="Trending now 🔥" note="// last 24h" />
         <section className="bg-card border-2 border-ink rounded-3xl shadow-pop overflow-hidden">
-          {trending.map((a, i) => {
-            const author = getAuthor(a.authorUsername)!;
-            const topic = getTopic(a.topicSlug)!;
+          {trendingRows.map(({ a, author, topic }, i) => {
             return (
               <Link
                 key={a.slug}
@@ -169,10 +193,47 @@ export default function HomePage() {
           })}
         </section>
 
+        {/* ── More stories (dense list) + sponsored ── */}
+        {moreStories.length > 0 && (
+          <>
+            <SectionHead title="More stories" note="// keep scrolling" />
+            <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+              <div className="bg-card border-2 border-ink rounded-3xl shadow-pop overflow-hidden anim-stagger">
+                {moreStories.map((a) => (
+                  <ArticleCard key={a.slug} article={a} variant="compact" />
+                ))}
+              </div>
+              <div className="space-y-6 lg:sticky lg:top-24">
+                <SponsoredCard />
+                <NewsletterForm variant="card" />
+              </div>
+            </section>
+
+            {/* pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-8 font-mono text-[13px] font-bold">
+                {page > 1 && (
+                  <Link href={`/?page=${page - 1}`} className="btn btn-sm">
+                    ← Newer
+                  </Link>
+                )}
+                <span className="text-subtle">
+                  page {page} / {totalPages}
+                </span>
+                {page < totalPages && (
+                  <Link href={`/?page=${page + 1}`} className="btn btn-sm">
+                    Older →
+                  </Link>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
         {/* ── Topics ── */}
         <SectionHead title="Browse by topic" note="// pick your poison" id="topics" />
         <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {topics.map((t) => (
+          {allTopics.map((t) => (
             <Link
               key={t.slug}
               href={`/topic/${t.slug}`}

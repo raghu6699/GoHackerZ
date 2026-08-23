@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// LORE · mock data layer
+// GOHACKERZ · mock data layer
 // In the real app (see HLD/LLD) this is Postgres + Prisma.
 // For the MVP it's typed in-memory data with the same shape.
 // ─────────────────────────────────────────────────────────────
@@ -13,6 +13,7 @@ export interface Author {
   role: string;
   company: string;
   avatarColor: AvatarColor;
+  avatarUrl?: string | null;
   bio: string;
   followers: number;
   articleCount: number;
@@ -47,6 +48,9 @@ export interface Article {
   tags: string[];
   featured?: boolean;
   content: Block[];
+  coverImage?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
 }
 
 // ── Authors ──────────────────────────────────────────────────
@@ -382,3 +386,15 @@ export function formatDate(iso: string): string {
     year: "numeric",
   });
 }
+
+// ── Topic color-coding ───────────────────────────────────────
+// One accent hue per topic, used consistently across chips, borders and badges
+// so every topic is visually identifiable site-wide.
+export const topicChipClass: Record<AvatarColor, string> = {
+  sky: "bg-sky text-[#1A1440]",
+  pink: "bg-pink text-[#1A1440]",
+  peach: "bg-peach text-[#1A1440]",
+  lime: "bg-lime text-[#1A1440]",
+  purple: "bg-purple text-white",
+  ink: "bg-card text-ink",
+};

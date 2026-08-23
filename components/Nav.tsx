@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { NavAuth } from "./NavAuth";
 
 const links = [
   { href: "/", label: "Feed" },
   { href: "/topic/systems", label: "Deep Dives" },
+  { href: "/search", label: "Search" },
   { href: "/#topics", label: "Topics" },
   { href: "/writer/maya", label: "Writers" },
 ];
@@ -27,9 +29,7 @@ export function Nav() {
         </div>
         <div className="ml-auto flex items-center gap-2.5">
           <ThemeToggle />
-          <Link href="/signin" className="tlink hidden sm:inline-block">
-            Sign in
-          </Link>
+          <NavAuth />
           <Link href="/write" className="btn btn-purple">
             Start writing ✎
           </Link>

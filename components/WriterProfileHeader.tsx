@@ -17,7 +17,7 @@ export function WriterProfileHeader({
   const [followersDelta, setFollowersDelta] = useState(0);
 
   const handleFollowToggle = (isFollowing: boolean) => {
-    setFollowersDelta(isFollowing ? 1 : 0);
+    setFollowersDelta((d) => (isFollowing ? d + 1 : d - 1));
   };
 
   return (
@@ -27,7 +27,7 @@ export function WriterProfileHeader({
         aria-hidden="true"
       />
       <div className="relative flex flex-col sm:flex-row items-start gap-6">
-        <Avatar initials={author.initials} color="peach" size="xl" />
+        <Avatar initials={author.initials} color="peach" size="xl" src={author.avatarUrl} />
         <div className="flex-1">
           <h1 className="text-[clamp(32px,5vw,52px)] font-bold tracking-tight leading-none mb-2">
             {author.name}

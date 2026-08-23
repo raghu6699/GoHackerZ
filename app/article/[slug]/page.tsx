@@ -6,46 +6,112 @@ import { ArticleBody } from "@/components/ArticleBody";
 import { ArticleActions } from "@/components/ArticleActions";
 import { ArticleCard } from "@/components/ArticleCard";
 import { CommentSection } from "@/components/CommentSection";
+import { ViewPing } from "@/components/ViewPing";
 import { FollowButton } from "@/components/FollowButton";
 import {
-  articles,
   getArticle,
   getAuthor,
   getTopic,
   getArticlesByTopic,
+} from "@/lib/queries";
+import {
   formatDate,
+  topicChipClass,
 } from "@/lib/data";
 
-export function generateStaticParams() {
-  return articles.map((a) => ({ slug: a.slug }));
-}
-
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
-}): Metadata {
-  const article = getArticle(params.slug);
+}): Promise<Metadata> {
+  const article = await getArticle(params.slug);
   if (!article) return { title: "Not found — GoHackerz" };
-  return { title: `${article.title} — GoHackerz`, description: article.dek };
+  return {
+    title: `${article.seoTitle || article.title} — GoHackerz`,
+    description: article.seoDescription || article.dek,
+    openGraph: {
+      title: article.seoTitle || article.title,
+      description: article.seoDescription || article.dek,
+      images: article.coverImage ? [article.coverImage] : undefined,
+    },
+  };
 }
 
-export default function ArticlePage({
+export default async function ArticlePage({
   params,
 }: {
   params: { slug: string };
 }) {
-  const article = getArticle(params.slug);
+  const article = await getArticle(params.slug);
   if (!article) notFound();
 
-  const author = getAuthor(article.authorUsername)!;
-  const topic = getTopic(article.topicSlug)!;
-  const related = getArticlesByTopic(topic.slug)
+  const author = (await getAuthor(article.authorUsername))!;
+  const topic = (await getTopic(article.topicSlug))!;
+  const related = (await getArticlesByTopic(topic.slug))
     .filter((a) => a.slug !== article.slug)
     .slice(0, 3);
 
+  // ── JSON-LD: Article + BreadcrumbList for search engines ──
+  const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const articleUrl = `${SITE}/article/${article.slug}`;
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: article.seoTitle || article.title,
+      description: article.seoDescription || article.dek,
+      url: articleUrl,
+      mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+      datePublished: new Date(article.publishedAt).toISOString(),
+      ...(article.coverImage ? { image: [article.coverImage] } : {}),
+      author: {
+        "@type": "Person",
+        name: author.name,
+        url: `${SITE}/writer/${author.username}`,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "GoHackerz",
+        url: SITE,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: topic.name,
+          item: `${SITE}/topic/${topic.slug}`,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: article.title,
+          item: articleUrl,
+        },
+      ],
+    },
+  ];
+
   return (
     <article className="wrap max-w-[820px] pt-8 pb-4">
+      <ViewPing slug={article.slug} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {/* cover */}
+      {article.coverImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={article.coverImage}
+          alt=""
+          className="w-full h-[280px] sm:h-[360px] object-cover rounded-3xl border-2 border-ink shadow-pop-lg mb-8"
+        />
+      )}
       {/* breadcrumb */}
       <div className="flex items-center gap-2 font-mono text-[12px] text-subtle mb-6">
         <Link href="/" className="hover:text-purple">
@@ -58,13 +124,13 @@ export default function ArticlePage({
       </div>
 
       {/* header */}
-      <Link href={`/topic/${topic.slug}`} className="chip bg-sky text-[#1A1440] mb-5">
+      <Link href={`/topic/${topic.slug}`} className={`chip ${topicChipClass[topic.color]} mb-5`}>
         {topic.emoji} {topic.name}
       </Link>
       <h1 className="text-[clamp(34px,5.5vw,56px)] font-bold leading-[1.02] tracking-tight mt-4 mb-5">
         {article.title}
       </h1>
-      <p className="text-[20px] leading-relaxed text-muted mb-8">
+      <p className="font-serif italic text-[21px] leading-relaxed text-muted mb-8">
         {article.dek}
       </p>
 
@@ -74,7 +140,7 @@ export default function ArticlePage({
           href={`/writer/${author.username}`}
           className="flex items-center gap-3"
         >
-          <Avatar initials={author.initials} color={author.avatarColor} size="lg" />
+          <Avatar initials={author.initials} color={author.avatarColor} size="lg" src={author.avatarUrl} />
           <div>
             <b className="text-[17px]">{author.name}</b>
             <div className="font-mono text-[12px] text-subtle">
@@ -83,6 +149,7 @@ export default function ArticlePage({
           </div>
         </Link>
         <ArticleActions
+          slug={article.slug}
           initialReactions={article.reactions}
           comments={article.comments}
         />
@@ -102,7 +169,7 @@ export default function ArticlePage({
 
       {/* author card */}
       <section className="card p-7 mt-10 flex flex-col sm:flex-row gap-5 items-start">
-        <Avatar initials={author.initials} color={author.avatarColor} size="xl" />
+        <Avatar initials={author.initials} color={author.avatarColor} size="xl" src={author.avatarUrl} />
         <div>
           <div className="font-mono text-[11px] text-subtle mb-1">
             WRITTEN BY

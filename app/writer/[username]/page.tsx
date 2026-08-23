@@ -4,35 +4,32 @@ import type { Metadata } from "next";
 import { ArticleCard } from "@/components/ArticleCard";
 import { WriterProfileHeader } from "@/components/WriterProfileHeader";
 import {
-  authors,
+  getAllAuthors,
   getAuthor,
   getArticlesByAuthor,
-  formatCount,
-} from "@/lib/data";
+} from "@/lib/queries";
+import { formatCount } from "@/lib/data";
 
-export function generateStaticParams() {
-  return authors.map((a) => ({ username: a.username }));
-}
-
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
   params: { username: string };
-}): Metadata {
-  const author = getAuthor(params.username);
+}): Promise<Metadata> {
+  const author = await getAuthor(params.username);
   if (!author) return { title: "Not found — GoHackerz" };
   return { title: `${author.name} — GoHackerz`, description: author.bio };
 }
 
-export default function WriterPage({
+export default async function WriterPage({
   params,
 }: {
   params: { username: string };
 }) {
-  const author = getAuthor(params.username);
+  const authors = await getAllAuthors();
+  const author = await getAuthor(params.username);
   if (!author) notFound();
 
-  const posts = getArticlesByAuthor(author.username);
+  const posts = await getArticlesByAuthor(author.username);
   const totalReactions = posts.reduce((s, a) => s + a.reactions, 0);
 
   return (

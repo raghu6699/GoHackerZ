@@ -11,7 +11,17 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("App Error:", error);
+    // Structured client error log — one JSON line, ready for any log drain.
+    console.error(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        level: "error",
+        event: "client.render_error",
+        message: error.message,
+        digest: error.digest,
+        stack: error.stack?.slice(0, 2000),
+      })
+    );
   }, [error]);
 
   return (

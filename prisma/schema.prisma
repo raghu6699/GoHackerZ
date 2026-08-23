@@ -1,0 +1,176 @@
+// GoHackerz - database schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  READER
+  WRITER
+  EDITOR
+  ADMIN
+}
+
+enum ArticleStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  authId      String?  @unique
+  email       String   @unique
+  username    String?  @unique
+  name        String?
+  bio         String?
+  role        Role     @default(READER)
+  trustLevel  Int      @default(0)
+  avatarColor String   @default("purple")
+  avatarUrl   String?
+  company     String?
+  createdAt   DateTime @default(now())
+
+  articles  Article[]
+  reactions Reaction[]
+  bookmarks Bookmark[]
+  comments  Comment[]
+  reviews   ReviewComment[] @relation("editorReviews")
+  followers Follow[] @relation("following")
+  following Follow[] @relation("follower")
+  commentLikes CommentLike[]
+}
+
+model Topic {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  emoji       String  @default("*")
+  color       String  @default("purple")
+  description String?
+
+  articles Article[]
+}
+
+model Article {
+  id                String        @id @default(cuid())
+  slug              String        @unique
+  title             String
+  dek               String?
+  content           Json
+  status            ArticleStatus @default(DRAFT)
+  readingTime       Int           @default(1)
+  coverImage        String?
+  tags              String[]      @default([])
+  featured          Boolean       @default(false)
+  isSponsored       Boolean       @default(false)
+  rejectionFeedback String?
+  scheduledAt       DateTime?
+  publishedAt       DateTime?
+  seoTitle          String?
+  seoDescription    String?
+
+  reactionCount Int @default(0)
+  commentCount  Int @default(0)
+  bookmarkCount Int @default(0)
+  viewCount     Int @default(0)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+  topicId  String
+  topic    Topic  @relation(fields: [topicId], references: [id])
+
+  reactions      Reaction[]
+  bookmarks      Bookmark[]
+  comments       Comment[]
+  reviewComments ReviewComment[] @relation("articleReviews")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([topicId])
+  @@index([authorId])
+}
+
+model Reaction {
+  id        String  @id @default(cuid())
+  count     Int     @default(1)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id])
+
+  @@unique([userId, articleId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id])
+
+  @@unique([userId, articleId])
+}
+
+model Comment {
+  id        String        @id @default(cuid())
+  body      String
+  likes     Int           @default(0)
+  parentId  String?
+  createdAt DateTime      @default(now())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  articleId String
+  article   Article       @relation(fields: [articleId], references: [id])
+  likedBy   CommentLike[]
+}
+
+model ReviewComment {
+  id        String   @id @default(cuid())
+  body      String
+  createdAt DateTime @default(now())
+  editorId  String
+  editor    User     @relation("editorReviews", fields: [editorId], references: [id])
+  articleId String
+  article   Article  @relation("articleReviews", fields: [articleId], references: [id])
+}
+
+model NewsletterSub {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  confirmedAt  DateTime?
+  confirmToken String?   @unique
+  createdAt    DateTime  @default(now())
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  followingId String
+  following   User     @relation("following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id])
+
+  @@unique([userId, commentId])
+}

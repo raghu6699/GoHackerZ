@@ -21,12 +21,27 @@ export function Avatar({
   color = "purple",
   size = "md",
   rotate,
+  src,
 }: {
   initials: string;
   color?: AvatarColor;
   size?: keyof typeof sizeMap;
   rotate?: boolean;
+  /** Uploaded profile image — shown instead of initials when present. */
+  src?: string | null;
 }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={initials}
+        className={`avatar ${sizeMap[size]} object-cover bg-card ${
+          rotate ? "-rotate-6" : ""
+        }`}
+      />
+    );
+  }
   return (
     <span
       className={`avatar ${colorMap[color]} ${sizeMap[size]} ${

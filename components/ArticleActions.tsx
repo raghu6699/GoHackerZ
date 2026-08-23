@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatCount } from "@/lib/data";
+import { useToast } from "@/context/ToastContext";
 
 export function ArticleActions({
+  slug,
   initialReactions,
   comments,
 }: {
+  slug: string;
   initialReactions: number;
   comments: number;
 }) {
@@ -14,6 +17,83 @@ export function ArticleActions({
   const [reacted, setReacted] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const { showToast } = useToast();
+
+  // Load the real reaction + bookmark state for this viewer
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/articles/${slug}/react`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setReactions(data.count);
+      })
+      .catch(() => {});
+    fetch(`/api/articles/${slug}/bookmark`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setSaved(data.saved);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  async function toggleSave() {
+    if (busy) return;
+    setBusy(true);
+    const next = !saved;
+    setSaved(next); // optimistic
+    try {
+      const res = await fetch(`/api/articles/${slug}/bookmark`, { method: "POST" });
+      if (res.status === 401) {
+        setSaved(!next);
+        showToast("Sign in to save posts ✦");
+        return;
+      }
+      const data = await res.json();
+      if (res.ok) setSaved(data.saved);
+    } catch {
+      setSaved(!next);
+      showToast("Couldn't save — try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleReaction() {
+    if (busy) return;
+    setBusy(true);
+    // optimistic update
+    const nextReacted = !reacted;
+    const nextCount = Math.max(0, reactions + (nextReacted ? 1 : -1));
+    setReacted(nextReacted);
+    setReactions(nextCount);
+
+    try {
+      const res = await fetch(`/api/articles/${slug}/react`, { method: "POST" });
+      if (res.status === 401) {
+        // revert
+        setReacted(!nextReacted);
+        setReactions(reactions);
+        showToast("Sign in to react to posts ✦");
+        return;
+      }
+      const data = await res.json();
+      if (res.ok) {
+        setReacted(data.reacted);
+        setReactions(data.count);
+      }
+    } catch {
+      // revert on network failure
+      setReacted(!nextReacted);
+      setReactions(reactions);
+      showToast("Couldn't save your reaction — try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const handleShare = async () => {
     try {
@@ -33,12 +113,11 @@ export function ArticleActions({
   return (
     <div className="flex items-center gap-3 relative">
       <button
-        onClick={() => {
-          setReactions((r) => (reacted ? r - 1 : r + 1));
-          setReacted((v) => !v);
-        }}
+        onClick={toggleReaction}
+        disabled={busy}
         className={`btn btn-sm ${reacted ? "btn-lime" : ""}`}
         aria-pressed={reacted}
+        title={reacted ? "Remove your reaction" : "React to this post"}
       >
         ▲ {formatCount(reactions)}
       </button>
@@ -50,7 +129,8 @@ export function ArticleActions({
         💬 {formatCount(comments)}
       </a>
       <button
-        onClick={() => setSaved((v) => !v)}
+        onClick={toggleSave}
+        disabled={busy}
         className={`btn btn-sm ${saved ? "btn-purple" : ""}`}
         aria-pressed={saved}
         type="button"

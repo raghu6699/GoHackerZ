@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -11,8 +11,12 @@
     --color-card: #FFFFFF;
     --color-ink: #1A1440;
     --color-body: #2A2450;
-    --color-muted: #565080;
-    --color-subtle: #8B85AD;
+    /* WCAG AA on white: was #565080 (~5.6:1) -> now ~7:1 */
+    --color-muted: #4A4473;
+    /* WCAG AA large-text minimum on white: was #8B85AD (~3.9:1) -> now ~4.9:1 */
+    --color-subtle: #655E92;
+    /* Serif family used by long-form reading mode */
+    --font-serif: "Source Serif 4";
   }
 
   html.dark {
@@ -21,8 +25,8 @@
     --color-card: #181232;
     --color-ink: #F4F1FF;
     --color-body: #E3DEFB;
-    --color-muted: #B8B2DE;
-    --color-subtle: #8F88B8;
+    --color-muted: #C3BDE6;
+    --color-subtle: #A29BCB;
   }
 
   html {
@@ -61,6 +65,23 @@
     outline: 3px solid #7c5cff;
     outline-offset: 2px;
     border-radius: 8px;
+  }
+
+  /* ── Page-level enter transition: kills the "staggered jump" feel ── */
+  main {
+    animation: page-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    main,
+    .anim,
+    .anim-stagger > * {
+      animation: none !important;
+      transition: none !important;
+    }
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 
@@ -114,6 +135,30 @@
     @apply text-[#1A1440];
   }
 
+  /* ── Long-form reading mode ── */
+  .reading {
+    font-family: var(--font-serif), Georgia, serif;
+  }
+  .reading > p:first-of-type::first-letter {
+    float: left;
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 3.4em;
+    line-height: 0.85;
+    padding-right: 0.12em;
+    padding-top: 0.06em;
+    color: #7c5cff;
+  }
+
+  /* ── Sponsored / ad unit (native sticker styling, disclosure required) ── */
+  .ad-card {
+    @apply bg-card border-2 border-dashed border-ink rounded-2xl shadow-pop overflow-hidden;
+  }
+  .ad-disclosure {
+    @apply inline-flex items-center gap-1 font-mono text-[10px] font-bold tracking-wider uppercase
+           border-2 border-ink rounded-full px-2 py-[2px] bg-peach text-[#1A1440];
+  }
+
   /* ── Card ── */
   .card {
     @apply bg-card border-2 border-ink rounded-2xl shadow-pop transition-transform duration-150;
@@ -150,4 +195,139 @@
     );
     background-size: 26px 26px;
   }
+
+  /* ── Motion utilities ─────────────────────────────────────────── */
+  .anim {
+    animation: fade-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  /* Children cascade in with 60ms steps — use on grids/lists */
+  .anim-stagger > * {
+    animation: fade-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .anim-stagger > *:nth-child(1) { animation-delay: 40ms; }
+  .anim-stagger > *:nth-child(2) { animation-delay: 100ms; }
+  .anim-stagger > *:nth-child(3) { animation-delay: 160ms; }
+  .anim-stagger > *:nth-child(4) { animation-delay: 220ms; }
+  .anim-stagger > *:nth-child(5) { animation-delay: 280ms; }
+  .anim-stagger > *:nth-child(6) { animation-delay: 340ms; }
+  .anim-stagger > *:nth-child(n + 7) { animation-delay: 400ms; }
+
+  .anim-pop {
+    animation: pop-in 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* ── Skeleton shimmer (loading placeholders) ──────────────────── */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-card);
+    border-radius: 12px;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(124, 92, 255, 0.1),
+      transparent
+    );
+    animation: shimmer 1.4s infinite;
+  }
+}
+
+/* Raw keyframes (usable by both Tailwind animate-* and the classes above) */
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.94) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* ── TipTap rich editor ─────────────────────────────────────── */
+.ProseMirror {
+  min-height: 420px;
+  outline: none;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--subtle, #8b84ad);
+}
+.ProseMirror h2 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 1.1em;
+  letter-spacing: -0.01em;
+}
+.ProseMirror blockquote {
+  border-left: 6px solid #7c5cff;
+  padding: 0.6rem 1rem;
+  font-style: italic;
+  font-weight: 600;
+  border-radius: 0 12px 12px 0;
+  background: rgba(124, 92, 255, 0.06);
+  margin: 0.8rem 0;
+}
+.ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.ProseMirror ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.ProseMirror pre {
+  background: #0f0b24;
+  color: #e8e4ff;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13.5px;
+  overflow-x: auto;
+  margin: 0.8rem 0;
+}
+.ProseMirror code {
+  background: rgba(124, 92, 255, 0.12);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+  font-size: 0.92em;
+}
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+}
+.ProseMirror a {
+  color: #7c5cff;
+  text-decoration: underline;
+}
+.editor-toolbar button.is-active {
+  background: #7c5cff;
+  color: #fff;
+}
+
+/* ── Shiki server-rendered code blocks ─────────────────────── */
+.shiki-wrap pre {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  background-color: #0f0b24 !important;
+}
+.shiki-wrap code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13.5px;
+  line-height: 1.65;
 }

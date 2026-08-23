@@ -3,35 +3,32 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArticleCard } from "@/components/ArticleCard";
 import {
-  topics,
+  getAllTopics,
   getTopic,
   getArticlesByTopic,
-  formatCount,
-} from "@/lib/data";
+} from "@/lib/queries";
+import { formatCount } from "@/lib/data";
 
-export function generateStaticParams() {
-  return topics.map((t) => ({ slug: t.slug }));
-}
-
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
-}): Metadata {
-  const topic = getTopic(params.slug);
+}): Promise<Metadata> {
+  const topic = await getTopic(params.slug);
   if (!topic) return { title: "Not found — GoHackerz" };
   return { title: `${topic.name} — GoHackerz`, description: topic.description };
 }
 
-export default function TopicPage({
+export default async function TopicPage({
   params,
 }: {
   params: { slug: string };
 }) {
-  const topic = getTopic(params.slug);
+  const topics = await getAllTopics();
+  const topic = await getTopic(params.slug);
   if (!topic) notFound();
 
-  const posts = getArticlesByTopic(topic.slug);
+  const posts = await getArticlesByTopic(topic.slug);
   const totalReactions = posts.reduce((s, a) => s + a.reactions, 0);
 
   return (

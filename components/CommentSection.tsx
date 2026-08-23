@@ -3,79 +3,19 @@
 import { useState, useEffect } from "react";
 import { Avatar } from "./Avatar";
 import { formatCount, type AvatarColor } from "@/lib/data";
+import { useToast } from "@/context/ToastContext";
 
 export interface CommentItem {
   id: string;
   authorName: string;
-  initials: string;
-  avatarColor: AvatarColor;
-  role?: string;
+  username?: string | null;
+  avatarUrl?: string | null;
+  role?: string | null;
   content: string;
   createdAt: string;
   likes: number;
+  liked?: boolean;
 }
-
-const DEFAULT_COMMENTS: Record<string, CommentItem[]> = {
-  "three-assumptions-destroying-tail-latencies": [
-    {
-      id: "c1",
-      authorName: "Alex Rivera",
-      initials: "AR",
-      avatarColor: "sky",
-      role: "Infra @ Linear",
-      content:
-        "The semaphore pattern for bounded concurrency hit home. We saw a 30% drop in redis socket timeouts just by failing fast instead of queueing 5,000 requests during flash spikes.",
-      createdAt: "3 hours ago",
-      likes: 42,
-    },
-    {
-      id: "c2",
-      authorName: "Priya Nair",
-      initials: "PN",
-      avatarColor: "peach",
-      role: "Platform Engineer",
-      content:
-        "“Your p99 is your power users' p50.” Print that out and frame it in every sprint planning room. Outstanding post.",
-      createdAt: "5 hours ago",
-      likes: 28,
-    },
-    {
-      id: "c3",
-      authorName: "Marcus Vance",
-      initials: "MV",
-      avatarColor: "lime",
-      role: "Backend Lead",
-      content:
-        "Did you measure connection pool checkout latency separately in Datadog/Prometheus? Curious what metrics you watched before and after introducing the statement cache.",
-      createdAt: "1 day ago",
-      likes: 15,
-    },
-  ],
-  "postgres-is-all-you-need": [
-    {
-      id: "c1",
-      authorName: "Sarah Chen",
-      initials: "SC",
-      avatarColor: "purple",
-      role: "Data Architect",
-      content:
-        "PgBouncer in transaction pooling mode + carefully tuned autovacuum cost limits has kept our main cluster humming at 6TB without any shard headaches.",
-      createdAt: "4 hours ago",
-      likes: 31,
-    },
-    {
-      id: "c2",
-      authorName: "Liam O'Connor",
-      initials: "LO",
-      avatarColor: "pink",
-      role: "SRE",
-      content:
-        "The query bloat snippet is pure gold. Adding that to our weekly health check script.",
-      createdAt: "1 day ago",
-      likes: 19,
-    },
-  ],
-};
 
 const AVATAR_COLORS: AvatarColor[] = ["purple", "pink", "sky", "peach", "lime", "ink"];
 
@@ -95,96 +35,91 @@ export function CommentSection({
   articleTitle: string;
 }) {
   const [comments, setComments] = useState<CommentItem[]>([]);
-  const [name, setName] = useState("");
   const [text, setText] = useState("");
-  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
-  // Load from localStorage or defaults
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`lore_comments_${articleSlug}`);
-      const savedLikes = localStorage.getItem(`lore_comment_likes_${articleSlug}`);
-      if (savedLikes) {
-        setLikedMap(JSON.parse(savedLikes));
-      }
-      if (saved) {
-        setComments(JSON.parse(saved));
-      } else {
-        const defaults = DEFAULT_COMMENTS[articleSlug] || [
-          {
-            id: "default-1",
-            authorName: "Devin Foster",
-            initials: "DF",
-            avatarColor: "purple",
-            role: "Software Engineer",
-            content: "Great breakdown! Love the practical takeaways.",
-            createdAt: "2 hours ago",
-            likes: 8,
-          },
-        ];
-        setComments(defaults);
-      }
-    } catch {
-      setComments([]);
-    }
-    setHasLoaded(true);
+    let cancelled = false;
+    fetch(`/api/articles/${articleSlug}/comments`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) {
+          setComments(data.comments ?? []);
+          setHasLoaded(true);
+        }
+      })
+      .catch(() => setHasLoaded(true));
+    return () => {
+      cancelled = true;
+    };
   }, [articleSlug]);
 
-  // Persist updates
-  useEffect(() => {
-    if (!hasLoaded) return;
-    try {
-      localStorage.setItem(
-        `lore_comments_${articleSlug}`,
-        JSON.stringify(comments)
-      );
-      localStorage.setItem(
-        `lore_comment_likes_${articleSlug}`,
-        JSON.stringify(likedMap)
-      );
-    } catch {
-      // ignore storage quota errors
-    }
-  }, [comments, likedMap, articleSlug, hasLoaded]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim()) return;
-
+    const body = text.trim();
+    if (!body || isSubmitting) return;
     setIsSubmitting(true);
-    const authorDisplayName = name.trim() || "Anonymous Builder";
-    const newColor =
-      AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
+    setError(null);
 
-    const newComment: CommentItem = {
-      id: "c_" + Date.now(),
-      authorName: authorDisplayName,
-      initials: getInitials(authorDisplayName),
-      avatarColor: newColor,
-      role: "Builder",
-      content: text.trim(),
-      createdAt: "Just now",
-      likes: 0,
-    };
+    try {
+      const res = await fetch(`/api/articles/${articleSlug}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        showToast("Sign in to join the discussion ✦");
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || "Couldn't post comment");
+      setComments((c) => [data.comment, ...c]);
+      setText("");
+      showToast("Comment posted ✦");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
-    setComments((prev) => [newComment, ...prev]);
-    setText("");
-    setIsSubmitting(false);
-  };
-
-  const toggleLike = (id: string) => {
-    setLikedMap((prev) => {
-      const isLiked = !!prev[id];
-      setComments((list) =>
-        list.map((c) =>
-          c.id === id ? { ...c, likes: isLiked ? c.likes - 1 : c.likes + 1 } : c
-        )
-      );
-      return { ...prev, [id]: !isLiked };
-    });
-  };
+  async function toggleLike(id: string) {
+    // optimistic
+    setComments((cs) =>
+      cs.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              liked: !c.liked,
+              likes: c.likes + (c.liked ? -1 : 1),
+            }
+          : c
+      )
+    );
+    try {
+      const res = await fetch(`/api/comments/${id}/like`, { method: "POST" });
+      if (res.status === 401) {
+        setComments((cs) =>
+          cs.map((c) =>
+            c.id === id ? { ...c, liked: !!c.liked && !c.liked === false ? c.liked : false } : c
+          )
+        );
+        showToast("Sign in to upvote comments ✦");
+        return;
+      }
+      const data = await res.json();
+      if (res.ok) {
+        setComments((cs) =>
+          cs.map((c) => (c.id === id ? { ...c, liked: data.liked, likes: data.likes } : c))
+        );
+      }
+    } catch {
+      showToast("Couldn't save your upvote — try again.");
+    }
+  }
 
   return (
     <section
@@ -213,25 +148,6 @@ export function CommentSection({
       {/* Add Comment Form */}
       <div className="card p-6 mb-10 shadow-pop bg-card">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <label
-                htmlFor="comment-author"
-                className="block font-mono text-[11px] text-subtle font-bold mb-1"
-              >
-                YOUR NAME / HANDLE
-              </label>
-              <input
-                id="comment-author"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Satoshi or @builder (optional)"
-                className="w-full border-2 border-ink rounded-xl px-3.5 py-2.5 text-[15px] outline-none shadow-pop-sm focus:shadow-pop transition-shadow bg-card text-ink placeholder:text-subtle"
-              />
-            </div>
-          </div>
-
           <div>
             <label
               htmlFor="comment-text"
@@ -266,10 +182,23 @@ export function CommentSection({
       </div>
 
       {/* Comments List */}
-      {comments.length > 0 ? (
+      {!hasLoaded ? (
+        <div className="space-y-4">
+          {[0, 1].map((i) => (
+            <div key={i} className="card p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="skeleton w-8 h-8 rounded-lg" />
+                <div className="skeleton h-4 w-40" />
+              </div>
+              <div className="skeleton h-4 w-full mb-2" />
+              <div className="skeleton h-4 w-2/3" />
+            </div>
+          ))}
+        </div>
+      ) : comments.length > 0 ? (
         <div className="space-y-4">
           {comments.map((c) => {
-            const isLiked = !!likedMap[c.id];
+            const isLiked = !!c.liked;
             return (
               <div
                 key={c.id}
@@ -279,8 +208,9 @@ export function CommentSection({
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     <Avatar
-                      initials={c.initials}
-                      color={c.avatarColor}
+                      initials={getInitials(c.authorName)}
+                      color={AVATAR_COLORS[c.authorName.length % AVATAR_COLORS.length]}
+                      src={c.avatarUrl}
                       size="sm"
                     />
                     <div>

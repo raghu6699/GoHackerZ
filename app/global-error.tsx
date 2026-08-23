@@ -1,13 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        level: "error",
+        event: "client.global_error",
+        message: error.message,
+        digest: error.digest,
+      })
+    );
+  }, [error]);
   return (
     <html lang="en">
       <body className="bg-[#EEF1FF] text-[#1A1440] font-sans antialiased min-h-screen flex items-center justify-center p-6">

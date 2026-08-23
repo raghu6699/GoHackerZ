@@ -1,0 +1,43 @@
+import { createClient } from "@/lib/supabase-server";
+import { prisma } from "@/lib/prisma";
+
+/**
+ * Resolves the currently authenticated Supabase user and mirrors them into
+ * the public.User table (Prisma). Returns null when not signed in.
+ */
+export async function getCurrentDbUser() {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user || !user.email) return null;
+
+  const metaName = (user.user_metadata?.name as string | undefined)?.trim();
+  const fallback = user.email.split("@")[0];
+  const name = metaName || fallback;
+  // Deterministic, collision-resistant username derived from the auth id
+  const username =
+    fallback.toLowerCase().replace(/[^a-z0-9]+/g, "") + "_" + user.id.slice(0, 6);
+
+  // Already linked?
+  const byAuthId = await prisma.user.findUnique({ where: { authId: user.id } });
+  if (byAuthId) {
+    return prisma.user.update({ where: { id: byAuthId.id }, data: { name } });
+  }
+
+  // Same email signed up before (e.g. re-registered after an auth reset)?
+  // Re-link the existing profile instead of violating the unique email index.
+  const byEmail = await prisma.user.findUnique({ where: { email: user.email } });
+  if (byEmail) {
+    return prisma.user.update({
+      where: { id: byEmail.id },
+      data: { authId: user.id, name },
+    });
+  }
+
+  return prisma.user.create({
+    data: { authId: user.id, email: user.email, name, username, role: "READER" },
+  });
+}
