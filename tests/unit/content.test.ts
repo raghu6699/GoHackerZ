@@ -139,6 +139,87 @@ describe("serializeTiptapDoc", () => {
   });
 });
 
+describe("images & galleries", () => {
+  it("parses standalone image lines with optional captions", () => {
+    expect(parseBlocks('![chart](https://x.io/c.png "Q3 latency")')).toEqual([
+      { type: "img", alt: "chart", src: "https://x.io/c.png", caption: "Q3 latency" },
+    ]);
+    expect(parseBlocks("![diagram](https://x.io/d.png)")).toEqual([
+      { type: "img", alt: "diagram", src: "https://x.io/d.png", caption: undefined },
+    ]);
+  });
+
+  it("round-trips images through blocksToText and back", () => {
+    const blocks = parseBlocks(
+      'before\n\n![a](https://x.io/a.png "cap")\n\n![b](https://x.io/b.png)\n\nafter'
+    );
+    expect(blocks).toEqual([
+      { type: "p", text: "before" },
+      { type: "img", alt: "a", src: "https://x.io/a.png", caption: "cap" },
+      { type: "img", alt: "b", src: "https://x.io/b.png", caption: undefined },
+      { type: "p", text: "after" },
+    ]);
+    expect(parseBlocks(blocksToText(blocks))).toEqual(blocks);
+  });
+
+  it("serializes TipTap image nodes (title attr = caption) to storage format", () => {
+    const md = serializeTiptapDoc({
+      type: "doc",
+      content: [
+        {
+          type: "image",
+          attrs: { src: "https://x.io/i.png", alt: "photo", title: "A caption" },
+        },
+      ],
+    } as never);
+    expect(md).toBe('![photo](https://x.io/i.png "A caption")');
+    expect(parseBlocks(md)[0]).toEqual({
+      type: "img",
+      alt: "photo",
+      src: "https://x.io/i.png",
+      caption: "A caption",
+    });
+  });
+
+  it("does not treat inline markdown links as images", () => {
+    expect(parseBlocks("[not an image](https://x.io)")).toEqual([
+      { type: "p", text: "[not an image](https://x.io)" },
+    ]);
+  });
+});
+
+describe("footnotes", () => {
+  it("collects definitions into a trailing footnotes block and keeps refs inline", () => {
+    const blocks = parseBlocks(
+      "Claim one[^1].\n\n[^1]: The benchmark repo.\n[^2]: Personal communication."
+    );
+    expect(blocks[0]).toEqual({ type: "p", text: "Claim one[^1]." });
+    expect(blocks[1]).toEqual({
+      type: "footnotes",
+      items: [
+        { id: "1", text: "The benchmark repo." },
+        { id: "2", text: "Personal communication." },
+      ],
+    });
+  });
+
+  it("tokenizes [^id] references distinctly from links", () => {
+    expect(parseInline("see [^rust] and [docs](https://d.rs)")).toEqual([
+      { t: "text", v: "see " },
+      { t: "footref", id: "rust" },
+      { t: "text", v: " and " },
+      { t: "link", v: "docs", href: "https://d.rs" },
+    ]);
+  });
+
+  it("round-trips a fully footnoted essay through storage format", () => {
+    const original =
+      "Latency lied to us[^lie].\n\n> Trust, but profile.\n\n[^lie]: p99, not p50.";
+    const blocks = parseBlocks(original);
+    expect(parseBlocks(blocksToText(blocks))).toEqual(blocks);
+  });
+});
+
 describe("blocksToHtml (editor hydration)", () => {
   it("escapes HTML-injecting code content", () => {
     const html = blocksToHtml([

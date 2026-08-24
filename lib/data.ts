@@ -32,7 +32,9 @@ export type Block =
   | { type: "h2"; text: string }
   | { type: "quote"; text: string }
   | { type: "ul"; items: string[] }
-  | { type: "code"; lang: string; code: string };
+  | { type: "code"; lang: string; code: string }
+  | { type: "img"; src: string; alt: string; caption?: string }
+  | { type: "footnotes"; items: { id: string; text: string }[] };
 
 export interface Article {
   slug: string;

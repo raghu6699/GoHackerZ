@@ -8,6 +8,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Image from "@tiptap/extension-image";
 import { common, createLowlight } from "lowlight";
 import { topics } from "@/lib/data";
 import type { Block } from "@/lib/data";
@@ -60,7 +61,15 @@ function ToolbarButton({
   );
 }
 
-function Toolbar({ editor }: { editor: Editor | null }) {
+function Toolbar({
+  editor,
+  onImageUploadClick,
+  onImageUrlClick,
+}: {
+  editor: Editor | null;
+  onImageUploadClick: () => void;
+  onImageUrlClick: () => void;
+}) {
   if (!editor) return null;
 
 
@@ -103,6 +112,12 @@ function Toolbar({ editor }: { editor: Editor | null }) {
       </ToolbarButton>
       <ToolbarButton title="Code block" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
         {"{ }"}
+      </ToolbarButton>
+      <ToolbarButton title="Insert image from file" onClick={onImageUploadClick}>
+        🖼↑
+      </ToolbarButton>
+      <ToolbarButton title="Insert image from URL" onClick={onImageUrlClick}>
+        🖼🔗
       </ToolbarButton>
       <ToolbarButton title="Link" active={editor.isActive("link")} onClick={addOrRemoveLink}>
         🔗
@@ -203,6 +218,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
         codeBlock: false, // replaced by lowlight-powered CodeBlockLowlight
       }),
       CodeBlockLowlight.configure({ lowlight, defaultLanguage: "text" }),
+      Image.configure({ inline: false, allowBase64: true }),
       Placeholder.configure({
         placeholder: "Tell the story — use the toolbar for headings, lists, quotes and code.",
       }),
@@ -220,6 +236,51 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
       setBody(serializeTiptapDoc(ed.getJSON()));
     },
   });
+
+  // ── Inline essay images: reuse the cover-upload storage path ──
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  function insertImageNode(src: string, caption: string) {
+    editor
+      ?.chain()
+      .focus()
+      .setImage({
+        src,
+        alt: caption || "essay illustration",
+        title: caption || undefined,
+      })
+      .run();
+  }
+
+  async function handleInlineImageFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setError("That file isn't an image.");
+      return;
+    }
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("cover", file);
+      const res = await fetch("/api/uploads/cover", {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      const caption = window.prompt("Caption (optional)") ?? "";
+      insertImageNode(data.url, caption);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Image upload failed");
+    }
+  }
+
+  function insertImageByUrl() {
+    if (!editor) return;
+    const url = window.prompt("Image URL");
+    if (!url || !url.trim()) return;
+    const caption = window.prompt("Caption (optional)") ?? "";
+    insertImageNode(url.trim(), caption);
+  }
 
   // ── Autosave: debounced localStorage snapshots after first change ──
   const draftKey = `gh-draft:${initial?.slug ?? "new"}`;
@@ -481,7 +542,22 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
             </div>
           </div>
           <div className="border-t-2 border-dashed border-ink/20 pt-4 space-y-3">
-            <Toolbar editor={editor} />
+            <Toolbar
+              editor={editor}
+              onImageUploadClick={() => imgInputRef.current?.click()}
+              onImageUrlClick={insertImageByUrl}
+            />
+            <input
+              ref={imgInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleInlineImageFile(f);
+                e.target.value = ""; // allow re-selecting the same file
+              }}
+            />
             <div className="border-2 border-ink/10 rounded-2xl px-5 py-4 bg-white/40">
               <EditorContent editor={editor} />
             </div>
@@ -569,8 +645,28 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                         <code>{b.code}</code>
                       </pre>
                     );
+                  case "img":
+                    return (
+                      <figure key={i}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={b.src}
+                          alt={b.alt}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full rounded-xl border-2 border-ink"
+                        />
+                        {b.caption && (
+                          <figcaption className="font-mono text-[11px] text-subtle mt-1 text-center">
+                            {b.caption}
+                          </figcaption>
+                        )}
+                      </figure>
+                    );
+                  case "footnotes":
+                    return null; // definitions render on the published page
                   default:
-                    return <p key={i}>{b.text}</p>;
+                    return b.text ? <p key={i}>{b.text}</p> : null;
                 }
               })
             ) : (

@@ -15,10 +15,11 @@ export type InlineToken =
   | { t: "strong"; v: string }
   | { t: "em"; v: string }
   | { t: "code"; v: string }
-  | { t: "link"; v: string; href: string };
+  | { t: "link"; v: string; href: string }
+  | { t: "footref"; id: string };
 
 const INLINE_RE =
-  /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(\*[^*\n]+\*)|(\[[^\]\n]+\]\([^)\s]+\))/g;
+  /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(\*[^*\n]+\*)|(\[\^[A-Za-z0-9_-]+\])|(\[[^\]\n]+\]\([^)\s]+\))/g;
 
 export function parseInline(s: string): InlineToken[] {
   const tokens: InlineToken[] = [];
@@ -31,6 +32,8 @@ export function parseInline(s: string): InlineToken[] {
       tokens.push({ t: "code", v: tok.slice(1, -1) });
     } else if (tok.startsWith("**")) {
       tokens.push({ t: "strong", v: tok.slice(2, -2) });
+    } else if (tok.startsWith("[^")) {
+      tokens.push({ t: "footref", id: tok.slice(2, -1) });
     } else if (tok.startsWith("*")) {
       tokens.push({ t: "em", v: tok.slice(1, -1) });
     } else {
@@ -64,6 +67,8 @@ function inlineToHtml(s: string): string {
           return `<code>${escapeHtml(tok.v)}</code>`;
         case "link":
           return `<a href="${escapeHtml(tok.href)}">${escapeHtml(tok.v)}</a>`;
+        case "footref":
+          return `<sup><a href="#fn-${escapeHtml(tok.id)}">[${escapeHtml(tok.id)}]</a></sup>`;
         default:
           return escapeHtml(tok.v);
       }
@@ -73,10 +78,16 @@ function inlineToHtml(s: string): string {
 
 // ── Markdown-ish text → Block[] (storage format) ──────────────
 //   ## heading → h2 · > text → quote · - item → ul · ```lang fenced → code
+//   ![alt](src "caption") on its own line → img
+//   [^id]: definition text lines (collected into a trailing footnotes block)
+
+const IMG_LINE_RE = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*$/;
+const FOOTNOTE_DEF_RE = /^\[\^([A-Za-z0-9_-]+)\]:\s*(.*)$/;
 
 export function parseBlocks(body: string): Block[] {
   const lines = body.replace(/\r\n/g, "\n").split("\n");
   const blocks: Block[] = [];
+  const footnotes = new Map<string, string>();
   let para: string[] = [];
   let list: string[] = [];
   let inCode = false;
@@ -118,7 +129,28 @@ export function parseBlocks(body: string): Block[] {
     if (!t) {
       flushPara();
       flushList();
-    } else if (t.startsWith("- ") || t.startsWith("* ")) {
+      continue;
+    }
+
+    // Standalone footnote definition — collected, not a visible paragraph.
+    const fnDef = FOOTNOTE_DEF_RE.exec(t);
+    if (fnDef && !inCode) {
+      flushPara();
+      flushList();
+      footnotes.set(fnDef[1], fnDef[2]);
+      continue;
+    }
+
+    // Standalone image line.
+    const img = IMG_LINE_RE.exec(t);
+    if (img) {
+      flushPara();
+      flushList();
+      blocks.push({ type: "img", alt: img[1], src: img[2], caption: img[3] });
+      continue;
+    }
+
+    if (t.startsWith("- ") || t.startsWith("* ")) {
       flushPara();
       list.push(t.slice(2));
     } else if (t.startsWith("## ")) {
@@ -139,6 +171,12 @@ export function parseBlocks(body: string): Block[] {
   if (inCode && codeLines.length) {
     blocks.push({ type: "code", lang: codeLang, code: codeLines.join("\n") });
   }
+  if (footnotes.size > 0) {
+    blocks.push({
+      type: "footnotes",
+      items: [...footnotes.entries()].map(([id, text]) => ({ id, text })),
+    });
+  }
   return blocks;
 }
 
@@ -150,6 +188,10 @@ export function blocksToText(blocks: Block[]): string {
       if (b.type === "quote") return `> ${b.text}`;
       if (b.type === "ul") return b.items.map((i) => `- ${i}`).join("\n");
       if (b.type === "code") return "```" + b.lang + "\n" + b.code + "\n```";
+      if (b.type === "img")
+        return `![${b.alt}](${b.src}${b.caption ? ` "${b.caption}"` : ""})`;
+      if (b.type === "footnotes")
+        return b.items.map((f) => `[^${f.id}]: ${f.text}`).join("\n\n");
       return b.text;
     })
     .join("\n\n");
@@ -168,6 +210,11 @@ export function blocksToHtml(blocks: Block[]): string {
           return `<ul>${b.items.map((i) => `<li>${inlineToHtml(i)}</li>`).join("")}</ul>`;
         case "code":
           return `<pre><code class="language-${escapeHtml(b.lang)}">${escapeHtml(b.code)}</code></pre>`;
+        case "img":
+          return `<p><img src="${escapeHtml(b.src)}" alt="${escapeHtml(b.alt)}"${b.caption ? ` title="${escapeHtml(b.caption)}"` : ""} /></p>`;
+        case "footnotes":
+          // Footnote definitions live in storage, not in the editor body.
+          return "";
         default:
           return `<p>${inlineToHtml(b.text)}</p>`;
       }
@@ -255,6 +302,14 @@ export function serializeTiptapDoc(doc: TiptapNode): string {
       case "codeBlock": {
         const lang = String(n.attrs?.language ?? "") || "text";
         out.push("```" + lang + "\n" + codeTextOf(n) + "\n```");
+        break;
+      }
+      case "image": {
+        const src = String(n.attrs?.src ?? "");
+        if (!src) break;
+        const alt = String(n.attrs?.alt ?? "");
+        const caption = n.attrs?.title ? String(n.attrs.title) : null;
+        out.push(`![${alt}](${src}${caption ? ` "${caption}"` : ""})`);
         break;
       }
       default:

@@ -314,6 +314,17 @@
   color: #7c5cff;
   text-decoration: underline;
 }
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 2px solid rgba(26, 20, 64, 0.15);
+  margin: 0.5rem 0;
+}
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid #7c5cff;
+  outline-offset: 2px;
+}
 .editor-toolbar button.is-active {
   background: #7c5cff;
   color: #fff;
