@@ -7,6 +7,7 @@ import {
   getAllAuthors,
   getAuthor,
   getArticlesByAuthor,
+  preloadCardData,
 } from "@/lib/queries";
 import { formatCount } from "@/lib/data";
 
@@ -31,6 +32,7 @@ export default async function WriterPage({
 
   const posts = await getArticlesByAuthor(author.username);
   const totalReactions = posts.reduce((s, a) => s + a.reactions, 0);
+  const cardData = await preloadCardData(posts);
 
   return (
     <div className="wrap pt-8 pb-4">
@@ -58,7 +60,12 @@ export default async function WriterPage({
       {posts.length > 0 ? (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {posts.map((a) => (
-            <ArticleCard key={a.slug} article={a} />
+            <ArticleCard
+              key={a.slug}
+              article={a}
+              author={cardData.authors.get(a.authorUsername)}
+              topic={cardData.topics.get(a.topicSlug)}
+            />
           ))}
         </section>
       ) : (

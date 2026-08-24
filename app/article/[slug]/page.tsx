@@ -13,6 +13,7 @@ import {
   getAuthor,
   getTopic,
   getArticlesByTopic,
+  preloadCardData,
 } from "@/lib/queries";
 import {
   formatDate,
@@ -50,6 +51,7 @@ export default async function ArticlePage({
   const related = (await getArticlesByTopic(topic.slug))
     .filter((a) => a.slug !== article.slug)
     .slice(0, 3);
+  const relatedCardData = await preloadCardData(related);
 
   // ── JSON-LD: Article + BreadcrumbList for search engines ──
   const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -213,7 +215,12 @@ export default async function ArticlePage({
           </h2>
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {related.map((a) => (
-              <ArticleCard key={a.slug} article={a} />
+              <ArticleCard
+                key={a.slug}
+                article={a}
+                author={relatedCardData.authors.get(a.authorUsername)}
+                topic={relatedCardData.topics.get(a.topicSlug)}
+              />
             ))}
           </section>
         </>

@@ -11,6 +11,7 @@ import {
   getAuthor,
   getTopic,
   getAllTopics,
+  preloadCardData,
 } from "@/lib/queries";
 import { formatCount } from "@/lib/data";
 import { notFound } from "next/navigation";
@@ -38,13 +39,8 @@ export default async function HomePage({
   const page = Math.min(pageNum, totalPages);
   const moreStories = pool.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const trendingRows = await Promise.all(
-    trending.map(async (a) => ({
-      a,
-      author: (await getAuthor(a.authorUsername))!,
-      topic: (await getTopic(a.topicSlug))!,
-    }))
-  );
+  // One batched round-trip per table for every card on the page.
+  const cardData = await preloadCardData([...latest, ...trending, ...moreStories]);
 
   return (
     <>
@@ -159,14 +155,22 @@ export default async function HomePage({
         <SectionHead title="Fresh drops" note="// updated live" />
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5 anim-stagger">
           {latest.map((a) => (
-            <ArticleCard key={a.slug} article={a} />
+            <ArticleCard
+              key={a.slug}
+              article={a}
+              author={cardData.authors.get(a.authorUsername)}
+              topic={cardData.topics.get(a.topicSlug)}
+            />
           ))}
         </section>
 
         {/* ── Trending ── */}
         <SectionHead title="Trending now 🔥" note="// last 24h" />
         <section className="bg-card border-2 border-ink rounded-3xl shadow-pop overflow-hidden">
-          {trendingRows.map(({ a, author, topic }, i) => {
+          {trending.map((a, i) => {
+            const author = cardData.authors.get(a.authorUsername);
+            const topic = cardData.topics.get(a.topicSlug);
+            if (!author || !topic) return null;
             return (
               <Link
                 key={a.slug}
@@ -200,7 +204,13 @@ export default async function HomePage({
             <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
               <div className="bg-card border-2 border-ink rounded-3xl shadow-pop overflow-hidden anim-stagger">
                 {moreStories.map((a) => (
-                  <ArticleCard key={a.slug} article={a} variant="compact" />
+                  <ArticleCard
+                    key={a.slug}
+                    article={a}
+                    variant="compact"
+                    author={cardData.authors.get(a.authorUsername)}
+                    topic={cardData.topics.get(a.topicSlug)}
+                  />
                 ))}
               </div>
               <div className="space-y-6 lg:sticky lg:top-24">

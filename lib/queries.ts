@@ -290,6 +290,61 @@ export async function getFollowingFeed(userId: string): Promise<Article[]> {
   return rows.map(mapArticle);
 }
 
+// ── Batch loaders (avoid per-card N+1 queries) ────────────────
+
+export interface CardData {
+  authors: Map<string, Author>;
+  topics: Map<string, Topic>;
+}
+
+/**
+ * Prefetches authors + topics for a list of articles in ~2 round-trips,
+ * instead of 2 queries per rendered card. Pages pass the resolved entries
+ * down to <ArticleCard>. Falls back to individual lookups only for legacy
+ * email-prefix usernames.
+ */
+export async function preloadCardData(
+  articles: Pick<Article, "authorUsername" | "topicSlug">[]
+): Promise<CardData> {
+  const authors = new Map<string, Author>();
+  const topics = new Map<string, Topic>();
+
+  const usernames = [...new Set(articles.map((a) => a.authorUsername))];
+  const slugs = [...new Set(articles.map((a) => a.topicSlug))];
+
+  const users = usernames.length
+    ? await prisma.user.findMany({
+        where: { username: { in: usernames } },
+        include: { _count: { select: { articles: true, followers: true } } },
+      })
+    : [];
+  const topicRows = slugs.length
+    ? await prisma.topic.findMany({ where: { slug: { in: slugs } } })
+    : [];
+
+  for (const t of topicRows) topics.set(t.slug, mapTopic(t));
+
+  const seen = new Set<string>();
+  for (const u of users) {
+    if (u.username) {
+      authors.set(u.username, mapAuthor(u));
+      seen.add(u.username);
+    }
+  }
+
+  // Legacy accounts matched by email prefix rather than username.
+  await Promise.all(
+    usernames
+      .filter((n) => !seen.has(n))
+      .map(async (n) => {
+        const a = await getAuthor(n);
+        if (a) authors.set(n, a);
+      })
+  );
+
+  return { authors, topics };
+}
+
 // ── Drafts & review workflow ──────────────────────────────────
 export interface WithStatus extends Article {
   status: string;

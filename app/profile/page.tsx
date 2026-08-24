@@ -6,6 +6,7 @@ import {
   getUserArticles,
   getFollowingFeed,
   getFollowedAuthors,
+  preloadCardData,
   type WithStatus,
 } from "@/lib/queries";
 import { ProfileEditor } from "@/components/ProfileEditor";
@@ -46,6 +47,7 @@ export default async function ProfilePage({
   ]);
   const followingFeed =
     tab === "following" ? await getFollowingFeed(user.id) : [];
+  const feedCardData = await preloadCardData(followingFeed);
 
   const published = posts.filter((p) => p.status === "PUBLISHED").length;
   const inProgress = posts.length - published;
@@ -187,7 +189,12 @@ export default async function ProfilePage({
           {followingFeed.length > 0 ? (
             <section className="grid grid-cols-1 sm:grid-cols-2 gap-5 anim-stagger">
               {followingFeed.map((a) => (
-                <ArticleCard key={a.slug} article={a} />
+                <ArticleCard
+                  key={a.slug}
+                  article={a}
+                  author={feedCardData.authors.get(a.authorUsername)}
+                  topic={feedCardData.topics.get(a.topicSlug)}
+                />
               ))}
             </section>
           ) : (

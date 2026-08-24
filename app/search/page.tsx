@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
 import { Avatar } from "@/components/Avatar";
-import { searchArticles, searchAuthors } from "@/lib/queries";
+import { searchArticles, searchAuthors, preloadCardData } from "@/lib/queries";
 
 export const metadata: Metadata = { title: "Search — GoHackerz" };
 
@@ -15,6 +15,7 @@ export default async function SearchPage({
   const [articles, authors] = q
     ? await Promise.all([searchArticles(q), searchAuthors(q)])
     : [[], []];
+  const cardData = await preloadCardData(q ? articles : []);
 
   return (
     <div className="wrap max-w-[900px] py-12">
@@ -60,7 +61,12 @@ export default async function SearchPage({
           {articles.length > 0 ? (
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {articles.map((a) => (
-                <ArticleCard key={a.slug} article={a} />
+                <ArticleCard
+                  key={a.slug}
+                  article={a}
+                  author={cardData.authors.get(a.authorUsername)}
+                  topic={cardData.topics.get(a.topicSlug)}
+                />
               ))}
             </section>
           ) : authors.length === 0 ? (
