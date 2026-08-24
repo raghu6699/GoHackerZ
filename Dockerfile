@@ -9,6 +9,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DOCKER_BUILD=1
 # Build-time placeholder — pages that need the DB are dynamic or degrade
 # gracefully (sitemap/RSS); runtime uses the real DATABASE_URL.
 ARG DATABASE_URL="postgresql://build:build@localhost:5432/build"

@@ -11,7 +11,9 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
-  output: "standalone", // produces .next/standalone for Docker deploys
+  // Standalone output is only for containerized (Docker) deploys —
+  // Vercel manages its own packaging and fails with standalone enabled.
+  ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" } : {}),
   images: {
     remotePatterns: [
       {
