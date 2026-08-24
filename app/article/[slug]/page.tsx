@@ -7,6 +7,8 @@ import { ArticleActions } from "@/components/ArticleActions";
 import { ArticleCard } from "@/components/ArticleCard";
 import { CommentSection } from "@/components/CommentSection";
 import { ViewPing } from "@/components/ViewPing";
+import { ReadingProgress } from "@/components/ReadingProgress";
+import { TextSizeControl } from "@/components/TextSizeControl";
 import { FollowButton } from "@/components/FollowButton";
 import {
   getArticle,
@@ -100,6 +102,7 @@ export default async function ArticlePage({
 
   return (
     <article className="wrap max-w-[820px] pt-8 pb-4">
+      <ReadingProgress />
       <ViewPing slug={article.slug} />
       <script
         type="application/ld+json"
@@ -155,6 +158,11 @@ export default async function ArticlePage({
           initialReactions={article.reactions}
           comments={article.comments}
         />
+      </div>
+
+      {/* text-size control */}
+      <div className="flex justify-end mb-3 -mt-2">
+        <TextSizeControl />
       </div>
 
       {/* body */}

@@ -331,3 +331,19 @@
   font-size: 13.5px;
   line-height: 1.65;
 }
+
+/* ── Reader-controlled article text sizing ─────────────────── */
+/* .reading + element selectors out-specify the text-[…px] utilities so the
+   whole reading column scales from one custom property. */
+.reading {
+  font-size: calc(19px * var(--reading-zoom, 1));
+}
+.reading p {
+  font-size: inherit;
+}
+.reading blockquote {
+  font-size: 1.1em;
+}
+.reading ul li {
+  font-size: 0.95em;
+}
