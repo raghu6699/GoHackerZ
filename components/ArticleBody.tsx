@@ -130,7 +130,7 @@ export async function ArticleBody({ content }: { content: Block[] }) {
           return (
             <div
               key={`g${u}`}
-              className={`grid gap-3 ${
+              className={`gallery grid gap-3 ${
                 multi ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
               }`}
             >

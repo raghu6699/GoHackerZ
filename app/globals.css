@@ -126,7 +126,9 @@
   /* ── Chips / pills ── */
   .chip {
     @apply inline-flex items-center gap-1 font-mono text-[11px] font-bold
-           border-2 border-ink rounded-full px-[10px] py-1 bg-card text-ink;
+           rounded-full px-[10px] py-1 bg-card text-ink;
+    /* soft 1px edge instead of the heavy 2px ink border */
+    border: 1px solid color-mix(in srgb, var(--color-ink) 25%, transparent);
   }
   .chip.bg-lime,
   .chip.bg-sky,
@@ -341,6 +343,14 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13.5px;
   line-height: 1.65;
+}
+
+/* Galleries escape the 68ch reading measure — Medium-style breakout */
+.reading .gallery {
+  width: min(86ch, calc(100vw - 3rem));
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* ── Reader-controlled article text sizing ─────────────────── */

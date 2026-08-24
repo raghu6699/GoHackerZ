@@ -56,7 +56,6 @@ export default async function TopicPage({
               <span className="chip bg-sky text-[#1A1440]">
                 ▲ {formatCount(totalReactions)} reactions
               </span>
-              <button className="btn btn-sm btn-purple">+ Follow topic</button>
             </div>
           </div>
         </div>

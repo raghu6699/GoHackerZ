@@ -63,71 +63,58 @@ function ToolbarButton({
 
 function Toolbar({
   editor,
+  onLinkClick,
   onImageUploadClick,
-  onImageUrlClick,
 }: {
   editor: Editor | null;
+  onLinkClick: () => void;
   onImageUploadClick: () => void;
-  onImageUrlClick: () => void;
 }) {
   if (!editor) return null;
 
-
-  const addOrRemoveLink = () => {
-    const url = window.prompt("Link URL (empty to remove)");
-    if (url === null) return;
-    if (!url.trim()) {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
-    }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
-  };
 
   const currentLang = (editor.getAttributes("codeBlock").language as string) || "text";
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <ToolbarButton title="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
-        B
+        Bold
       </ToolbarButton>
       <span className="italic">
         <ToolbarButton title="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
-          I
+          Italic
         </ToolbarButton>
       </span>
       <ToolbarButton title="Inline code" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
-        {"<>"}
+        Code
       </ToolbarButton>
       <ToolbarButton title="Heading" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
-        H2
+        Heading
       </ToolbarButton>
       <ToolbarButton title="Quote" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
-        ❝
+        Quote
       </ToolbarButton>
       <ToolbarButton title="Bullet list" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
-        • List
+        Bullets
       </ToolbarButton>
       <ToolbarButton title="Numbered list" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
-        1. List
+        Numbered
       </ToolbarButton>
       <ToolbarButton title="Code block" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
-        {"{ }"}
+        Code block
+      </ToolbarButton>
+      <ToolbarButton title="Link" active={editor.isActive("link")} onClick={onLinkClick}>
+        Link
       </ToolbarButton>
       <ToolbarButton title="Insert image from file" onClick={onImageUploadClick}>
-        🖼↑
-      </ToolbarButton>
-      <ToolbarButton title="Insert image from URL" onClick={onImageUrlClick}>
-        🖼🔗
-      </ToolbarButton>
-      <ToolbarButton title="Link" active={editor.isActive("link")} onClick={addOrRemoveLink}>
-        🔗
+        Image
       </ToolbarButton>
       <span className="grow" />
       <ToolbarButton title="Undo" onClick={() => editor.chain().focus().undo().run()}>
-        ↩
+        Undo
       </ToolbarButton>
       <ToolbarButton title="Redo" onClick={() => editor.chain().focus().redo().run()}>
-        ↪
+        Redo
       </ToolbarButton>
       {editor.isActive("codeBlock") && (
         <select
@@ -258,6 +245,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
       return;
     }
     setError(null);
+    setPopover({ kind: "image", src: "", caption: "", busy: true });
     try {
       const form = new FormData();
       form.append("cover", file);
@@ -267,19 +255,53 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
-      const caption = window.prompt("Caption (optional)") ?? "";
-      insertImageNode(data.url, caption);
+      setPopover({ kind: "image", src: data.url, caption: "", busy: false });
     } catch (err) {
+      setPopover(null);
       setError(err instanceof Error ? err.message : "Image upload failed");
     }
   }
 
-  function insertImageByUrl() {
+  // ── Inline link / image popovers (no native window.prompt) ────
+  const [popover, setPopover] = useState<
+    | { kind: "link"; url: string }
+    | { kind: "image"; src: string; caption: string; busy: boolean }
+    | null
+  >(null);
+
+  function openLinkPopover() {
     if (!editor) return;
-    const url = window.prompt("Image URL");
-    if (!url || !url.trim()) return;
-    const caption = window.prompt("Caption (optional)") ?? "";
-    insertImageNode(url.trim(), caption);
+    const existing = (editor.getAttributes("link").href as string) ?? "";
+    setPopover({ kind: "link", url: existing });
+  }
+
+  function applyLink() {
+    if (!editor || !popover || popover.kind !== "link") return;
+    const url = popover.url.trim();
+    if (!url) {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    } else {
+      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    }
+    setPopover(null);
+  }
+
+  function removeLink() {
+    if (!editor) return;
+    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    setPopover(null);
+  }
+
+  function applyImage() {
+    if (!editor || !popover || popover.kind !== "image") return;
+    const src = popover.src.trim();
+    if (!src) return;
+    editor.chain().focus().setImage({
+      src,
+      alt: popover.caption || "essay illustration",
+      title: popover.caption || undefined,
+    }).run();
+    setPopover(null);
   }
 
   // ── Autosave: debounced localStorage snapshots after first change ──
@@ -542,11 +564,101 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
             </div>
           </div>
           <div className="border-t-2 border-dashed border-ink/20 pt-4 space-y-3">
-            <Toolbar
-              editor={editor}
-              onImageUploadClick={() => imgInputRef.current?.click()}
-              onImageUrlClick={insertImageByUrl}
-            />
+            <div className="relative">
+              <Toolbar
+                editor={editor}
+                onLinkClick={openLinkPopover}
+                onImageUploadClick={() => imgInputRef.current?.click()}
+              />
+              {popover && (
+                <div
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="absolute z-30 top-full mt-2 left-0 w-[320px] max-w-[90vw] border-2 border-ink rounded-xl bg-card shadow-pop p-3 space-y-2 text-[13px]"
+                >
+                  {popover.kind === "link" ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={popover.url}
+                        onChange={(e) =>
+                          setPopover({ kind: "link", url: e.target.value })
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && applyLink()}
+                        placeholder="https://example.com"
+                        className="w-full border-2 border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple"
+                      />
+                      <div className="flex gap-2 justify-end items-center">
+                        {editor?.isActive("link") && (
+                          <button
+                            type="button"
+                            onClick={removeLink}
+                            className="font-mono text-[11px] font-bold text-pink hover:underline cursor-pointer"
+                          >
+                            Remove link
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={applyLink}
+                          className="btn btn-sm btn-purple !py-1 !px-3 text-[12px]"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        value={popover.src}
+                        onChange={(e) =>
+                          setPopover({
+                            kind: "image",
+                            src: e.target.value,
+                            caption: popover.caption,
+                            busy: false,
+                          })
+                        }
+                        placeholder="Image URL — or pick a file above"
+                        disabled={popover.busy}
+                        className="w-full border-2 border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
+                      />
+                      <input
+                        value={popover.caption}
+                        onChange={(e) =>
+                          setPopover({
+                            kind: "image",
+                            src: popover.src,
+                            caption: e.target.value,
+                            busy: false,
+                          })
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && applyImage()}
+                        placeholder={popover.busy ? "Uploading…" : "Caption (optional)"}
+                        disabled={popover.busy || !popover.src.trim()}
+                        className="w-full border-2 border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
+                      />
+                      <div className="flex gap-2 justify-end items-center">
+                        <button
+                          type="button"
+                          onClick={() => setPopover(null)}
+                          className="font-mono text-[11px] font-bold text-subtle hover:underline cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={applyImage}
+                          disabled={popover.busy || !popover.src.trim()}
+                          className="btn btn-sm btn-purple !py-1 !px-3 text-[12px] disabled:opacity-40"
+                        >
+                          {popover.busy ? "Uploading…" : "Insert image"}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
             <input
               ref={imgInputRef}
               type="file"

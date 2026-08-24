@@ -13,7 +13,7 @@ import {
   getAllTopics,
   preloadCardData,
 } from "@/lib/queries";
-import { formatCount } from "@/lib/data";
+import { formatCount, formatDate } from "@/lib/data";
 import { notFound } from "next/navigation";
 
 export default async function HomePage({
@@ -26,6 +26,7 @@ export default async function HomePage({
   if (!featured) notFound();
 
   const featuredAuthor = (await getAuthor(featured.authorUsername))!;
+  const featuredTopic = (await getTopic(featured.topicSlug))!;
   const allTopics = await getAllTopics();
   const latest = (await getLatest(3)).filter((a) => !a.featured);
   const trending = await getTrending(4);
@@ -49,7 +50,7 @@ export default async function HomePage({
       <header className="wrap relative pt-14 pb-10">
         <span className="inline-flex items-center gap-2 bg-card border-2 border-ink rounded-full px-[15px] py-[7px] text-[13px] font-semibold shadow-pop mb-6">
           <span className="text-[15px]">👋</span> New here?{" "}
-          <b className="text-purple">Join 190k builders →</b>
+          <b className="text-purple">Every essay is free, forever →</b>
         </span>
         <h1 className="text-[clamp(42px,7.5vw,86px)] leading-[0.98] tracking-tight font-bold max-w-[12ch] mb-6">
           Where builders <span className="text-purple">actually</span> write.
@@ -138,9 +139,20 @@ export default async function HomePage({
             </Link>
           </div>
           <div className="relative bg-card border-2 border-ink rounded-2xl text-ink p-6 flex flex-col justify-center">
-            <div className="text-[64px] font-bold leading-none text-purple">40×</div>
-            <div className="font-semibold text-[15px] mt-1.5 mb-4 text-ink">
-              faster p99 — zero new servers
+            <div className="font-mono text-[11px] text-subtle font-bold mb-3">
+              INSIDE THIS ESSAY
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[44px] leading-none">
+                {featuredTopic.emoji}
+              </span>
+              <span className="text-[20px] font-bold leading-tight">
+                {featuredTopic.name}
+              </span>
+            </div>
+            <div className="font-mono text-[12px] text-subtle font-bold mb-5">
+              {formatDate(featured.publishedAt).toUpperCase()} ·{" "}
+              {featured.readingTime} MIN READ
             </div>
             <div className="flex gap-2 flex-wrap">
               {featured.tags.map((t) => (
@@ -190,7 +202,7 @@ export default async function HomePage({
                     {a.title}
                   </h4>
                 </div>
-                <span className="hidden sm:inline-block font-mono text-[12px] font-bold bg-sky text-[#1A1440] border-2 border-ink rounded-full px-2.5 py-1 whitespace-nowrap">
+                <span className="hidden sm:inline-block font-mono text-[12px] font-bold bg-sky text-[#1A1440] border border-ink/30 rounded-full px-2.5 py-1 whitespace-nowrap">
                   ▲ {formatCount(a.reactions)}
                 </span>
               </Link>

@@ -52,7 +52,7 @@ export async function ArticleCard({
             {article.readingTime} MIN · {formatDateRelative(article.publishedAt)}
           </div>
         </div>
-        <span className="hidden sm:inline-block shrink-0 font-mono text-[11px] font-bold bg-card border-2 border-ink rounded-full px-2 py-[2px] whitespace-nowrap">
+        <span className="hidden sm:inline-block shrink-0 font-mono text-[11px] font-bold bg-card border border-ink/30 rounded-full px-2 py-[2px] whitespace-nowrap">
           ▲ {formatCount(article.reactions)}
         </span>
       </Link>
@@ -92,7 +92,7 @@ export async function ArticleCard({
         >
           {author.name}
         </Link>
-        <span className="ml-auto font-mono text-[12px] font-bold bg-lime text-[#1A1440] border-2 border-ink rounded-full px-2.5 py-[3px]">
+        <span className="ml-auto font-mono text-[12px] font-bold bg-lime text-[#1A1440] border border-ink/30 rounded-full px-2.5 py-[3px]">
           ▲ {formatCount(article.reactions)}
         </span>
       </div>
