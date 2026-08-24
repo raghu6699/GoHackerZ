@@ -8,8 +8,8 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(
   req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const editor = await getCurrentDbUser();
   if (!editor) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,7 +29,7 @@ export async function POST(
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true, status: true },
   });
   if (!article) {

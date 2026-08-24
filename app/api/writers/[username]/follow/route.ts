@@ -24,9 +24,9 @@ async function followerCount(userId: string): Promise<number | null> {
 /** GET — is the viewer following this writer + the writer's follower count. */
 export async function GET(
   _req: Request,
-  { params }: { params: { username: string } }
-) {
-  const writer = await findWriter(params.username);
+  { params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  const writer = await findWriter((await params).username);
   if (!writer) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -55,8 +55,8 @@ export async function GET(
 /** POST — toggle follow for the signed-in user. */
 export async function POST(
   _req: Request,
-  { params }: { params: { username: string } }
-) {
+  { params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
   const viewer = await getCurrentDbUser();
   if (!viewer) {
     return NextResponse.json(
@@ -65,7 +65,7 @@ export async function POST(
     );
   }
 
-  const writer = await findWriter(params.username);
+  const writer = await findWriter((await params).username);
   if (!writer) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

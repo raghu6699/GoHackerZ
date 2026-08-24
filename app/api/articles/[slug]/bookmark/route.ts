@@ -5,10 +5,10 @@ import { prisma } from "@/lib/prisma";
 /** GET — bookmark state for this article + viewer. */
 export async function GET(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true, bookmarkCount: true },
   });
   if (!article) {
@@ -29,8 +29,8 @@ export async function GET(
 /** POST — toggle bookmark (auth required). */
 export async function POST(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
     return NextResponse.json(
@@ -40,7 +40,7 @@ export async function POST(
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true },
   });
   if (!article) {

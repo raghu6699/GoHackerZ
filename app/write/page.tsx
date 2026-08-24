@@ -9,14 +9,15 @@ export const metadata: Metadata = { title: "Write — GoHackerz" };
 export default async function WritePage({
   searchParams,
 }: {
-  searchParams: { edit?: string };
+  searchParams: Promise<{ edit?: string }>;
 }) {
+  const sp = await searchParams;
   const user = await getCurrentDbUser();
   if (!user) redirect("/signin");
 
   let initial = undefined;
-  if (searchParams.edit) {
-    const existing = await getEditableArticle(searchParams.edit, user.id);
+  if (sp.edit) {
+    const existing = await getEditableArticle(sp.edit, user.id);
     if (existing && existing.status !== "PUBLISHED") {
       initial = {
         slug: existing.slug,

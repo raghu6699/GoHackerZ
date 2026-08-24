@@ -25,9 +25,10 @@ import {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const article = await getArticle(params.slug);
+  const { slug } = await params;
+  const article = await getArticle(slug);
   if (!article) return { title: "Not found — GoHackerz" };
   return {
     title: `${article.seoTitle || article.title} — GoHackerz`,
@@ -43,9 +44,10 @@ export async function generateMetadata({
 export default async function ArticlePage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const article = await getArticle(params.slug);
+  const { slug } = await params;
+  const article = await getArticle(slug);
   if (!article) notFound();
 
   const author = (await getAuthor(article.authorUsername))!;

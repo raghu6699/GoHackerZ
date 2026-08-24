@@ -19,8 +19,9 @@ import { notFound } from "next/navigation";
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const { page: pageParam } = await searchParams;
   const featured = await getFeatured();
   if (!featured) notFound();
 
@@ -34,7 +35,7 @@ export default async function HomePage({
   const shownSlugs = new Set([featured.slug, ...all.slice(0, 3).map((a) => a.slug), ...trending.map((a) => a.slug)]);
   const pool = all.filter((a) => !shownSlugs.has(a.slug));
   const PAGE_SIZE = 6;
-  const pageNum = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
+  const pageNum = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const totalPages = Math.max(1, Math.ceil(pool.length / PAGE_SIZE));
   const page = Math.min(pageNum, totalPages);
   const moreStories = pool.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

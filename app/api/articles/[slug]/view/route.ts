@@ -8,10 +8,10 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const row = await prisma.article.update({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     data: { viewCount: { increment: 1 } },
     select: { viewCount: true },
   });

@@ -14,9 +14,10 @@ import { formatCount } from "@/lib/data";
 export async function generateMetadata({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
-  const author = await getAuthor(params.username);
+  const { username } = await params;
+  const author = await getAuthor(username);
   if (!author) return { title: "Not found — GoHackerz" };
   return { title: `${author.name} — GoHackerz`, description: author.bio };
 }
@@ -24,10 +25,11 @@ export async function generateMetadata({
 export default async function WriterPage({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }) {
+  const { username } = await params;
   const authors = await getAllAuthors();
-  const author = await getAuthor(params.username);
+  const author = await getAuthor(username);
   if (!author) notFound();
 
   const posts = await getArticlesByAuthor(author.username);

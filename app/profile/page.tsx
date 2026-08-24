@@ -32,14 +32,13 @@ const STATUS_STYLE: Record<string, string> = {
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const user = await getCurrentDbUser();
   if (!user) redirect("/signin");
 
-  const tab = TABS.some((t) => t.key === searchParams.tab)
-    ? searchParams.tab!
-    : "edit";
+  const sp = await searchParams;
+  const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "edit";
 
   const [posts, followedAuthors] = await Promise.all([
     getUserArticles(user.id),

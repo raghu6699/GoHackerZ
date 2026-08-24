@@ -9,15 +9,15 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true, authorId: true, status: true },
   });
   if (!article) {

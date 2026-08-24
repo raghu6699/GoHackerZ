@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
  * the public.User table (Prisma). Returns null when not signed in.
  */
 export async function getCurrentDbUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
     error,

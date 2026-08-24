@@ -78,7 +78,7 @@ d("flows: publish → review → react → follow", () => {
     await prisma.$disconnect();
   });
 
-  const ctx = (slug: string) => ({ params: { slug } });
+  const ctx = (slug: string) => ({ params: Promise.resolve({ slug }) });
 
   it("runs the full approve path: SUBMITTED → PUBLISHED with publishedAt set", async () => {
     mockUser.mockResolvedValue(writer);
@@ -172,14 +172,14 @@ d("flows: publish → review → react → follow", () => {
     mockUser.mockResolvedValue(editor);
     const follow = () =>
       toggleFollow(jsonReq(`http://localhost/api/writers/${RUN}-w/follow`), {
-        params: { username: `${RUN}-w` },
+        params: Promise.resolve({ username: `${RUN}-w` }),
       } as unknown as Parameters<typeof toggleFollow>[1]);
 
     expect(await (await follow()).json()).toMatchObject({ following: true, followers: 1 });
     expect(await (await follow()).json()).toMatchObject({ following: false, followers: 0 });
 
     const selfRes = await toggleFollow(jsonReq(`http://localhost/api/writers/${RUN}-e/follow`), {
-      params: { username: `${RUN}-e` },
+      params: Promise.resolve({ username: `${RUN}-e` }),
     } as unknown as Parameters<typeof toggleFollow>[1]);
     expect(selfRes.status).toBe(400);
   });

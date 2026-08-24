@@ -5,15 +5,15 @@ import { prisma } from "@/lib/prisma";
 /** POST — toggle the signed-in user's upvote on a comment. */
 export async function POST(
   _req: Request,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const comment = await prisma.comment.findUnique({
-    where: { id: params.id },
+    where: { id: (await params).id },
     select: { id: true },
   });
   if (!comment) {

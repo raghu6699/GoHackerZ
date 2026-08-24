@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 // Server-side Supabase client (server components / route handlers)
-export function createClient() {
-  const cookieStore = cookies();
+// Next 15+: cookies() is async.
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

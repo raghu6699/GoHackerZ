@@ -8,15 +8,15 @@ import { prisma } from "@/lib/prisma";
  */
 export async function PATCH(
   req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const existing = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true, authorId: true },
   });
   if (!existing) {
@@ -65,14 +65,14 @@ export async function PATCH(
 /** DELETE /api/articles/[slug] — delete your own article. */
 export async function DELETE(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const existing = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { authorId: true },
   });
   if (!existing) {
@@ -81,6 +81,6 @@ export async function DELETE(
   if (existing.authorId !== user.id) {
     return NextResponse.json({ error: "Not your article." }, { status: 403 });
   }
-  await prisma.article.delete({ where: { slug: params.slug } });
+  await prisma.article.delete({ where: { slug: (await params).slug } });
   return NextResponse.json({ ok: true });
 }

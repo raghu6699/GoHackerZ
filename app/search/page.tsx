@@ -9,9 +9,10 @@ export const metadata: Metadata = { title: "Search — GoHackerz" };
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const q = (searchParams.q ?? "").trim();
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
   const [articles, authors] = q
     ? await Promise.all([searchArticles(q), searchAuthors(q)])
     : [[], []];

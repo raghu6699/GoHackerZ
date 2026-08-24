@@ -5,10 +5,10 @@ import { prisma } from "@/lib/prisma";
 /** GET — current reaction state for this article (+ viewer's own reaction). */
 export async function GET(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true, reactionCount: true },
   });
   if (!article) {
@@ -30,8 +30,8 @@ export async function GET(
 /** POST — toggle the signed-in user's reaction on this article (transactional). */
 export async function POST(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
     return NextResponse.json(
@@ -41,7 +41,7 @@ export async function POST(
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true },
   });
   if (!article) {

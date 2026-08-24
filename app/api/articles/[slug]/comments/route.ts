@@ -17,10 +17,10 @@ function timeAgo(date: Date): string {
 /** GET — all comments on this article (+ viewer's like state). */
 export async function GET(
   _req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true },
   });
   if (!article) {
@@ -66,8 +66,8 @@ export async function GET(
 /** POST — add a comment (auth required). */
 export async function POST(
   req: Request,
-  { params }: { params: { slug: string } }
-) {
+  { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
     return NextResponse.json(
@@ -92,7 +92,7 @@ export async function POST(
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: params.slug },
+    where: { slug: (await params).slug },
     select: { id: true },
   });
   if (!article) {

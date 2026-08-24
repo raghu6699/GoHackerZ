@@ -13,9 +13,10 @@ import { formatCount } from "@/lib/data";
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const topic = await getTopic(params.slug);
+  const { slug } = await params;
+  const topic = await getTopic(slug);
   if (!topic) return { title: "Not found — GoHackerz" };
   return { title: `${topic.name} — GoHackerz`, description: topic.description };
 }
@@ -23,10 +24,11 @@ export async function generateMetadata({
 export default async function TopicPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const topics = await getAllTopics();
-  const topic = await getTopic(params.slug);
+  const topic = await getTopic(slug);
   if (!topic) notFound();
 
   const posts = await getArticlesByTopic(topic.slug);
