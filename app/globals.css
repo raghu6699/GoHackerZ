@@ -347,3 +347,97 @@
 .reading ul li {
   font-size: 0.95em;
 }
+
+/* ── Invisible edge-case polish ─────────────────────────────── */
+
+/* Balanced headings (no orphaned last words), prettier paragraph rag.
+   Progressive: unsupported browsers just ignore these. */
+h1, h2, h3, h4 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* Long URLs / unbroken tokens must never blow out layouts */
+.reading p,
+.reading blockquote,
+.reading li,
+.card,
+.comment-body {
+  overflow-wrap: break-word;
+}
+
+/* Anchored headings clear the sticky nav when deep-linked from feeds */
+[id] {
+  scroll-margin-top: 90px;
+}
+
+/* Cover images never block first paint or pop in unstyled */
+img {
+  background-color: var(--color-card);
+}
+
+/* iOS Safari zooms the whole page on focus for inputs < 16px — keep
+   form fields zoom-proof without redesigning desktop type. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Quiet, theme-aware scrollbars (WebKit + fallback) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 92, 255, 0.4) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 255, 0.35);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 255, 0.6);
+  background-clip: content-box;
+}
+
+/* Print: readers actually save essays as PDFs — give them a clean copy */
+@media print {
+  nav,
+  footer,
+  button,
+  .btn,
+  .chip,
+  .shadow-pop,
+  .shadow-pop-lg,
+  .fixed {
+    display: none !important;
+    box-shadow: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .card,
+  section {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .reading p,
+  .reading li {
+    color: #000 !important;
+    font-size: 11pt !important;
+  }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555;
+  }
+}

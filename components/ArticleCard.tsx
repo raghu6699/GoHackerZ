@@ -6,6 +6,7 @@ import {
   type Author,
   type Topic,
   formatCount,
+  formatDateRelative,
   topicChipClass,
 } from "@/lib/data";
 
@@ -48,7 +49,7 @@ export async function ArticleCard({
           </h4>
           <div className="font-mono text-[11px] text-subtle font-bold mt-0.5 truncate">
             {author.name.toUpperCase()} · {topic.name.toUpperCase()} ·{" "}
-            {article.readingTime} MIN · {formatDateShort(article.publishedAt)}
+            {article.readingTime} MIN · {formatDateRelative(article.publishedAt)}
           </div>
         </div>
         <span className="hidden sm:inline-block shrink-0 font-mono text-[11px] font-bold bg-card border-2 border-ink rounded-full px-2 py-[2px] whitespace-nowrap">
@@ -97,11 +98,4 @@ export async function ArticleCard({
       </div>
     </article>
   );
-}
-
-function formatDateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
 }

@@ -387,6 +387,23 @@ export function formatDate(iso: string): string {
   });
 }
 
+/** "3h ago" style stamps — feeds read faster; full date stays available. */
+export function formatDateRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (isNaN(then)) return "";
+  const secs = Math.round((Date.now() - then) / 1000);
+  if (secs < 60) return "just now";
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w ago`;
+  return formatDate(iso);
+}
+
 // ── Topic color-coding ───────────────────────────────────────
 // One accent hue per topic, used consistently across chips, borders and badges
 // so every topic is visually identifiable site-wide.

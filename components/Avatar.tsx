@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { AvatarColor } from "@/lib/data";
 
 const colorMap: Record<AvatarColor, string> = {
@@ -30,12 +33,20 @@ export function Avatar({
   /** Uploaded profile image — shown instead of initials when present. */
   src?: string | null;
 }) {
-  if (src) {
+  // A deleted/expired storage object must never surface as a broken-image
+  // glyph — degrade to the initials tile instead.
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImg = src && !imgFailed;
+
+  if (showImg) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={initials}
+        loading="lazy"
+        decoding="async"
+        onError={() => setImgFailed(true)}
         className={`avatar ${sizeMap[size]} object-cover bg-card ${
           rotate ? "-rotate-6" : ""
         }`}
@@ -53,3 +64,4 @@ export function Avatar({
     </span>
   );
 }
+
