@@ -39,42 +39,59 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  // Auth session refresh — but a missing/broken Supabase config must never
+  // crash the whole site. Pages enforce auth independently (server-side
+  // redirects), so failing open here only costs the edge-level shortcut.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    logger.warn("middleware.missing_supabase_env", { path: pathname });
+    return response;
+  }
+
+  try {
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            response = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            );
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
+      }
+    );
+
+    // IMPORTANT: do not remove — triggers token refresh when needed
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Edge-level gate: unauthenticated users never even render protected pages
+    const isProtected =
+      pathname.startsWith("/profile") ||
+      pathname === "/write" ||
+      pathname.startsWith("/write/") ||
+      pathname.startsWith("/review");
+    if (isProtected && !user) {
+      const url = new URL("/signin", request.url);
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
     }
-  );
-
-  // IMPORTANT: do not remove — triggers token refresh when needed
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Edge-level gate: unauthenticated users never even render protected pages
-  const isProtected =
-    pathname.startsWith("/profile") ||
-    pathname === "/write" ||
-    pathname.startsWith("/write/") ||
-    pathname.startsWith("/review");
-  if (isProtected && !user) {
-    const url = new URL("/signin", request.url);
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+  } catch (e) {
+    logger.error("middleware.auth_refresh_failed", {
+      message: e instanceof Error ? e.message : "unknown",
+    });
   }
 
   return response;
