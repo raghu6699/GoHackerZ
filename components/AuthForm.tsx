@@ -53,6 +53,11 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
     const name = String(form.get("name") ?? "");
 
     const supabase = createClient();
+    if (!supabase) {
+      setError("Auth isn't configured in this environment.");
+      setLoading(false);
+      return;
+    }
 
     if (isSignup) {
       const { data, error } = await supabase.auth.signUp({
@@ -107,6 +112,10 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
     }
 
     const supabase = createClient();
+    if (!supabase) {
+      setError("Auth isn't configured in this environment.");
+      return;
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/api/auth/callback` },

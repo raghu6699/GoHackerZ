@@ -20,7 +20,12 @@ export function NavAuth() {
   const router = useRouter();
 
   useEffect(() => {
+    // Unconfigured env → stay signed-out view instead of crashing the layout.
     const supabase = createClient();
+    if (!supabase) {
+      setReady(true);
+      return;
+    }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -76,7 +81,7 @@ export function NavAuth() {
   async function signOut() {
     setOpen(false);
     const supabase = createClient();
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     setUser(null);
     router.push("/");
     router.refresh();

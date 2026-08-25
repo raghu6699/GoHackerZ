@@ -20,6 +20,7 @@ export default function ResetPasswordPage() {
     try {
       const { createClient } = await import("@/lib/supabase-browser");
       const supabase = createClient();
+      if (!supabase) throw new Error("Auth isn't configured in this environment.");
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(error.message);
       setDone(true);

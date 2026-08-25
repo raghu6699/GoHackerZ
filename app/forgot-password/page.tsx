@@ -16,6 +16,7 @@ export default function ForgotPasswordPage() {
     try {
       const { createClient } = await import("@/lib/supabase-browser");
       const supabase = createClient();
+      if (!supabase) throw new Error("Auth isn't configured in this environment.");
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
       });
