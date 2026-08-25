@@ -575,9 +575,12 @@ img {
     pointer-events: none;
   }
   .gw-name {
-    @apply w-full bg-white/50 border-2 border-ink/30 rounded-md px-2 py-1 mb-2
-           text-[13px] text-[#1A1440] outline-none focus:border-ink;
+    @apply w-full bg-white/50 border-2 rounded-md px-2 py-1 mb-2
+           text-[13px] text-[#1A1440] outline-none;
+    /* border-ink/30 — ink is a raw var() so Tailwind can't apply /30; use color-mix */
+    border-color: color-mix(in srgb, var(--color-ink) 30%, transparent);
   }
+  .gw-name:focus { border-color: var(--color-ink); }
   .gw-draft-foot {
     @apply flex items-center justify-between gap-2 min-h-[34px];
   }
@@ -624,14 +627,20 @@ img {
 
   .gw-scrub-label {
     @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-10 m-0 whitespace-nowrap
-           font-mono text-[12px] font-bold text-muted bg-card/90 border-2 border-ink/20
+           font-mono text-[12px] font-bold text-muted border-2
            rounded-full px-4 py-2 pointer-events-none;
+    /* bg-card/90 + border-ink/20 — var()-based colors can't take Tailwind /alpha */
+    background: color-mix(in srgb, var(--color-card) 90%, transparent);
+    border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
   }
 
   .gw-hint {
     @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-10 m-0 whitespace-nowrap
-           font-mono text-[12px] font-bold text-muted bg-card/90 border-2 border-ink/20
+           font-mono text-[12px] font-bold text-muted border-2
            rounded-full px-4 py-2 pointer-events-none;
+    /* bg-card/90 + border-ink/20 — var()-based colors can't take Tailwind /alpha */
+    background: color-mix(in srgb, var(--color-card) 90%, transparent);
+    border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
   }
 
   @media (max-width: 640px) {
