@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
+import { EVENT_TYPES, recordArticleEvent, trackingContext } from "@/lib/analytics";
 
 /** GET — bookmark state for this article + viewer. */
 export async function GET(
@@ -28,7 +29,7 @@ export async function GET(
 
 /** POST — toggle bookmark (auth required). */
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const user = await getCurrentDbUser();
@@ -47,6 +48,7 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const ctx = trackingContext(req);
   try {
     const result = await prisma.$transaction(async (tx) => {
       const existing = await tx.bookmark.findUnique({
@@ -71,6 +73,17 @@ export async function POST(
       });
       return { saved: true, count: updated.bookmarkCount };
     });
+
+    if (result.saved) {
+      after(async () => {
+        await recordArticleEvent({
+          articleId: article.id,
+          type: EVENT_TYPES.BOOKMARK,
+          referrer: ctx.referrer,
+          sessionHash: ctx.sessionHash,
+        });
+      });
+    }
 
     return NextResponse.json(result);
   } catch (e) {

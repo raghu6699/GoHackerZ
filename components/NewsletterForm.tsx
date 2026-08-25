@@ -75,7 +75,7 @@ export function NewsletterForm({
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@company.dev"
-        className="border-2 border-ink rounded-xl px-4 py-3 font-mono text-[14px] min-w-[220px] shadow-pop outline-none bg-card text-ink"
+        className="border-2 border-ink rounded-xl px-4 py-3 font-mono text-[14px] w-full sm:w-auto sm:min-w-[220px] shadow-pop outline-none bg-card text-ink"
       />
       <button type="submit" className={`btn ${variant === "lime" ? "btn-purple" : "btn-lime"}`}>
         Subscribe →

@@ -31,10 +31,16 @@
 
   html {
     scroll-behavior: smooth;
+    /* Stop iOS Safari from inflating text in landscape — the #1 cause of
+       text spilling out of pills/buttons/boxes on iPhones. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     @apply bg-bg text-ink font-sans antialiased;
+    /* Safety net: one stray wide element must never create sideways scroll */
+    overflow-x: clip;
     transition: background-color 350ms cubic-bezier(0.4, 0, 0.2, 1),
                 color 350ms cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -91,6 +97,9 @@
     @apply inline-flex items-center justify-center gap-2 font-semibold text-[15px]
            border-2 border-ink rounded-xl px-[18px] py-[10px] bg-card text-ink
            shadow-pop transition-transform duration-100 select-none;
+    text-align: center;
+    /* Long labels wrap instead of pushing siblings out of their container */
+    max-width: 100%;
   }
   .btn:hover {
     @apply -translate-x-[2px] -translate-y-[2px] shadow-pop-lg;
@@ -127,7 +136,10 @@
   .chip {
     @apply inline-flex items-center gap-1 font-mono text-[11px] font-bold
            rounded-full px-[10px] py-1 bg-card text-ink;
-    /* soft 1px edge instead of the heavy 2px ink border */
+    /* soft 1px edge instead of the heavy 2px ink border.
+       Plain rgba first: fallback for browsers without color-mix (iOS < 16.2),
+       otherwise those browsers would drop the border entirely. */
+    border: 1px solid rgba(26, 20, 64, 0.25);
     border: 1px solid color-mix(in srgb, var(--color-ink) 25%, transparent);
   }
   .chip.bg-lime,
@@ -172,6 +184,9 @@
   /* ── Section container ── */
   .wrap {
     @apply mx-auto max-w-[1200px] px-6;
+    /* Respect iPhone notch / Dynamic Island in landscape */
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
   }
 
   /* ── Avatar ── */
@@ -460,5 +475,175 @@ img {
     content: " (" attr(href) ")";
     font-size: 9pt;
     color: #555;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   GUESTBOOK WALL (components/StickyWall.tsx)
+   Prefixed gw- throughout — globals.css already defines .chip for topics.
+   ────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  /* Launcher sticker — fixed bottom-right, out of every content flow */
+  .gw-launcher {
+    @apply fixed z-40 bottom-4 right-4 sm:bottom-6 sm:right-6 inline-flex items-center gap-2
+           font-bold text-[14px] text-[#1A1440] bg-lime border-2 border-ink
+           rounded-xl px-4 py-2.5 shadow-pop select-none cursor-pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  .gw-launcher:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #1a1440;
+  }
+  .gw-launcher:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #1a1440;
+  }
+
+  /* Full-screen overlay */
+  .gw-overlay {
+    @apply fixed inset-0 z-[90];
+    background-color: #e8e4f7;
+    /* corkboard dot grid */
+    background-image: radial-gradient(#cfc7ec 1.5px, transparent 1.5px);
+    background-size: 26px 26px;
+    animation: gw-fade 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  html.dark .gw-overlay {
+    background-color: #14102b;
+    background-image: radial-gradient(#241d49 1.5px, transparent 1.5px);
+  }
+  @keyframes gw-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .gw-canvas {
+    @apply absolute inset-0 overflow-hidden;
+    touch-action: none; /* pointermove owns the gesture while placing notes */
+  }
+
+  .gw-empty {
+    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+           flex items-center gap-3 bg-card border-2 border-ink rounded-2xl
+           px-6 py-4 shadow-pop font-semibold text-[15px] text-body;
+  }
+  .gw-empty span { font-size: 22px; }
+
+  /* Sticky note — positioned by its center via left/top percentages */
+  .gw-note {
+    @apply absolute w-[210px] max-w-[70vw] border-2 border-ink rounded-lg p-3.5 shadow-pop;
+    transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+    animation: gw-pop 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes gw-pop {
+    from { opacity: 0; scale: 0.85; }
+    to { opacity: 1; scale: 1; }
+  }
+
+  /* The painted palette — your five brand colors as sticky paper */
+  .gw-nc0 { background: #fff3a0; } /* yellow  */
+  .gw-nc1 { background: #ffd3ea; } /* pink    */
+  .gw-nc2 { background: #c9f0ff; } /* sky     */
+  .gw-nc3 { background: #e3d4ff; } /* purple  */
+  .gw-nc4 { background: #d8ffbe; } /* lime-ish*/
+
+  .gw-note-txt {
+    @apply m-0 mb-2 whitespace-pre-wrap break-words text-[15px] leading-snug font-medium text-[#1A1440];
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    overflow-wrap: anywhere;
+  }
+  .gw-note-foot {
+    @apply m-0 text-[11px] font-mono font-bold uppercase tracking-wide text-[#1A1440]/60;
+  }
+
+  /* Draft being written/placed */
+  .gw-draft {
+    @apply cursor-grab z-10;
+    box-shadow: 8px 8px 0 rgba(26, 20, 64, 0.35);
+  }
+  .gw-draft:active { cursor: grabbing; }
+
+  .gw-write {
+    @apply block w-full h-[110px] resize-none bg-transparent border-0 outline-none
+           text-[15px] leading-snug font-medium text-[#1A1440] placeholder:text-[#1A1440]/40;
+    font-family: inherit;
+  }
+  .gw-hp {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .gw-name {
+    @apply w-full bg-white/50 border-2 border-ink/30 rounded-md px-2 py-1 mb-2
+           text-[13px] text-[#1A1440] outline-none focus:border-ink;
+  }
+  .gw-draft-foot {
+    @apply flex items-center justify-between gap-2 min-h-[34px];
+  }
+  .gw-note-err {
+    @apply text-[12px] font-semibold text-[#B3261E] leading-tight;
+  }
+  .gw-stick {
+    @apply ml-auto shrink-0 font-bold text-[14px] text-white bg-purple border-2 border-ink
+           rounded-lg px-4 py-1.5 shadow-pop-sm cursor-pointer select-none;
+    transition: transform 100ms ease, box-shadow 100ms ease;
+  }
+  .gw-stick:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #1a1440;
+  }
+  .gw-stick:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Palette chips on the left edge — grab one to start a note */
+  .gw-palette {
+    @apply fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-10;
+  }
+  .gw-chip {
+    @apply w-10 h-10 rounded-full border-2 border-ink shadow-pop-sm cursor-grab select-none;
+    transition: transform 120ms ease;
+    touch-action: none;
+  }
+  .gw-chip:hover { transform: scale(1.12); }
+  .gw-chip:active { cursor: grabbing; transform: scale(0.95); }
+
+  .gw-close {
+    @apply fixed top-4 right-4 z-10 w-11 h-11 flex items-center justify-center
+           text-[18px] font-bold text-ink bg-card border-2 border-ink rounded-full
+           shadow-pop cursor-pointer;
+    transition: transform 100ms ease;
+  }
+  .gw-close:hover { transform: rotate(90deg); }
+
+  .gw-scrub {
+    @apply fixed bottom-5 left-1/2 -translate-x-1/2 w-[min(420px,80vw)] z-10 cursor-pointer;
+    accent-color: #7c5cff;
+  }
+
+  .gw-scrub-label {
+    @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-10 m-0 whitespace-nowrap
+           font-mono text-[12px] font-bold text-muted bg-card/90 border-2 border-ink/20
+           rounded-full px-4 py-2 pointer-events-none;
+  }
+
+  .gw-hint {
+    @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-10 m-0 whitespace-nowrap
+           font-mono text-[12px] font-bold text-muted bg-card/90 border-2 border-ink/20
+           rounded-full px-4 py-2 pointer-events-none;
+  }
+
+  @media (max-width: 640px) {
+    .gw-palette { left: 0.5rem; }
+    .gw-note { width: 180px; }
+    .gw-hint { bottom: 3.5rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gw-overlay,
+    .gw-note {
+      animation: none !important;
+    }
   }
 }

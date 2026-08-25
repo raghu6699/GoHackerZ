@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
+import { EVENT_TYPES, recordArticleEvent, trackingContext } from "@/lib/analytics";
 
 /** GET — current reaction state for this article (+ viewer's own reaction). */
 export async function GET(
@@ -29,7 +30,7 @@ export async function GET(
 
 /** POST — toggle the signed-in user's reaction on this article (transactional). */
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const user = await getCurrentDbUser();
@@ -48,6 +49,7 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const ctx = trackingContext(req);
   try {
     // Single transaction: row + counter move together, can't drift apart
     const result = await prisma.$transaction(async (tx) => {
@@ -80,6 +82,17 @@ export async function POST(
       });
       return { reacted: true, count: updated.reactionCount };
     });
+
+    if (result.reacted) {
+      after(async () => {
+        await recordArticleEvent({
+          articleId: article.id,
+          type: EVENT_TYPES.REACTION,
+          referrer: ctx.referrer,
+          sessionHash: ctx.sessionHash,
+        });
+      });
+    }
 
     return NextResponse.json(result);
   } catch (e) {

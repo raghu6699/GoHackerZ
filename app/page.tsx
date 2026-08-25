@@ -47,7 +47,7 @@ export default async function HomePage({
   return (
     <>
       {/* ── Hero ── */}
-      <header className="wrap relative pt-14 pb-10">
+      <header className="wrap relative pt-8 sm:pt-14 pb-10">
         <span className="inline-flex items-center gap-2 bg-card border-2 border-ink rounded-full px-[15px] py-[7px] text-[13px] font-semibold shadow-pop mb-6">
           <span className="text-[15px]">👋</span> New here?{" "}
           <b className="text-purple">Every essay is free, forever →</b>
@@ -68,14 +68,14 @@ export default async function HomePage({
             Write a post ✦
           </Link>
         </div>
-        <div className="flex gap-7 mt-10 font-medium">
+        <div className="flex gap-5 sm:gap-7 mt-8 sm:mt-10 font-medium flex-wrap">
           {[
             ["640+", "essays"],
             ["12k", "writers"],
             ["190k", "subscribers"],
           ].map(([n, l]) => (
             <div key={l}>
-              <b className="text-[26px] block text-purple">{n}</b>
+              <b className="text-[22px] sm:text-[26px] block text-purple">{n}</b>
               <span className="text-[13px] text-subtle">{l}</span>
             </div>
           ))}
@@ -107,7 +107,7 @@ export default async function HomePage({
       {/* ── Featured ── */}
       <div className="wrap">
         <SectionHead title="Today's headliner" note="// editor's pick" />
-        <section className="relative overflow-hidden bg-purple text-white border-2 border-ink rounded-3xl shadow-pop-lg p-10 grid md:grid-cols-[1.4fr_1fr] gap-9">
+        <section className="relative overflow-hidden bg-purple text-white border-2 border-ink rounded-3xl shadow-pop-lg p-5 sm:p-10 grid md:grid-cols-[1.4fr_1fr] gap-6 md:gap-9">
           <span className="absolute -top-10 -right-10 w-[180px] h-[180px] bg-lime border-2 border-ink rounded-full opacity-90" />
           <div className="relative">
             <span className="inline-block bg-lime text-[#1A1440] border-2 border-ink rounded-full font-mono text-[12px] font-bold px-3 py-[5px] mb-4">
@@ -188,13 +188,13 @@ export default async function HomePage({
               <Link
                 key={a.slug}
                 href={`/article/${a.slug}`}
-                className="grid grid-cols-[54px_1fr_auto] gap-4 items-center px-6 py-5 border-b-2 border-ink last:border-b-0 hover:bg-bg transition-colors group"
+                className="grid grid-cols-[34px_1fr_auto] sm:grid-cols-[54px_1fr_auto] gap-3 sm:gap-4 items-center px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-ink last:border-b-0 hover:bg-bg transition-colors group"
               >
                 <span className="text-[28px] font-bold text-purple text-center">
                   {i + 1}
                 </span>
                 <div>
-                  <div className="font-mono text-[11px] text-subtle font-bold mb-1.5">
+                  <div className="font-mono text-[11px] text-subtle font-bold mb-1.5 break-words">
                     {author.name.toUpperCase()} · {topic.name.toUpperCase()} ·{" "}
                     {a.readingTime} MIN
                   </div>
@@ -275,9 +275,9 @@ export default async function HomePage({
 
         {/* ── Newsletter ── */}
         <SectionHead title="The Weekly Compile" note="// every friday" />
-        <section className="relative overflow-hidden bg-lime text-[#1A1440] border-2 border-ink rounded-3xl shadow-pop-lg p-11 grid md:grid-cols-[1fr_auto] gap-8 items-center">
+        <section className="relative overflow-hidden bg-lime text-[#1A1440] border-2 border-ink rounded-3xl shadow-pop-lg p-6 sm:p-11 grid md:grid-cols-[1fr_auto] gap-8 items-center">
           <div className="relative z-10">
-            <h2 className="text-[36px] font-bold leading-none mb-2.5 text-[#1A1440]">
+            <h2 className="text-[27px] sm:text-[36px] font-bold leading-none mb-2.5 text-[#1A1440]">
               Five sharp reads. Zero spam. ✦
             </h2>
             <p className="text-[16px] font-medium max-w-[420px] text-[#1A1440] leading-relaxed">

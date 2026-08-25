@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { NavAuth } from "./NavAuth";
+import { MobileMenu } from "./MobileMenu";
 
 const links = [
   { href: "/", label: "Feed" },
@@ -13,8 +14,8 @@ const links = [
 
 export function Nav() {
   return (
-    <nav className="sticky top-0 z-50 py-4 bg-bg/85 backdrop-blur-md">
-      <div className="wrap flex items-center gap-6">
+    <nav className="sticky top-0 z-50 py-3 md:py-4 bg-bg/85 backdrop-blur-md">
+      <div className="wrap flex items-center gap-2.5 md:gap-6">
         <Logo />
         <div className="hidden md:flex gap-1 ml-3">
           {links.map((l) => (
@@ -27,12 +28,16 @@ export function Nav() {
             </Link>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-2 md:gap-2.5">
           <ThemeToggle />
           <NavAuth />
           <Link href="/write" className="btn btn-purple">
-            Start writing ✎
+            {/* Shorter label keeps the bar inside 320px viewports */}
+            <span className="hidden sm:inline">Start writing</span>
+            <span className="sm:hidden">Write</span>{" "}
+            <span aria-hidden>✎</span>
           </Link>
+          <MobileMenu />
         </div>
       </div>
     </nav>

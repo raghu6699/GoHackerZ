@@ -38,7 +38,7 @@ export default async function TopicPage({
   return (
     <div className="wrap pt-8 pb-4">
       {/* topic header */}
-      <header className="relative overflow-hidden bg-card border-2 border-ink rounded-3xl shadow-pop-lg p-10 mb-10 dotgrid">
+      <header className="relative overflow-hidden bg-card border-2 border-ink rounded-3xl shadow-pop-lg p-5 sm:p-10 mb-10 dotgrid">
         <div className="relative flex items-start gap-5">
           <span className="text-[64px] leading-none">{topic.emoji}</span>
           <div>

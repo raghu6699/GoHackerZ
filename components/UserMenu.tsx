@@ -89,7 +89,7 @@ export function NavAuth() {
   ];
 
   return (
-    <div ref={menuRef} className="relative hidden sm:block">
+    <div ref={menuRef} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-2 border-2 border-ink rounded-xl pl-1 pr-2.5 py-1 bg-card shadow-pop-sm transition-all duration-150 hover:-translate-y-[1px] hover:shadow-pop ${
@@ -100,7 +100,8 @@ export function NavAuth() {
         aria-label="Account menu"
       >
         <Avatar initials={name.slice(0, 2).toUpperCase()} color="purple" size="sm" src={user.user_metadata?.avatar_url as string | undefined} />
-        <span className="font-bold text-[13px] max-w-[90px] truncate">{name}</span>
+        {/* Name hidden on phones — avatar alone keeps the bar inside narrow viewports */}
+        <span className="hidden sm:inline font-bold text-[13px] max-w-[90px] truncate">{name}</span>
         <svg
           width="10"
           height="10"

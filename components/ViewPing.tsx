@@ -17,11 +17,15 @@ export function ViewPing({ slug }: { slug: string }) {
     } catch {
       // private mode etc. — still ping; worst case slight overcount
     }
-    fetch(`/api/articles/${encodeURIComponent(slug)}/view`, { method: "POST" }).catch(
-      () => {
-        /* view counting must never disturb reading */
-      }
-    );
+    fetch(`/api/articles/${encodeURIComponent(slug)}/view`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // document.referrer survives cases where the browser strips the Referer
+      // header (referrer-policy); server buckets it to a source name.
+      body: JSON.stringify({ referrer: document.referrer || null }),
+    }).catch(() => {
+      /* view counting must never disturb reading */
+    });
   }, [slug]);
 
   return null;

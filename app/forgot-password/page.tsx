@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="wrap max-w-[480px] py-16">
-      <div className="card shadow-pop-lg p-9">
+      <div className="card shadow-pop-lg p-5 sm:p-9">
         {sent ? (
           <div className="text-center py-6">
             <div className="text-[56px] mb-3">📬</div>

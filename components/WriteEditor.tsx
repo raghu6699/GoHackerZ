@@ -722,7 +722,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
         </section>
 
         {/* live preview */}
-        <section className="card p-8 lg:sticky lg:top-24 self-start">
+        <section className="card p-5 lg:p-8 lg:sticky lg:top-24 self-start">
           <div className="font-mono text-[11px] text-purple font-bold mb-4">// live preview</div>
           {coverUrl && (
             // eslint-disable-next-line @next/next/no-img-element

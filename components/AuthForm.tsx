@@ -116,7 +116,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
 
   return (
     <div className="wrap max-w-[480px] py-16">
-      <div className="relative card shadow-pop-lg p-9">
+      <div className="relative card shadow-pop-lg p-5 sm:p-9">
         {/* corner sticker */}
         <span className="absolute -top-4 -right-3 chip bg-lime rotate-6 shadow-pop-sm">
           {isSignup ? "free forever ✦" : "welcome back 👋"}

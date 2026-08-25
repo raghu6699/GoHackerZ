@@ -111,7 +111,7 @@ export function ArticleActions({
   };
 
   return (
-    <div className="flex items-center gap-3 relative">
+    <div className="flex items-center flex-wrap gap-2 sm:gap-3 relative">
       <button
         onClick={toggleReaction}
         disabled={busy}

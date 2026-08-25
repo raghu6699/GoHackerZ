@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { StickyWall } from "@/components/StickyWall";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/context/ToastContext";
 
@@ -9,6 +10,13 @@ export const metadata: Metadata = {
   title: "GoHackerz — Where builders actually write",
   description:
     "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship. No sludge, no listicles.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Draw edge-to-edge on notched iPhones (safe areas handled via env() in CSS)
+  viewportFit: "cover",
 };
 
 /** Applied before first paint so dark-mode users never see a white flash. */
@@ -38,6 +46,7 @@ export default function RootLayout({
             <Nav />
             <main id="main">{children}</main>
             <Footer />
+            <StickyWall />
           </ToastProvider>
         </ThemeProvider>
       </body>

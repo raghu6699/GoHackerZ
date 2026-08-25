@@ -108,7 +108,7 @@ export function ProfileEditor({ initial }: { initial: ProfileData }) {
         </Link>
       </p>
 
-      <div className="card p-7 space-y-6">
+      <div className="card p-5 sm:p-7 space-y-6">
         {/* ── avatar ── */}
         <div className="flex items-center gap-5">
           <div className="relative">

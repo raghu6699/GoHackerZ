@@ -113,6 +113,24 @@ Below: what HackerNoon does in each, and exactly how GoHackerz replicates it.
 | Newsletter ads | Sponsor row in digest template; booking calendar later |
 | Analytics for sponsors | Per-campaign impressions/clicks dashboard |
 
+### Writer analytics engine (implemented)
+
+First-party event pipeline backing the future `/dashboard`:
+
+- **Capture** — every view/reaction/bookmark/comment writes an `ArticleEvent`
+  row (`lib/analytics.ts`), recorded via `after()` so responses never wait.
+  Referrers are bucketed ("google", "twitter-x", …); visitor identity is a
+  salted SHA-256 hash — no cookies, no PII.
+- **Rollup** — `/api/cron/analytics-rollup` (daily, Vercel Cron; protected by
+  `CRON_SECRET`) aggregates completed UTC days into `ArticleDailyStat` and
+  deletes those events atomically. Raw events are retained ~90 days;
+  rollups keep history forever.
+- **Reads** — `getArticleTimeseries()`, `getWriterPerStory()`,
+  `getTopReferrers()` in `lib/analytics.ts` merge rollups + today's live
+  events exactly (no double counting).
+- **Setup** — set `CRON_SECRET` in Vercel env; run
+  `npx prisma migrate deploy`.
+
 ---
 
 ## 6. Trust & Safety Operations

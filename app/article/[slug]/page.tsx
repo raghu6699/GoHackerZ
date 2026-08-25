@@ -180,7 +180,7 @@ export default async function ArticlePage({
       </div>
 
       {/* author card */}
-      <section className="card p-7 mt-10 flex flex-col sm:flex-row gap-5 items-start">
+      <section className="card p-5 sm:p-7 mt-10 flex flex-col sm:flex-row gap-5 items-start">
         <Avatar initials={author.initials} color={author.avatarColor} size="xl" src={author.avatarUrl} />
         <div>
           <div className="font-mono text-[11px] text-subtle mb-1">

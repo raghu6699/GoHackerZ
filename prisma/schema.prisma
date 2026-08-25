@@ -90,6 +90,8 @@ model Article {
   bookmarks      Bookmark[]
   comments       Comment[]
   reviewComments ReviewComment[] @relation("articleReviews")
+  events         ArticleEvent[]
+  dailyStats     ArticleDailyStat[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -173,4 +175,58 @@ model CommentLike {
   comment   Comment  @relation(fields: [commentId], references: [id])
 
   @@unique([userId, commentId])
+}
+
+// ── Writer analytics ────────────────────────────────────────────
+// Raw engagement events. Written on the hot path (non-blocking), rolled up
+// into ArticleDailyStat by /api/cron/analytics-rollup, pruned after 90 days.
+// sessionHash is a salted SHA-256 of ip+UA — dedupes repeat views, no PII.
+
+model ArticleEvent {
+  id          String   @id @default(cuid())
+  articleId   String
+  type        String // "view" | "reaction" | "bookmark" | "comment"
+  createdAt   DateTime @default(now())
+  referrer    String? // bucketed source: "google", "twitter-x", "direct", …
+  sessionHash String?
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, createdAt])
+  @@index([createdAt])
+}
+
+// ── Guestbook wall ──────────────────────────────────────────────
+// Sticky notes visitors leave on the /guestbook wall. Anonymous by design
+// (name optional), spam-guarded by the middleware rate limit + a UI
+// honeypot field that never reaches the database. `hidden` is the
+// moderation switch — admins flip it instead of deleting, so nothing is
+// lost and the note vanishes from every fetch immediately.
+model WallNote {
+  id        String   @id @default(cuid())
+  name      String   @default("")
+  msg       String
+  color     Int      @default(0) // palette index 0..4 (see StickyWall)
+  x         Float // relative position on the wall, 0..1 (center of note)
+  y         Float
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// One row per article per UTC day. Dashboards read these (fast, flat);
+// today's partial numbers are merged live from ArticleEvent at query time.
+model ArticleDailyStat {
+  id        String   @id @default(cuid())
+  articleId String
+  date      DateTime @db.Date
+  views     Int      @default(0)
+  reactions Int      @default(0)
+  bookmarks Int      @default(0)
+  comments  Int      @default(0)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, date])
 }

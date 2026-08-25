@@ -7,6 +7,11 @@ const config: Config = {
     "./components/**/*.{ts,tsx}",
     "./lib/**/*.{ts,tsx}",
   ],
+  // hover: styles only apply on devices that truly support hover — stops
+  // iOS/Android/iPad taps from leaving "stuck" hover states behind.
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   theme: {
     extend: {
       colors: {

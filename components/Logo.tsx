@@ -21,7 +21,7 @@ export function Logo({
       >
         G
       </span>
-      GoHackerz
+      <span className="max-[370px]:hidden">GoHackerz</span>
     </Link>
   );
 }

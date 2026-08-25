@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
+import { EVENT_TYPES, recordArticleEvent, trackingContext } from "@/lib/analytics";
 
 function timeAgo(date: Date): string {
   const s = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -109,6 +110,16 @@ export async function POST(
         data: { commentCount: { increment: 1 } },
       }),
     ]);
+
+    const ctx = trackingContext(req);
+    after(async () => {
+      await recordArticleEvent({
+        articleId: article.id,
+        type: EVENT_TYPES.COMMENT,
+        referrer: ctx.referrer,
+        sessionHash: ctx.sessionHash,
+      });
+    });
 
     return NextResponse.json({
       ok: true,
