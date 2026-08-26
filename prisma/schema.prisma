@@ -206,7 +206,7 @@ model WallNote {
   id        String   @id @default(cuid())
   name      String   @default("")
   msg       String
-  color     Int      @default(0) // palette index 0..4 (see StickyWall)
+  color     Int      @default(0) // palette index 0..9 (see StickyWall)
   x         Float // relative position on the wall, 0..1 (center of note)
   y         Float
   hidden    Boolean  @default(false)

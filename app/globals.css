@@ -540,12 +540,17 @@ img {
     to { opacity: 1; scale: 1; }
   }
 
-  /* The painted palette — your five brand colors as sticky paper */
-  .gw-nc0 { background: #fff3a0; } /* yellow  */
-  .gw-nc1 { background: #ffd3ea; } /* pink    */
-  .gw-nc2 { background: #c9f0ff; } /* sky     */
-  .gw-nc3 { background: #e3d4ff; } /* purple  */
-  .gw-nc4 { background: #d8ffbe; } /* lime-ish*/
+  /* The painted palette — brand colors + classic sticky-paper pastels */
+  .gw-nc0 { background: #fff3a0; } /* yellow    */
+  .gw-nc1 { background: #ffd3ea; } /* pink      */
+  .gw-nc2 { background: #c9f0ff; } /* sky       */
+  .gw-nc3 { background: #e3d4ff; } /* purple    */
+  .gw-nc4 { background: #d8ffbe; } /* lime      */
+  .gw-nc5 { background: #ffdda1; } /* orange    */
+  .gw-nc6 { background: #b5f0e3; } /* teal/mint */
+  .gw-nc7 { background: #ffc9c9; } /* coral     */
+  .gw-nc8 { background: #cdd8ff; } /* periwinkle*/
+  .gw-nc9 { background: #f3d1f0; } /* orchid    */
 
   .gw-note-txt {
     @apply m-0 mb-2 whitespace-pre-wrap break-words text-[15px] leading-snug font-medium text-[#1A1440];

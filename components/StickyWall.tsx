@@ -23,7 +23,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const API = "/api/guestbook";
-const COLORS = 5; // .gw-nc0 … .gw-nc4 in globals.css
+const COLORS = 10; // .gw-nc0 … .gw-nc9 in globals.css
 const MSG_MAX = 280;
 const NAME_MAX = 40;
 const SHOW_MAX = 500; // newest notes drawn on the wall

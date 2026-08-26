@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
 
 const MSG_MAX = 280;
 const NAME_MAX = 40;
-const COLORS = 5;
+const COLORS = 10;
 const FETCH_MAX = 500; // newest notes returned — matches the wall's window
 
 type NoteDTO = {
