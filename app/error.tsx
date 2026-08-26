@@ -43,6 +43,11 @@ export default function Error({
           Back to Feed
         </Link>
       </div>
+      {error.digest && (
+        <p className="font-mono text-[11px] text-subtle mt-6">
+          digest: {error.digest}
+        </p>
+      )}
     </div>
   );
 }
