@@ -255,17 +255,19 @@ export default async function HomePage({
 
         {/* ── Topics ── */}
         <SectionHead title="Browse by topic" note="// pick your poison" id="topics" />
-        <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <section className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 gap-4">
           {allTopics.map((t) => (
             <Link
               key={t.slug}
               href={`/topic/${t.slug}`}
-              className="card card-hover p-5 flex items-center gap-3"
+              className="card card-hover p-4 sm:p-5 flex items-center gap-3 min-w-0"
             >
-              <span className="text-[28px]">{t.emoji}</span>
-              <div>
-                <div className="font-bold text-[18px]">{t.name}</div>
-                <div className="font-mono text-[11px] text-subtle">
+              <span className="text-[28px] shrink-0">{t.emoji}</span>
+              <div className="min-w-0">
+                <div className="font-bold text-[16px] sm:text-[18px] leading-snug break-words">
+                  {t.name}
+                </div>
+                <div className="font-mono text-[11px] text-subtle truncate">
                   #{t.slug}
                 </div>
               </div>
