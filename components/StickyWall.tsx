@@ -23,7 +23,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const API = "/api/guestbook";
-const COLORS = 10; // .gw-nc0 … .gw-nc9 in globals.css
+// NOTE: these class names MUST appear as complete literals in this file.
+// Tailwind purges handwritten `@layer` rules from globals.css unless the
+// full class name shows up in scanned content — the old dynamic
+// `gw-nc${i}` template silently dropped every color but the two that
+// happened to be mentioned in a comment.
+const NOTE_COLORS = [
+  "gw-nc0", // yellow
+  "gw-nc1", // pink
+  "gw-nc2", // sky
+  "gw-nc3", // purple
+  "gw-nc4", // lime
+  "gw-nc5", // orange
+  "gw-nc6", // teal/mint
+  "gw-nc7", // coral
+  "gw-nc8", // periwinkle
+  "gw-nc9", // orchid
+] as const;
+const COLORS = NOTE_COLORS.length;
 const MSG_MAX = 280;
 const NAME_MAX = 40;
 const SHOW_MAX = 500; // newest notes drawn on the wall
@@ -327,7 +344,7 @@ export function StickyWall() {
             {visible.map((n) => (
               <div
                 key={n.id}
-                className={`gw-note gw-nc${n.color}`}
+                className={`gw-note ${NOTE_COLORS[n.color] ?? "gw-nc0"}`}
                 style={
                   {
                     left: `${n.x * 100}%`,
@@ -360,7 +377,7 @@ export function StickyWall() {
               <div
                 ref={draftRef}
                 data-testid="gw-draft"
-                className={`gw-note gw-draft gw-nc${draft.color}`}
+                className={`gw-note gw-draft ${NOTE_COLORS[draft.color] ?? "gw-nc0"}`}
                 style={
                   {
                     ...(draft.x != null &&
@@ -437,7 +454,7 @@ export function StickyWall() {
               <button
                 key={i}
                 type="button"
-                className={`gw-chip gw-nc${i}`}
+                className={`gw-chip ${NOTE_COLORS[i]}`}
                 aria-label={`New note (color ${i + 1})`}
                 onPointerDown={(e) => onChipPointerDown(e, i)}
               />
