@@ -32,6 +32,14 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#EEF1FF" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#0C081A" media="(prefers-color-scheme: dark)" />
+        {/* Turbopack strips remote @import() from globals.css — load Google Fonts
+            here instead or the webfonts (incl. Caveat for sticky notes) never ship */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Caveat:wght@500;600;700&display=swap"
+        />
         <script dangerouslySetInnerHTML={{ __html: themeNoFlashScript }} />
       </head>
       <body>
