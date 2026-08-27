@@ -11,7 +11,7 @@ import { ReadingProgress } from "@/components/ReadingProgress";
 import { TextSizeControl } from "@/components/TextSizeControl";
 import { FollowButton } from "@/components/FollowButton";
 import {
-  SectionNavbar,
+  FloatingToc,
   TableOfContentsCard,
 } from "@/components/TableOfContents";
 import { extractHeadings } from "@/lib/content";
@@ -114,7 +114,7 @@ export default async function ArticlePage({
   return (
     <article className="wrap max-w-[820px] pt-8 pb-4">
       <ReadingProgress />
-      {showToc && <SectionNavbar headings={headings} />}
+      {showToc && <FloatingToc headings={headings} />}
       <ViewPing slug={article.slug} />
       <script
         type="application/ld+json"
@@ -172,7 +172,7 @@ export default async function ArticlePage({
         />
       </div>
 
-      {/* table of contents — reveal probe lets the sticky bar know the intro is done */}
+      {/* table of contents — reveal probe tells the floating TOC button when the intro is done */}
       {showToc && (
         <>
           <span id="toc-reveal" aria-hidden className="block h-0" />

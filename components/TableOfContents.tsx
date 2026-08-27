@@ -9,9 +9,9 @@ import type { TocHeading } from "@/lib/content";
  * Two pieces, both fed by `extractHeadings()` (server-side):
  *  - TableOfContentsCard — static contents card rendered right below the
  *    byline, listing every h2 section as an anchor link.
- *  - SectionNavbar — sticky strip under the site nav that appears once the
- *    reader scrolls past the intro; highlights the active section while
- *    scrolling and lets you jump between sections seamlessly.
+ *  - FloatingToc — Medium's pinned right-edge button (stack-of-lines glyph);
+ *    hovering or tapping it opens a flyout panel of all sections with the
+ *    current one highlighted. Click a section to jump straight to it.
  */
 
 /**
@@ -49,43 +49,33 @@ export function TableOfContentsCard({ headings }: { headings: TocHeading[] }) {
 }
 
 /**
- * Sticky horizontal section strip. Sticks directly under the site nav,
- * reveals itself after the reader passes `#toc-reveal` (end of the byline),
- * and tracks the active section on scroll — rAF-throttled like ReadingProgress.
+ * Medium's floating TOC — the little stack-of-lines button pinned to the
+ * right edge of the viewport. Appears once the reader scrolls past the
+ * byline (`#toc-reveal`); hovering or tapping opens a flyout listing every
+ * section, with the one you're currently reading highlighted. Click a
+ * section to jump straight to it. Active-section tracking is rAF-throttled
+ * like ReadingProgress.
  */
-export function SectionNavbar({ headings }: { headings: TocHeading[] }) {
-  const [visible, setVisible] = useState(false);
+export function FloatingToc({ headings }: { headings: TocHeading[] }) {
+  const [revealed, setRevealed] = useState(false);
+  const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [top, setTop] = useState(64); // fallback = rough sticky-nav height
   const rafRef = useRef(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const chipsRef = useRef(new Map<string, HTMLAnchorElement>());
-  // While the user is flicking through the strip themselves, don't fight them.
-  const suppressAutoScrollUntil = useRef(0);
-
-  // The bar must stick to the bottom edge of whatever height the real nav has.
-  useEffect(() => {
-    const nav = document.querySelector("nav");
-    const measure = () =>
-      setTop(nav instanceof HTMLElement ? nav.offsetHeight : 64);
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
-
+  // Reveal past the intro; track the active section while scrolling.
   useEffect(() => {
     const update = () => {
       rafRef.current = 0;
-
       const probe = document.getElementById("toc-reveal");
-      if (probe) setVisible(probe.getBoundingClientRect().top <= 100);
+      if (probe) setRevealed(probe.getBoundingClientRect().top <= 220);
 
       let current: string | null = null;
       for (const h of headings) {
         const el = document.getElementById(h.id);
         if (!el) continue;
-        if (el.getBoundingClientRect().top <= 140) current = h.id;
+        if (el.getBoundingClientRect().top <= 160) current = h.id;
         else break;
       }
       setActiveId(current);
@@ -93,7 +83,6 @@ export function SectionNavbar({ headings }: { headings: TocHeading[] }) {
     const onScroll = () => {
       if (!rafRef.current) rafRef.current = requestAnimationFrame(update);
     };
-
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
@@ -104,70 +93,92 @@ export function SectionNavbar({ headings }: { headings: TocHeading[] }) {
     };
   }, [headings]);
 
-  // Keep the active chip inside the visible part of the strip.
+  // Close on Escape / outside tap; keep the active row visible in the panel.
   useEffect(() => {
-    if (!activeId || Date.now() < suppressAutoScrollUntil.current) return;
-    const scroller = scrollerRef.current;
-    const chip = chipsRef.current.get(activeId);
-    if (scroller && chip) {
-      scroller.scrollTo({
-        left: chip.offsetLeft - scroller.clientWidth / 2 + chip.clientWidth / 2,
-        behavior: "smooth",
-      });
-    }
-  }, [activeId]);
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const onPointer = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointer);
+    panelRef.current
+      ?.querySelector<HTMLAnchorElement>(`[data-toc="${activeId ?? ""}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
+    };
+  }, [open, activeId]);
 
   if (headings.length === 0) return null;
 
   return (
-    <nav
-      aria-label="Article sections"
-      aria-hidden={!visible}
-      style={{ top }}
-      className={`sticky z-40 transition-all duration-300 ${
-        visible
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 -translate-y-3 pointer-events-none"
+    <div
+      ref={rootRef}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      className={`fixed right-3 sm:right-4 top-1/2 -translate-y-1/2 z-40 transition-opacity duration-300 ${
+        revealed ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
-      <div className="bg-bg/95 backdrop-blur-md border-y-2 border-ink">
-        <div
-          ref={scrollerRef}
-          onWheel={(e) => {
-            if (Math.abs(e.deltaX) > Math.abs(e.deltaY))
-              suppressAutoScrollUntil.current = Date.now() + 2000;
-          }}
-          onPointerDown={() => {
-            suppressAutoScrollUntil.current = Date.now() + 2500;
-          }}
-          className="toc-strip overflow-x-auto"
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label="Story sections"
+          title="Story sections"
+          className="grid place-items-center w-10 h-10 rounded-full bg-card border-2 border-ink shadow-pop hover:-translate-y-0.5 transition-transform"
         >
-          <div className="flex items-center gap-2 min-w-max px-6 py-2.5 w-fit mx-auto">
-            <span className="font-mono text-[10px] font-bold tracking-widest text-subtle mr-1 shrink-0">
-              SECTIONS
-            </span>
-            {headings.map((h) => (
-              <a
-                key={h.id}
-                href={`#${h.id}`}
-                ref={(el) => {
-                  if (el) chipsRef.current.set(h.id, el);
-                  else chipsRef.current.delete(h.id);
-                }}
-                aria-current={activeId === h.id ? "true" : undefined}
-                title={h.text}
-                className={`chip whitespace-nowrap max-w-[240px] truncate transition-colors ${
-                  activeId === h.id
-                    ? "bg-lime font-bold shadow-pop-sm"
-                    : "hover:bg-lime/30"
-                }`}
+          {/* Stack-of-lines glyph, echo the three-dot window chrome */}
+          <span aria-hidden className="flex flex-col items-end gap-[4px]">
+            <span className="h-[3px] w-[18px] rounded-full bg-ink" />
+            <span className="h-[3px] w-[12px] rounded-full bg-ink/60" />
+            <span className="h-[3px] w-[15px] rounded-full bg-ink/60" />
+          </span>
+        </button>
+
+        {open && (
+          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 w-[min(76vw,300px)]">
+            <div className="card p-2 shadow-pop-xl">
+              <div className="font-mono text-[10px] font-bold tracking-widest text-subtle px-3 pt-2 pb-1">
+                SECTIONS
+              </div>
+              <div
+                ref={panelRef}
+                className="toc-strip max-h-[min(60vh,420px)] overflow-y-auto"
               >
-                {h.text}
-              </a>
-            ))}
+                {headings.map((h) => (
+                  <a
+                    key={h.id}
+                    href={`#${h.id}`}
+                    data-toc={h.id}
+                    aria-current={activeId === h.id ? "true" : undefined}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-start gap-2.5 rounded-xl px-3 py-2 text-[13.5px] leading-snug transition-colors ${
+                      activeId === h.id
+                        ? "bg-lime/40 font-bold text-ink"
+                        : "hover:bg-lime/20"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`mt-[6px] shrink-0 h-2 w-2 rounded-full border-2 border-ink ${
+                        activeId === h.id ? "bg-lime" : "bg-transparent"
+                      }`}
+                    />
+                    {h.text}
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-    </nav>
+    </div>
   );
 }
