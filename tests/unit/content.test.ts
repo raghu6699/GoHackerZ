@@ -5,7 +5,10 @@ import {
   serializeTiptapDoc,
   blocksToText,
   blocksToHtml,
+  stripInlineMarkup,
+  extractHeadings,
 } from "@/lib/content";
+import type { Block } from "@/lib/data";
 
 describe("parseBlocks", () => {
   it("parses paragraphs, headings, quotes and lists", () => {
@@ -227,5 +230,45 @@ describe("blocksToHtml (editor hydration)", () => {
     ]);
     expect(html).not.toContain("</script>");
     expect(html).toContain("&lt;/script&gt;");
+  });
+});
+
+describe("table of contents helpers", () => {
+  it("strips inline markdown down to a plain-text label", () => {
+    expect(stripInlineMarkup("**Bold** and *lean* `code`")).toBe(
+      "Bold and lean code"
+    );
+    expect(stripInlineMarkup("See [the docs](https://x.io) for more")).toBe(
+      "See the docs for more"
+    );
+  });
+
+  it("drops footnote refs instead of leaking markers into labels", () => {
+    expect(stripInlineMarkup("Latency [^p99] matters")).toBe(
+      "Latency matters"
+    );
+    expect(stripInlineMarkup("   ")).toBe("");
+  });
+
+  it("extracts headings with ids that match ArticleBody anchors", () => {
+    const content: Block[] = [
+      { type: "p", text: "Intro paragraph." },
+      { type: "h2", text: "**Why** tails bite" },
+      { type: "code", lang: "ts", code: "const x = 1;" },
+      { type: "h2", text: "[Fixes](https://x.io)" },
+      { type: "quote", text: "wise words" },
+      { type: "h2", text: "[^fn]Footnote-led title" },
+    ];
+    expect(extractHeadings(content)).toEqual([
+      { id: "section-1", text: "Why tails bite" },
+      { id: "section-3", text: "Fixes" },
+      { id: "section-5", text: "Footnote-led title" },
+    ]);
+  });
+
+  it("returns an empty outline for articles without sections", () => {
+    expect(extractHeadings([{ type: "p", text: "Just a paragraph." }])).toEqual(
+      []
+    );
   });
 });

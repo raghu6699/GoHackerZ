@@ -336,6 +336,98 @@ export const articles: Article[] = [
       { type: "quote", text: "Choose boring technology so you can be interesting where it counts." },
     ],
   },
+  {
+    slug: "ai-tooling-stack-honest-guide",
+    title: "The AI tooling stack: an honest guide for teams shipping in 2026",
+    dek: "Every vendor deck promises an AI-powered future and every team has three overlapping tools doing the same job. After eighteen months of rebuilding our workflow around assistants, agents and retrieval, here is what actually earned its place — section by section.",
+    authorUsername: "sofia",
+    topicSlug: "ai-engineering",
+    readingTime: 14,
+    reactions: 823,
+    comments: 96,
+    bookmarks: 412,
+    publishedAt: "2026-08-21T09:00:00Z",
+    tags: ["ai", "tooling", "developer-experience", "llm"],
+    featured: false,
+    seoTitle: "The AI tooling stack: an honest guide for shipping teams",
+    seoDescription:
+      "What actually earns its place in an AI-assisted engineering workflow — code assistants, agents, retrieval, evals and cost control, explained without vendor hype.",
+    content: [
+      { type: "p", text: "Eighteen months ago we were a normal team with a terminal and opinions. Today we have a code assistant wired into review, an agent that files pull requests nobody asked for, an internal retrieval bot that quotes documentation from 2021 with total confidence, and a spreadsheet tracking which model bills us by the token. Somewhere in that pile there is a genuinely better way to build software. This essay is about separating the pile." },
+      { type: "p", text: "I am not going to tell you whether AI tools are good. That question is boring and unanswerable. The useful question is narrower: **which parts of your workflow get measurably faster, which parts only look faster, and how do you tell the difference before you've retrained your whole team around a tool you'll abandon in March?**" },
+      { type: "quote", text: "The tool doesn't need to be magic. It needs to beat the thing it replaces on a metric someone actually tracks." },
+
+      { type: "h2", text: "The stack nobody agrees on" },
+      { type: "p", text: "Ask five teams what \"AI tooling\" means and you'll get six answers: autocomplete, chat-with-your-codebase, autonomous agents, RAG pipelines, eval harnesses, model gateways. The confusion is expensive because teams buy one category while evaluating another. So here is the map we use internally, drawn from what we actually run rather than what demos well." },
+      { type: "ul", items: [
+        "**Completion layer** — inline suggestions as you type. Latency-sensitive, context-starved, judged in milliseconds.",
+        "**Conversation layer** — chat interfaces with broad repository context. Judged in minutes per task.",
+        "**Agent layer** — systems that plan, edit many files, run tests and iterate. Judged in hours saved *and* review burden created.",
+        "**Retrieval layer** — search and Q&A over your private corpus. Judged on answer accuracy, not fluency.",
+        "**Evaluation layer** — the tooling that measures all of the above. Judged on whether anyone trusts its verdicts.",
+        "**Gateway layer** — routing, caching, rate limits and billing across model providers. Judged when the invoice arrives.",
+      ]},
+      { type: "p", text: "Most teams over-invest in the second row and under-invest in the last two. That's exactly backwards, and the sections below should convince you why." },
+
+      { type: "h2", text: "Code assistants: what actually moved" },
+      { type: "p", text: "We measured completion-tool value honestly for once: three squads, eight weeks, task timing pulled from the tracker instead of vibes. The headline result surprised us. Boilerplate-heavy work — DTOs, fixtures, config, test scaffolding — dropped roughly **35% in time**. Design-heavy work moved almost not at all, and one squad got slower because reviewers were now reading generated code they didn't trust." },
+      { type: "code", lang: "ts", code: "// What the assistant is great at: shape without surprise\nexport function toContractDto(row: SubscriptionRow): ContractDto {\n  return {\n    id: row.id,\n    plan: PLAN_LABELS[row.planTier] ?? \"unknown\",\n    renewsAt: row.renews_at.toISOString(),\n    seats: Math.max(row.active_seats, 1),\n    status: row.cancelled_at ? \"cancelled\" : \"active\",\n  };\n}\n// Twenty lines like this used to cost forty minutes of typing.\n// Now they cost four minutes plus ten seconds of review." },
+      { type: "p", text: "The pattern across every squad was the same: the assistant compresses **typing**, never **thinking**. Wherever the bottleneck was deciding what to build, the tool disappeared from the profile entirely. Wherever the bottleneck was producing correct-but-uninteresting code, it won big. Your mileage tracks your backlog's composition, not the vendor's benchmark." },
+      { type: "quote", text: "A completion model is a junior developer who types at the speed of thought and has never read your architecture docs." },
+
+      { type: "h2", text: "Agents: demos versus deadlines" },
+      { type: "p", text: "Agents are where cynicism goes to die and be resurrected weekly. Our first agent project was a success story we still show off: a migration bot that upgraded 214 call sites across an API rename, ran the test suite between each batch, and opened nine pull requests over one weekend. Total human time invested: about three hours of supervision. Estimated savings: two engineer-weeks." },
+      { type: "p", text: "Our second attempt failed in a more instructive way. We pointed a general-purpose agent at \"improve error handling in the payments service.\" It produced 1,900 lines of changes that were individually defensible and collectively catastrophic — wrapped exceptions in four incompatible idioms, and the diff too large for any reviewer to meaningfully approve. We closed it and wrote down the lessons:" },
+      { type: "ul", items: [
+        "Agents excel when **success is machine-checkable** — migrations, dependency bumps, mechanical refactors behind a test suite.",
+        "Agents flounder when success requires **taste**, cross-service reasoning, or constraints nobody wrote down.",
+        "The unit of delegation matters more than the model. Small, verifiable tasks compound; grand ones collapse.",
+        "Every agent PR is reviewed like any other PR. If review burden exceeds time saved, the agent lost.",
+      ]},
+      { type: "quote", text: "Delegate to an agent the way you'd delegate to a clever contractor on their first day: one task, clear acceptance criteria, and you check the work." },
+
+      { type: "h2", text: "Retrieval is a database problem" },
+      { type: "p", text: "Our internal Q&A bot was fluent, confident and wrong — the most dangerous combination in software. The failure wasn't the model; it was the corpus. Stale runbooks outranked current ones, our wiki held three competing architecture diagrams, and nothing marked which document had won. Fixing retrieval turned out to be a content-governance project wearing a machine-learning costume." },
+      { type: "p", text: "What moved the accuracy needle, in order of impact:" },
+      { type: "ul", items: [
+        "Deleting or archiving stale documents — **by far** the biggest single win.",
+        "Adding owners and review dates so freshness is queryable metadata.",
+        "Hybrid search — keyword matching layered under embeddings — for anything with identifiers, error codes or feature flags.",
+        "Mandatory citations with click-through tracking, so wrong sources actually get noticed.",
+        "Only then: re-ranking and chunk tuning, everything the internet argues about.",
+      ]},
+      { type: "code", lang: "sql", code: "-- Stale docs are a data problem before they are a model problem\nSELECT title, owner, last_reviewed\nFROM docs\nWHERE last_reviewed < now() - interval '6 months'\n  AND status = 'published'\nORDER BY last_reviewed;\n-- 41% of our corpus, silently poisoning every RAG answer." },
+
+      { type: "h2", text: "Evals, or it didn't happen" },
+      { type: "p", text: "Everything above decays. Models get swapped, prompts drift, corpora rot, and without an eval harness you find out from a support ticket three weeks later. Ours started embarrassingly small: forty real questions pulled from Slack threads where someone asked the bot something, annotated by the engineer who knew the true answer. Every prompt or model change re-runs it; regressions block the merge[^1]." },
+      { type: "p", text: "It isn't research-grade benchmarking — it's better described as **a test suite for prose**. Forty cases caught seven real regressions last quarter, including the model upgrade that made answers measurably friendlier and measurably wronger. That trade would have been invisible in any demo and obvious in any diff." },
+      { type: "code", lang: "yaml", code: "# evals/ci.yaml - runs on every prompt/model change\ncases: fixtures/qa/*.yml        # question + expected sources + must_contain\njudge:\n  model: cheap-exact            # LLM-as-judge only for style-sensitive cases\n  threshold: 0.92\nreport:\n  fail_on_regression: true      # score drop vs main blocks the merge\n  post_to: '#ai-platform'" },
+      { type: "h2", text: "The cost curve and where it bites" },
+      { type: "p", text: "Nobody budgets for success. Our first month of agent usage cost $340; the month after the migration bot became popular internally, it cost $5,100 — and nearly all of it was avoidable waste: re-reading unchanged files between iterations, retrying failed tests against contexts that hadn't changed, and shipping full conversation history when a summary would do. Here is what got it back under control[^2]:" },
+      { type: "ul", items: [
+        "**Cache aggressively** — identical prefixes are pure margin. Most gateways expose it; few teams enable it.",
+        "**Route by task, not by fashion** — small models handle classification and extraction fine; save the frontier model for planning.",
+        "**Cap per-task spend**, not just per-key spend. Runaway loops are a when, not an if.",
+        "**Bill feature teams internally** — nothing disciplines usage like a line item with your name on it.",
+      ]},
+      { type: "quote", text: "The token bill is a mirror. Everything embarrassing in your agent architecture shows up in it eventually." },
+
+      { type: "h2", text: "What we'd choose again" },
+      { type: "p", text: "If we restarted tomorrow with eighteen months of scar tissue: completion tooling on day one, no debate. A retrieval layer only after the corpus has owners and review dates. Agents scoped to migrations and mechanical work, gated by test suites. An eval harness before any *second* tool ships. And a model gateway from the very start — retrofitting cost visibility onto four ad-hoc integrations was the least fun week of this entire journey." },
+      { type: "quote", text: "Buy autocomplete. Build governance. Everything else earns its place by measurement." },
+      { type: "p", text: "The tools keep improving under us — that part is real. But every gain we've banked came from the same move: pick a workflow metric someone already cares about, change exactly one variable, and let the dashboard end the argument. Teams that skip that step don't have an AI strategy. They have a subscription collection." },
+      { type: "footnotes", items: [
+        {
+          id: "evalsuite",
+          text: "The harness lives next to app code in version control, so prompt changes go through the same review process as code changes.",
+        },
+        {
+          id: "billing",
+          text: "We used a simple gateway with per-team API keys and a nightly export into the finance sheet. Fancy dashboards came later.",
+        },
+      ]},
+    ],
+  },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────

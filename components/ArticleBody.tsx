@@ -161,6 +161,7 @@ export async function ArticleBody({ content }: { content: Block[] }) {
             return (
               <h2
                 key={idx}
+                id={`section-${idx}`}
                 className="font-sans text-[28px] font-bold tracking-tight pt-4 leading-tight"
               >
                 <Inline text={block.text} footnum={footnum} />

@@ -409,6 +409,27 @@ p {
   scroll-margin-top: 90px;
 }
 
+/* ── Table of contents (components/TableOfContents.tsx) ─────────────── */
+/* Hide the scrollbar on the sticky sections strip — chips still scroll */
+.toc-strip {
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.toc-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Buttery anchor jumps when navigating between sections from the TOC.
+   Disabled for readers who prefer reduced motion. */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Cover images never block first paint or pop in unstyled */
 img {
   background-color: var(--color-card);

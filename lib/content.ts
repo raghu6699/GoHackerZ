@@ -222,6 +222,44 @@ export function blocksToHtml(blocks: Block[]): string {
     .join("");
 }
 
+// ── Table of contents helpers ──────────────────────────────────
+// Long articles get Medium-style section navigation: an inline contents
+// card plus a sticky top strip. Both need (a) clean plain-text labels even
+// when headings contain inline markdown, and (b) ids that match what
+// ArticleBody stamps onto the rendered <h2> elements.
+
+/** Strip inline markdown (**bold**, *em*, `code`, links, footnote refs) to plain text. */
+export function stripInlineMarkup(s: string): string {
+  const plain = parseInline(s)
+    .map((tok) => (tok.t === "link" ? tok.v : tok.t === "footref" ? "" : tok.v))
+    .join("");
+  // Footnote refs vanish mid-string — collapse the leftover double spaces.
+  return plain.replace(/\s+/g, " ").trim();
+}
+
+export interface TocHeading {
+  /** DOM id ArticleBody gives this heading: `section-<blockIndex>`. */
+  id: string;
+  /** Plain-text label safe for TOC display. */
+  text: string;
+}
+
+/**
+ * Section outline of an article: one entry per h2 block, in reading order.
+ * Ids are derived from block indexes so they stay stable across renders and
+ * always agree with the anchors ArticleBody renders.
+ */
+export function extractHeadings(content: Block[]): TocHeading[] {
+  const out: TocHeading[] = [];
+  for (let i = 0; i < content.length; i++) {
+    const b = content[i];
+    if (b.type !== "h2") continue;
+    const text = stripInlineMarkup(b.text);
+    if (text) out.push({ id: `section-${i}`, text });
+  }
+  return out;
+}
+
 // ── TipTap JSON → markdown-ish text (editor save path) ────────
 
 interface TiptapNode {

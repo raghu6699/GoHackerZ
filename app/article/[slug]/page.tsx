@@ -11,6 +11,11 @@ import { ReadingProgress } from "@/components/ReadingProgress";
 import { TextSizeControl } from "@/components/TextSizeControl";
 import { FollowButton } from "@/components/FollowButton";
 import {
+  SectionNavbar,
+  TableOfContentsCard,
+} from "@/components/TableOfContents";
+import { extractHeadings } from "@/lib/content";
+import {
   getArticle,
   getAuthor,
   getTopic,
@@ -56,6 +61,10 @@ export default async function ArticlePage({
     .filter((a) => a.slug !== article.slug)
     .slice(0, 3);
   const relatedCardData = await preloadCardData(related);
+
+  // Medium-style section navigation for long reads (3+ sections)
+  const headings = extractHeadings(article.content);
+  const showToc = headings.length >= 3;
 
   // ── JSON-LD: Article + BreadcrumbList for search engines ──
   const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -105,6 +114,7 @@ export default async function ArticlePage({
   return (
     <article className="wrap max-w-[820px] pt-8 pb-4">
       <ReadingProgress />
+      {showToc && <SectionNavbar headings={headings} />}
       <ViewPing slug={article.slug} />
       <script
         type="application/ld+json"
@@ -161,6 +171,14 @@ export default async function ArticlePage({
           comments={article.comments}
         />
       </div>
+
+      {/* table of contents — reveal probe lets the sticky bar know the intro is done */}
+      {showToc && (
+        <>
+          <span id="toc-reveal" aria-hidden className="block h-0" />
+          <TableOfContentsCard headings={headings} />
+        </>
+      )}
 
       {/* text-size control */}
       <div className="flex justify-end mb-3 -mt-2">
