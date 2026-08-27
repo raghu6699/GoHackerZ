@@ -7,6 +7,11 @@ import { prisma } from "@/lib/prisma";
  */
 export async function getCurrentDbUser() {
   const supabase = await createClient();
+  // Fail open: no Supabase env configured ⇒ treat the visitor as signed out
+  // instead of letting createServerClient throw and 500ing every auth-aware
+  // route (react/bookmark/comments/follow/…). Mirrors middleware + browser.
+  if (!supabase) return null;
+
   const {
     data: { user },
     error,

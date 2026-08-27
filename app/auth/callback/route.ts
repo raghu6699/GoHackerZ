@@ -13,6 +13,11 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
+    // Fail open mirror: without Supabase env there is nothing to exchange the
+    // code against → drop to the error/redirect path rather than throw.
+    if (!supabase) {
+      return NextResponse.redirect(`${origin}/auth/error`);
+    }
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
