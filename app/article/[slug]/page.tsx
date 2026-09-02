@@ -26,6 +26,7 @@ import {
   formatDate,
   topicChipClass,
 } from "@/lib/data";
+import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({
   params,
@@ -67,8 +68,7 @@ export default async function ArticlePage({
   const showToc = headings.length >= 3;
 
   // ── JSON-LD: Article + BreadcrumbList for search engines ──
-  const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const articleUrl = `${SITE}/article/${article.slug}`;
+  const articleUrl = `${SITE_URL}/article/${article.slug}`;
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -82,24 +82,24 @@ export default async function ArticlePage({
       author: {
         "@type": "Person",
         name: author.name,
-        url: `${SITE}/writer/${author.username}`,
+        url: `${SITE_URL}/writer/${author.username}`,
       },
       publisher: {
         "@type": "Organization",
         name: "GoHackerz",
-        url: SITE,
+        url: SITE_URL,
       },
     },
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: SITE },
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
         {
           "@type": "ListItem",
           position: 2,
           name: topic.name,
-          item: `${SITE}/topic/${topic.slug}`,
+          item: `${SITE_URL}/topic/${topic.slug}`,
         },
         {
           "@type": "ListItem",

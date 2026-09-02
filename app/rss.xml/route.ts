@@ -1,6 +1,5 @@
 import { getLatest } from "@/lib/queries";
-
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 1800;
 
@@ -18,7 +17,7 @@ export async function GET() {
 <rss version="2.0">
   <channel>
     <title>GoHackerz — Where builders actually write</title>
-    <link>${SITE}</link>
+    <link>${SITE_URL}</link>
     <description>Honest engineering essays, teardowns and post-mortems.</description>
     <language>en</language>
   </channel>
@@ -41,8 +40,8 @@ export async function GET() {
     .map(
       (a) => `    <item>
       <title>${esc(a.title)}</title>
-      <link>${SITE}/article/${a.slug}</link>
-      <guid isPermaLink="true">${SITE}/article/${a.slug}</guid>
+      <link>${SITE_URL}/article/${a.slug}</link>
+      <guid isPermaLink="true">${SITE_URL}/article/${a.slug}</guid>
       <description>${esc(a.dek)}</description>
       <author>${esc(a.authorUsername)}@gohackerz.com (${esc(a.authorUsername)})</author>
       <pubDate>${new Date(a.publishedAt).toUTCString()}</pubDate>
@@ -54,7 +53,7 @@ export async function GET() {
 <rss version="2.0">
   <channel>
     <title>GoHackerz — Where builders actually write</title>
-    <link>${SITE}</link>
+    <link>${SITE_URL}</link>
     <description>Honest engineering essays, teardowns and post-mortems.</description>
     <language>en</language>
 ${items}

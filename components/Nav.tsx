@@ -5,11 +5,11 @@ import { NavAuth } from "./NavAuth";
 import { MobileMenu } from "./MobileMenu";
 
 const links = [
-  { href: "/", label: "Feed" },
-  { href: "/topic/systems", label: "Deep Dives" },
+  { href: "/read", label: "Feed" },
+  { href: "/deep-dives", label: "Deep Dives" },
+  { href: "/topics", label: "Topics" },
+  { href: "/about", label: "About" },
   { href: "/search", label: "Search" },
-  { href: "/#topics", label: "Topics" },
-  { href: "/writer/maya", label: "Writers" },
 ];
 
 export function Nav() {

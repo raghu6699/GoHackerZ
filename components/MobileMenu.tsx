@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/", label: "Feed" },
-  { href: "/topic/systems", label: "Deep Dives" },
+  { href: "/read", label: "Feed" },
+  { href: "/deep-dives", label: "Deep Dives" },
+  { href: "/topics", label: "Topics" },
+  { href: "/about", label: "About" },
   { href: "/search", label: "Search" },
-  { href: "/#topics", label: "Topics" },
-  { href: "/writer/maya", label: "Writers" },
 ];
 
 /**

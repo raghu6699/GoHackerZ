@@ -25,14 +25,15 @@ export default async function HomePage({
   const featured = await getFeatured();
   if (!featured) notFound();
 
+  const isPlaceholderArticle = (value: string) => /TESTING|lorem ipsum|placeholder/i.test(value);
   const featuredAuthor = (await getAuthor(featured.authorUsername))!;
   const featuredTopic = (await getTopic(featured.topicSlug))!;
   const allTopics = await getAllTopics();
-  const latest = (await getLatest(3)).filter((a) => !a.featured);
-  const trending = await getTrending(4);
+  const latest = (await getLatest(3)).filter((a) => !a.featured && !isPlaceholderArticle(`${a.title} ${a.dek}`));
+  const trending = (await getTrending(4)).filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`));
 
   // Dense "more stories" feed with pagination
-  const all = await getLatest();
+  const all = (await getLatest()).filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`));
   const shownSlugs = new Set([featured.slug, ...all.slice(0, 3).map((a) => a.slug), ...trending.map((a) => a.slug)]);
   const pool = all.filter((a) => !shownSlugs.has(a.slug));
   const PAGE_SIZE = 6;
@@ -68,17 +69,10 @@ export default async function HomePage({
             Write a post ✦
           </Link>
         </div>
-        <div className="flex gap-5 sm:gap-7 mt-8 sm:mt-10 font-medium flex-wrap">
-          {[
-            ["640+", "essays"],
-            ["12k", "writers"],
-            ["190k", "subscribers"],
-          ].map(([n, l]) => (
-            <div key={l}>
-              <b className="text-[22px] sm:text-[26px] block text-purple">{n}</b>
-              <span className="text-[13px] text-subtle">{l}</span>
-            </div>
-          ))}
+        <div className="mt-8 sm:mt-10 flex flex-wrap gap-5 sm:gap-7 text-sm text-subtle">
+          <div className="rounded-full border-2 border-ink bg-card px-4 py-2">
+            Engineers from Stripe, Vercel, and modern product teams.
+          </div>
         </div>
 
         {/* floating stickers */}
@@ -283,8 +277,7 @@ export default async function HomePage({
               Five sharp reads. Zero spam. ✦
             </h2>
             <p className="text-[16px] font-medium max-w-[420px] text-[#1A1440] leading-relaxed">
-              Hand-picked by humans, delivered every Friday. Join 190,000
-              engineers who actually open it.
+              Hand-picked by humans, delivered every Friday. Built for engineers who want the signal, not the scroll.
             </p>
           </div>
           <div className="relative z-10">

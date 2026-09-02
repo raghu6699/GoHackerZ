@@ -5,11 +5,30 @@ import { Footer } from "@/components/Footer";
 import { StickyWall } from "@/components/StickyWall";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "GoHackerz — Where builders actually write",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "GoHackerz — Where builders actually write",
+    template: "%s — GoHackerz",
+  },
   description:
     "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship. No sludge, no listicles.",
+  openGraph: {
+    title: "GoHackerz",
+    description:
+      "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship.",
+    url: SITE_URL,
+    siteName: "GoHackerz",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GoHackerz",
+    description:
+      "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship.",
+  },
 };
 
 export const viewport: Viewport = {

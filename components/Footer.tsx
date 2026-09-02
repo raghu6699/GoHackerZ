@@ -5,9 +5,9 @@ const cols = [
   {
     heading: "READ",
     links: [
-      { label: "Latest", href: "/" },
-      { label: "Deep Dives", href: "/topic/systems" },
-      { label: "Topics", href: "/#topics" },
+      { label: "Latest", href: "/read" },
+      { label: "Deep Dives", href: "/deep-dives" },
+      { label: "Topics", href: "/topics" },
     ],
   },
   {
@@ -21,9 +21,9 @@ const cols = [
   {
     heading: "ABOUT",
     links: [
-      { label: "Manifesto", href: "/" },
-      { label: "RSS", href: "/" },
-      { label: "Contact", href: "/" },
+      { label: "Manifesto", href: "/manifesto" },
+      { label: "RSS", href: "/rss.xml" },
+      { label: "Contact", href: "/contact" },
     ],
   },
 ];
