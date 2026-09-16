@@ -42,7 +42,19 @@ export async function getCurrentDbUser() {
     });
   }
 
-  return prisma.user.create({
+  const newDbUser = await prisma.user.create({
     data: { authId: user.id, email: user.email, name, username, role: "READER" },
   });
+
+  // Send Welcome Email via Resend asynchronously on first sign-up
+  try {
+    const { sendEmail, welcomeEmail } = await import("@/lib/mailer");
+    sendEmail(welcomeEmail(user.email)).catch((err) =>
+      console.error("Failed to send welcome email:", err)
+    );
+  } catch (err) {
+    console.error("Error triggering welcome email:", err);
+  }
+
+  return newDbUser;
 }
