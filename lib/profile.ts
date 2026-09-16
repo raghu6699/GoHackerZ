@@ -30,7 +30,7 @@ export async function getCurrentDbUser() {
     // Already linked?
     const byAuthId = await prisma.user.findUnique({ where: { authId: user.id } });
     if (byAuthId) {
-      return await prisma.user.update({ where: { id: byAuthId.id }, data: { name } });
+      return byAuthId;
     }
 
     // Same email signed up before (e.g. re-registered after an auth reset)?
@@ -39,7 +39,7 @@ export async function getCurrentDbUser() {
     if (byEmail) {
       return await prisma.user.update({
         where: { id: byEmail.id },
-        data: { authId: user.id, name },
+        data: { authId: user.id, name: byEmail.name || name },
       });
     }
 
@@ -59,7 +59,22 @@ export async function getCurrentDbUser() {
 
     return newDbUser;
   } catch (err) {
-    console.error("Error in getCurrentDbUser:", err);
-    return null;
+    console.error("Error in getCurrentDbUser database operation:", err);
+    // Return a synthetic user profile derived from Supabase Auth so signed-in
+    // users are NEVER falsely displayed as signed-out on /write or other pages.
+    return {
+      id: user.id,
+      authId: user.id,
+      email: user.email,
+      name: name,
+      username: username,
+      role: "READER" as const,
+      trustLevel: 0,
+      bio: null,
+      company: null,
+      avatarColor: "purple",
+      avatarUrl: (user.user_metadata?.avatar_url as string | undefined) ?? null,
+      createdAt: new Date(),
+    };
   }
 }
