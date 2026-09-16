@@ -70,6 +70,11 @@ function createPrisma() {
   });
 }
 
+/** Check if database connection string is available in environment. */
+export function isDbAvailable(): boolean {
+  return Boolean(process.env.DATABASE_URL);
+}
+
 function getClient(): PrismaClient {
   if (!globalForPrisma.prisma) globalForPrisma.prisma = createPrisma();
   return globalForPrisma.prisma;

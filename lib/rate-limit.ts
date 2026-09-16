@@ -55,9 +55,19 @@ export function resetRateLimits(): void {
   buckets.clear();
 }
 
-/** Best-effort client IP: Vercel/CDN proxy headers first, fallback "unknown". */
+/** Best-effort client IP: Cloudflare / Vercel / proxy headers first, fallback "unknown". */
 export function getClientIp(req: { headers: Headers }): string {
+  const cfIp = req.headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp.trim();
+
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+
   const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
+  if (fwd) {
+    const firstIp = fwd.split(",")[0].trim();
+    if (firstIp) return firstIp;
+  }
+
+  return "unknown";
 }

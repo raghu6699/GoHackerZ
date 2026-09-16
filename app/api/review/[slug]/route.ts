@@ -29,7 +29,7 @@ export async function POST(
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: (await params).slug },
+    where: { slug },
     select: { id: true, status: true },
   });
   if (!article) {
