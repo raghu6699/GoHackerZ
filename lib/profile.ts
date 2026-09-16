@@ -26,35 +26,40 @@ export async function getCurrentDbUser() {
   const username =
     fallback.toLowerCase().replace(/[^a-z0-9]+/g, "") + "_" + user.id.slice(0, 6);
 
-  // Already linked?
-  const byAuthId = await prisma.user.findUnique({ where: { authId: user.id } });
-  if (byAuthId) {
-    return prisma.user.update({ where: { id: byAuthId.id }, data: { name } });
-  }
-
-  // Same email signed up before (e.g. re-registered after an auth reset)?
-  // Re-link the existing profile instead of violating the unique email index.
-  const byEmail = await prisma.user.findUnique({ where: { email: user.email } });
-  if (byEmail) {
-    return prisma.user.update({
-      where: { id: byEmail.id },
-      data: { authId: user.id, name },
-    });
-  }
-
-  const newDbUser = await prisma.user.create({
-    data: { authId: user.id, email: user.email, name, username, role: "READER" },
-  });
-
-  // Send Welcome Email via Resend asynchronously on first sign-up
   try {
-    const { sendEmail, welcomeEmail } = await import("@/lib/mailer");
-    sendEmail(welcomeEmail(user.email)).catch((err) =>
-      console.error("Failed to send welcome email:", err)
-    );
-  } catch (err) {
-    console.error("Error triggering welcome email:", err);
-  }
+    // Already linked?
+    const byAuthId = await prisma.user.findUnique({ where: { authId: user.id } });
+    if (byAuthId) {
+      return await prisma.user.update({ where: { id: byAuthId.id }, data: { name } });
+    }
 
-  return newDbUser;
+    // Same email signed up before (e.g. re-registered after an auth reset)?
+    // Re-link the existing profile instead of violating the unique email index.
+    const byEmail = await prisma.user.findUnique({ where: { email: user.email } });
+    if (byEmail) {
+      return await prisma.user.update({
+        where: { id: byEmail.id },
+        data: { authId: user.id, name },
+      });
+    }
+
+    const newDbUser = await prisma.user.create({
+      data: { authId: user.id, email: user.email, name, username, role: "READER" },
+    });
+
+    // Send Welcome Email via Resend asynchronously on first sign-up
+    try {
+      const { sendEmail, welcomeEmail } = await import("@/lib/mailer");
+      sendEmail(welcomeEmail(user.email)).catch((err) =>
+        console.error("Failed to send welcome email:", err)
+      );
+    } catch (err) {
+      console.error("Error triggering welcome email:", err);
+    }
+
+    return newDbUser;
+  } catch (err) {
+    console.error("Error in getCurrentDbUser:", err);
+    return null;
+  }
 }

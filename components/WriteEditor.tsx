@@ -196,7 +196,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
 
   const words = body.trim() ? body.trim().split(/\s+/).length : 0;
   const readingTime = Math.max(1, Math.round(words / 200));
-  const activeTopic = topics.find((t) => t.slug === topic)!;
+  const activeTopic = topics.find((t) => t.slug === topic) ?? topics[0];
 
   const editor = useEditor({
     extensions: [
