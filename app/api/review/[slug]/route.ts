@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
+import { sendEmail, articleApprovedEmail, articleRejectedEmail } from "@/lib/mailer";
 
 /**
  * POST /api/review/[slug] — editor decision on a submitted article.
@@ -30,7 +31,7 @@ export async function POST(
 
   const article = await prisma.article.findUnique({
     where: { slug },
-    select: { id: true, status: true },
+    select: { id: true, title: true, status: true, author: { select: { email: true } } },
   });
   if (!article) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -47,6 +48,11 @@ export async function POST(
       where: { id: article.id },
       data: { status: "PUBLISHED", publishedAt: new Date(), rejectionFeedback: null },
     });
+
+    if (article.author?.email) {
+      sendEmail(articleApprovedEmail(article.author.email, article.title, slug)).catch(() => {});
+    }
+
     return NextResponse.json({ ok: true, status: "PUBLISHED" });
   }
 
@@ -71,6 +77,11 @@ export async function POST(
         },
       }),
     ]);
+
+    if (article.author?.email) {
+      sendEmail(articleRejectedEmail(article.author.email, article.title, feedback)).catch(() => {});
+    }
+
     return NextResponse.json({ ok: true, status: "REJECTED" });
   }
 

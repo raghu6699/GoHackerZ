@@ -55,6 +55,48 @@ export function resetRateLimits(): void {
   buckets.clear();
 }
 
+/**
+ * Async rate limiter with Upstash Redis REST support for multi-region serverless.
+ * Falls back seamlessly to checkRateLimit() when Upstash env vars are unset.
+ */
+export async function checkRateLimitAsync(
+  key: string,
+  limit: number,
+  windowMs: number
+): Promise<RateLimitResult> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    return checkRateLimit(key, limit, windowMs);
+  }
+
+  try {
+    const windowSec = Math.max(1, Math.ceil(windowMs / 1000));
+    const redisKey = `rl:${key}`;
+    const res = await fetch(`${url}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify([
+        ["INCR", redisKey],
+        ["EXPIRE", redisKey, windowSec],
+      ]),
+    });
+
+    if (!res.ok) return checkRateLimit(key, limit, windowMs);
+    const data = await res.json();
+    const count = Number(data[0]?.result ?? 1);
+
+    if (count <= limit) {
+      return { ok: true, remaining: limit - count, retryAfterSec: 0 };
+    }
+
+    return { ok: false, remaining: 0, retryAfterSec: windowSec };
+  } catch {
+    return checkRateLimit(key, limit, windowMs);
+  }
+}
+
 /** Best-effort client IP: Cloudflare / Vercel / proxy headers first, fallback "unknown". */
 export function getClientIp(req: { headers: Headers }): string {
   const cfIp = req.headers.get("cf-connecting-ip");

@@ -99,3 +99,33 @@ export function welcomeEmail(to: string): EmailMessage {
     ),
   };
 }
+
+export function articleApprovedEmail(to: string, title: string, slug: string): EmailMessage {
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const url = `${site}/article/${slug}`;
+  return {
+    to,
+    subject: `Your article "${title}" is live on GoHackerz!`,
+    html: shell(
+      "Your article is published! 🎉",
+      `<p>Great news! Your submission <strong>"${title}"</strong> has been reviewed and published to GoHackerz.</p>
+       <p><a href="${url}" style="display:inline-block;background:#7c5cff;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:700">View live article →</a></p>`
+    ),
+  };
+}
+
+export function articleRejectedEmail(to: string, title: string, feedback: string): EmailMessage {
+  return {
+    to,
+    subject: `Editorial update on "${title}"`,
+    html: shell(
+      "Editorial review notes",
+      `<p>Thank you for submitting <strong>"${title}"</strong> to GoHackerz.</p>
+       <p>Our editorial team reviewed your post and has suggested some updates before it can be published:</p>
+       <blockquote style="border-left:4px solid #ff7b9c;padding-left:12px;margin:16px 0;color:#333;background:#fff5f7;padding-top:8px;padding-bottom:8px">
+         ${feedback}
+       </blockquote>
+       <p>You can update your draft anytime in your writer workspace and resubmit for review.</p>`
+    ),
+  };
+}
