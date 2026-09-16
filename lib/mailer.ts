@@ -15,7 +15,9 @@ export interface EmailMessage {
 export interface SendResult {
   delivered: boolean;
   provider: "resend" | "console";
+  emailId?: string;
   error?: string;
+  rawResponse?: unknown;
 }
 
 export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
@@ -48,11 +50,11 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
         html: msg.html,
       }),
     });
+    const data = await res.json().catch(() => null);
     if (!res.ok) {
-      const detail = await res.text();
-      return { delivered: false, provider: "resend", error: detail.slice(0, 300) };
+      return { delivered: false, provider: "resend", error: JSON.stringify(data || {}), rawResponse: data };
     }
-    return { delivered: true, provider: "resend" };
+    return { delivered: true, provider: "resend", emailId: data?.id, rawResponse: data };
   } catch (e) {
     return {
       delivered: false,
