@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase-server";
 import { getCurrentDbUser } from "@/lib/profile";
 
 /**
- * GET /auth/callback?code=… — exchanges the Supabase auth code (email
- * confirmations, password recovery, OAuth) for a session cookie, syncs
- * the Prisma user profile, then redirects to `next` or home.
+ * GET /api/auth/callback?code=… — exchanges the Supabase OAuth/email auth code
+ * for a session cookie, syncs the user into Prisma (and sends welcome email),
+ * then redirects to `next` or home.
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -17,8 +17,10 @@ export async function GET(request: Request) {
     if (!supabase) {
       return NextResponse.redirect(`${origin}/auth/error`);
     }
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Sync user profile into Prisma database and trigger welcome email if new
       try {
         await getCurrentDbUser();
       } catch (err) {
