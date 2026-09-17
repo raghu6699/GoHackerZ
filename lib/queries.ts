@@ -1,7 +1,6 @@
 /**
  * GoHackerz — real database query layer.
- * Same function names/shapes as the old lib/data.ts mocks, but backed by
- * Supabase Postgres via Prisma. Pages just add `await`.
+ * Supabase Postgres via Prisma. Returns live database records without mock data.
  */
 import { prisma, isDbAvailable } from "./prisma";
 import type { Article, Author, AvatarColor, Topic } from "./data";
@@ -96,21 +95,21 @@ const liveWhere = {
 };
 
 export async function getFeatured(): Promise<Article | undefined> {
-  if (!isDbAvailable()) return mockData.getFeatured();
+  if (!isDbAvailable()) return undefined;
   try {
     const a = await prisma.article.findFirst({
       where: { ...liveWhere, featured: true },
       include: INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
-    return a ? mapArticle(a) : mockData.getFeatured();
+    return a ? mapArticle(a) : undefined;
   } catch {
-    return mockData.getFeatured();
+    return undefined;
   }
 }
 
 export async function getLatest(limit?: number, skip = 0): Promise<Article[]> {
-  if (!isDbAvailable()) return mockData.getLatest(limit);
+  if (!isDbAvailable()) return [];
   try {
     const rows = await prisma.article.findMany({
       where: liveWhere,
@@ -119,23 +118,23 @@ export async function getLatest(limit?: number, skip = 0): Promise<Article[]> {
       ...(typeof limit === "number" ? { take: limit } : {}),
       ...(skip ? { skip } : {}),
     });
-    return rows.length ? rows.map(mapArticle) : mockData.getLatest(limit);
+    return rows.map(mapArticle);
   } catch {
-    return mockData.getLatest(limit);
+    return [];
   }
 }
 
 export async function countLatest(): Promise<number> {
-  if (!isDbAvailable()) return mockData.articles.length;
+  if (!isDbAvailable()) return 0;
   try {
     return await prisma.article.count({ where: liveWhere });
   } catch {
-    return mockData.articles.length;
+    return 0;
   }
 }
 
 export async function getTrending(limit = 4): Promise<Article[]> {
-  if (!isDbAvailable()) return mockData.getTrending(limit);
+  if (!isDbAvailable()) return [];
   try {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT "id"
@@ -146,7 +145,7 @@ export async function getTrending(limit = 4): Promise<Article[]> {
                "publishedAt" DESC NULLS LAST
       LIMIT ${limit}
     `;
-    if (!rows.length) return mockData.getTrending(limit);
+    if (!rows.length) return [];
 
     const byId = await prisma.article.findMany({
       where: { id: { in: rows.map((r: { id: string }) => r.id) } },
@@ -157,39 +156,39 @@ export async function getTrending(limit = 4): Promise<Article[]> {
       .sort((a: { id: string }, b: { id: string }) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
       .map(mapArticle);
   } catch {
-    return mockData.getTrending(limit);
+    return [];
   }
 }
 
 export async function getArticle(slug: string): Promise<Article | undefined> {
-  if (!isDbAvailable()) return mockData.getArticle(slug);
+  if (!isDbAvailable()) return undefined;
   try {
     const a = await prisma.article.findUnique({
       where: { slug },
       include: INCLUDE,
     });
-    return a ? mapArticle(a) : mockData.getArticle(slug);
+    return a ? mapArticle(a) : undefined;
   } catch {
-    return mockData.getArticle(slug);
+    return undefined;
   }
 }
 
 export async function getArticlesByTopic(slug: string): Promise<Article[]> {
-  if (!isDbAvailable()) return mockData.getArticlesByTopic(slug);
+  if (!isDbAvailable()) return [];
   try {
     const rows = await prisma.article.findMany({
       where: { ...liveWhere, topic: { slug } },
       include: INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
-    return rows.length ? rows.map(mapArticle) : mockData.getArticlesByTopic(slug);
+    return rows.map(mapArticle);
   } catch {
-    return mockData.getArticlesByTopic(slug);
+    return [];
   }
 }
 
 export async function getArticlesByAuthor(username: string): Promise<Article[]> {
-  if (!isDbAvailable()) return mockData.getArticlesByAuthor(username);
+  if (!isDbAvailable()) return [];
   try {
     const rows = await prisma.article.findMany({
       where: {
@@ -199,9 +198,9 @@ export async function getArticlesByAuthor(username: string): Promise<Article[]> 
       include: INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
-    return rows.length ? rows.map(mapArticle) : mockData.getArticlesByAuthor(username);
+    return rows.map(mapArticle);
   } catch {
-    return mockData.getArticlesByAuthor(username);
+    return [];
   }
 }
 
@@ -226,7 +225,7 @@ export async function getTopic(slug: string): Promise<Topic | undefined> {
 }
 
 export async function getAuthor(username: string): Promise<Author | undefined> {
-  if (!isDbAvailable()) return mockData.getAuthor(username);
+  if (!isDbAvailable()) return undefined;
   try {
     const u = await prisma.user.findFirst({
       where: {
@@ -237,47 +236,30 @@ export async function getAuthor(username: string): Promise<Author | undefined> {
       },
       include: { _count: { select: { articles: true, followers: true } } },
     });
-    return u ? mapAuthor(u) : mockData.getAuthor(username);
+    return u ? mapAuthor(u) : undefined;
   } catch {
-    return mockData.getAuthor(username);
+    return undefined;
   }
 }
 
 export async function getAllAuthors(): Promise<Author[]> {
-  if (!isDbAvailable()) return mockData.authors;
+  if (!isDbAvailable()) return [];
   try {
     const rows = await prisma.user.findMany({
       where: { role: { in: ["WRITER", "EDITOR", "ADMIN"] } },
       include: { _count: { select: { articles: true, followers: true } } },
       orderBy: { name: "asc" },
     });
-    return rows.length ? rows.map(mapAuthor) : mockData.authors;
+    return rows.map(mapAuthor);
   } catch {
-    return mockData.authors;
+    return [];
   }
 }
 
 // ── Search ────────────────────────────────────────────────────
-/**
- * Ranked full-text search over title + dek (backed by the Article_fts_idx GIN
- * index from migration 1_full_text_search), with substring/tag fallbacks so
- * partial words and exact tag names still match.
- */
 export async function searchArticles(q: string, limit = 20): Promise<Article[]> {
   const query = q.trim();
-  if (!query) return [];
-
-  const mockFilter = () =>
-    mockData.articles
-      .filter(
-        (a) =>
-          a.title.toLowerCase().includes(query.toLowerCase()) ||
-          a.dek.toLowerCase().includes(query.toLowerCase()) ||
-          a.tags.some((t) => t.toLowerCase().includes(query.toLowerCase()))
-      )
-      .slice(0, limit);
-
-  if (!isDbAvailable()) return mockFilter();
+  if (!query || !isDbAvailable()) return [];
 
   try {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
@@ -303,7 +285,7 @@ export async function searchArticles(q: string, limit = 20): Promise<Article[]> 
       LIMIT ${limit}
     `;
 
-    if (!rows.length) return mockFilter();
+    if (!rows.length) return [];
 
     const byId = await prisma.article.findMany({
       where: { id: { in: rows.map((r: { id: string }) => r.id) } },
@@ -314,13 +296,12 @@ export async function searchArticles(q: string, limit = 20): Promise<Article[]> 
       .sort((a: { id: string }, b: { id: string }) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
       .map(mapArticle);
   } catch {
-    return mockFilter();
+    return [];
   }
 }
 
-
 export async function searchAuthors(q: string, limit = 10): Promise<Author[]> {
-  if (!isDbAvailable()) return mockData.authors.filter((a) => a.name.toLowerCase().includes(q.toLowerCase()) || a.username.toLowerCase().includes(q.toLowerCase())).slice(0, limit);
+  if (!isDbAvailable()) return [];
   try {
     const rows = await prisma.user.findMany({
       where: {
@@ -335,7 +316,7 @@ export async function searchAuthors(q: string, limit = 10): Promise<Author[]> {
     });
     return rows.map(mapAuthor);
   } catch {
-    return mockData.authors.filter((a) => a.name.toLowerCase().includes(q.toLowerCase()) || a.username.toLowerCase().includes(q.toLowerCase())).slice(0, limit);
+    return [];
   }
 }
 
@@ -374,8 +355,7 @@ export async function getFollowingFeed(userId: string): Promise<Article[]> {
   }
 }
 
-// ── Batch loaders (avoid per-card N+1 queries) ────────────────
-
+// ── Batch loaders ──────────────────────────────────────────────
 export interface CardData {
   authors: Map<string, Author>;
   topics: Map<string, Topic>;
@@ -390,15 +370,7 @@ export async function preloadCardData(
   const usernames = [...new Set(articles.map((a) => a.authorUsername))];
   const slugs = [...new Set(articles.map((a) => a.topicSlug))];
 
-  if (!isDbAvailable()) {
-    for (const u of usernames) {
-      const a = mockData.getAuthor(u);
-      if (a) authors.set(u, a);
-    }
-    for (const s of slugs) {
-      const t = mockData.getTopic(s);
-      if (t) topics.set(s, t);
-    }
+  if (!isDbAvailable() || (!usernames.length && !slugs.length)) {
     return { authors, topics };
   }
 
@@ -415,31 +387,13 @@ export async function preloadCardData(
 
     for (const t of topicRows) topics.set(t.slug, mapTopic(t));
 
-    const seen = new Set<string>();
     for (const u of users) {
       if (u.username) {
         authors.set(u.username, mapAuthor(u));
-        seen.add(u.username);
       }
     }
-
-    await Promise.all(
-      usernames
-        .filter((n) => !seen.has(n))
-        .map(async (n) => {
-          const a = await getAuthor(n);
-          if (a) authors.set(n, a);
-        })
-    );
   } catch {
-    for (const u of usernames) {
-      const a = mockData.getAuthor(u);
-      if (a) authors.set(u, a);
-    }
-    for (const s of slugs) {
-      const t = mockData.getTopic(s);
-      if (t) topics.set(s, t);
-    }
+    /* empty fallback */
   }
 
   return { authors, topics };
@@ -507,10 +461,10 @@ export async function getEditableArticle(
 }
 
 export async function countTopicArticles(slug: string): Promise<number> {
-  if (!isDbAvailable()) return mockData.getArticlesByTopic(slug).length;
+  if (!isDbAvailable()) return 0;
   try {
     return await prisma.article.count({ where: { ...liveWhere, topic: { slug } } });
   } catch {
-    return mockData.getArticlesByTopic(slug).length;
+    return 0;
   }
 }
