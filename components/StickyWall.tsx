@@ -325,7 +325,7 @@ export function StickyWall() {
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <>
-      <button type="button" className="gw-launcher" onClick={show}>
+      <button type="button" className="gw-launcher hidden md:inline-flex" onClick={show}>
         <span aria-hidden>📌</span> Leave a note
       </button>
 

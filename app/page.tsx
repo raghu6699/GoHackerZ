@@ -4,6 +4,7 @@ import { ArticleCard } from "@/components/ArticleCard";
 import { SponsoredCard } from "@/components/SponsoredCard";
 import { SectionHead } from "@/components/SectionHead";
 import { NewsletterForm } from "@/components/NewsletterForm";
+import { MobileFeedView } from "@/components/MobileFeedView";
 import {
   getFeatured,
   getLatest,
@@ -140,7 +141,17 @@ export default async function HomePage({
 
   return (
     <>
-      {/* ── Hero ── */}
+      {/* ── Native Streamlined Mobile View ── */}
+      <MobileFeedView
+        articles={[featured, ...latest, ...moreStories]}
+        trending={[featured, ...trending]}
+        topics={allTopics}
+        authors={cardData.authors}
+        topicsMap={cardData.topics}
+      />
+
+      {/* ── Rich Desktop Publication View ── */}
+      <div className="hidden md:block">
       <header className="wrap relative pt-8 sm:pt-14 pb-10">
         <span className="inline-flex items-center gap-2 bg-card border-2 border-ink rounded-full px-[15px] py-[7px] text-[13px] font-semibold shadow-pop mb-6">
           <span className="text-[15px]">👋</span> New here?{" "}
@@ -375,6 +386,7 @@ export default async function HomePage({
             <NewsletterForm variant="lime" />
           </div>
         </section>
+      </div>
       </div>
     </>
   );

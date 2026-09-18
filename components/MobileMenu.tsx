@@ -13,12 +13,14 @@ import {
   LogIn,
   X,
   Menu,
+  MessageSquare,
 } from "lucide-react";
 
 const links = [
   { href: "/read", label: "Feed", icon: BookOpen },
   { href: "/deep-dives", label: "Deep Dives", icon: Sparkles },
   { href: "/topics", label: "Topics", icon: Tag },
+  { href: "/guestbook", label: "Guestbook Wall", icon: MessageSquare },
   { href: "/search", label: "Search", icon: Search },
   { href: "/about", label: "About", icon: Info },
 ];
