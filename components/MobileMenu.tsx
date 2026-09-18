@@ -56,16 +56,16 @@ export function MobileMenu() {
         aria-expanded={open}
         aria-controls="mobile-menu-drawer"
         aria-label={open ? "Close menu" : "Open menu"}
-        className="btn btn-sm px-2.5 py-2 bg-card text-ink flex items-center justify-center min-h-[38px] min-w-[38px]"
+        className="btn btn-sm px-2.5 py-2 bg-card text-ink flex items-center justify-center min-h-[40px] min-w-[40px] relative z-[101]"
       >
-        {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        {open ? <X className="w-5 h-5 text-purple" /> : <Menu className="w-5 h-5 text-purple" />}
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] flex justify-end">
           {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-ink/40 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-ink/60 backdrop-blur-md transition-opacity"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
@@ -73,7 +73,7 @@ export function MobileMenu() {
           {/* Drawer Content */}
           <div
             id="mobile-menu-drawer"
-            className="relative w-[min(320px,85vw)] h-full bg-bg border-l-2 border-ink shadow-2xl flex flex-col p-5 z-10 anim-pop overflow-y-auto"
+            className="relative w-[min(300px,82vw)] h-full bg-bg border-l-2 border-ink shadow-2xl flex flex-col p-5 z-[102] overflow-y-auto anim-pop"
           >
             {/* Drawer Header */}
             <div className="flex items-center justify-between pb-4 border-b-2 border-ink mb-4">
@@ -91,7 +91,7 @@ export function MobileMenu() {
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex flex-col gap-2 flex-1" aria-label="Mobile Drawer">
+            <nav className="flex flex-col gap-2 flex-1" aria-label="Mobile Drawer Navigation">
               {links.map((l) => {
                 const Icon = l.icon;
                 const isActive = pathname === l.href;
@@ -99,6 +99,7 @@ export function MobileMenu() {
                   <Link
                     key={l.label}
                     href={l.href}
+                    onClick={() => setOpen(false)}
                     className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all ${
                       isActive
                         ? "bg-purple text-white shadow-pop-sm"
@@ -115,6 +116,7 @@ export function MobileMenu() {
 
               <Link
                 href="/write"
+                onClick={() => setOpen(false)}
                 className="btn btn-purple py-3 text-center justify-center font-bold flex items-center gap-2 shadow-pop"
               >
                 <PenTool className="w-4 h-4" />
@@ -126,6 +128,7 @@ export function MobileMenu() {
             <div className="pt-4 border-t-2 border-ink mt-auto flex flex-col gap-2">
               <Link
                 href="/signin"
+                onClick={() => setOpen(false)}
                 className="btn btn-lime text-center justify-center font-bold flex items-center gap-2"
               >
                 <LogIn className="w-4 h-4" />
