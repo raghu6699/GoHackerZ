@@ -264,6 +264,21 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
+
+  /* ── High-impact visual effects ────────────────────────────────── */
+  .text-gradient-purple {
+    @apply bg-gradient-to-r from-purple via-[#997BFF] to-[#C77CFF] bg-clip-text text-transparent;
+  }
+  .text-gradient-lime {
+    @apply bg-gradient-to-r from-lime via-[#B8F52C] to-[#80E600] bg-clip-text text-transparent;
+  }
+  .badge-pulse {
+    @apply relative inline-flex items-center;
+  }
+  .badge-pulse::before {
+    content: "";
+    @apply absolute -inset-0.5 rounded-full bg-lime/40 animate-ping opacity-75;
+  }
 }
 
 /* Raw keyframes (usable by both Tailwind animate-* and the classes above) */
