@@ -14,8 +14,8 @@ const links = [
 
 export function Nav() {
   return (
-    <nav className="sticky top-0 z-50 py-3 md:py-4 bg-bg/85 backdrop-blur-md">
-      <div className="wrap flex items-center gap-2.5 md:gap-6">
+    <nav className="sticky top-0 z-50 py-3 md:py-4 bg-bg/95 backdrop-blur-md border-b border-ink/10">
+      <div className="wrap flex items-center justify-between gap-3 md:gap-6">
         <Logo />
         <div className="hidden md:flex gap-1 ml-3">
           {links.map((l) => (
@@ -28,15 +28,14 @@ export function Nav() {
             </Link>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-2 md:gap-2.5">
+        <div className="flex items-center gap-2 md:gap-2.5">
           <ThemeToggle />
-          <NavAuth />
-          <Link href="/write" className="btn btn-purple">
-            {/* Shorter label keeps the bar inside 320px viewports */}
-            <span className="hidden sm:inline">Start writing</span>
-            <span className="sm:hidden">Write</span>{" "}
-            <span aria-hidden>✎</span>
-          </Link>
+          <div className="hidden md:flex items-center gap-2.5">
+            <NavAuth />
+            <Link href="/write" className="btn btn-purple">
+              <span>Start writing</span> <span aria-hidden>✎</span>
+            </Link>
+          </div>
           <MobileMenu />
         </div>
       </div>

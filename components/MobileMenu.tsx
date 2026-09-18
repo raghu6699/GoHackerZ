@@ -58,53 +58,62 @@ export function MobileMenu() {
       </button>
 
       {open && (
-        <div
-          id="mobile-menu-dropdown"
-          className="absolute top-full left-0 right-0 bg-bg/98 backdrop-blur-lg border-b-2 border-ink shadow-2xl z-50 anim-pop"
-        >
-          <nav className="wrap py-4 flex flex-col gap-2" aria-label="Mobile Navigation Menu">
-            {links.map((l) => {
-              const Icon = l.icon;
-              const isActive = pathname === l.href;
-              return (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 top-[57px] bg-ink/60 backdrop-blur-sm z-40"
+            onClick={() => setOpen(false)}
+          />
+
+          {/* Solid Full-Width Dropdown Sheet */}
+          <div
+            id="mobile-menu-dropdown"
+            className="fixed left-0 right-0 top-[57px] bg-card border-b-2 border-ink shadow-2xl z-50 p-5 anim-pop max-h-[85vh] overflow-y-auto"
+          >
+            <nav className="flex flex-col gap-2.5" aria-label="Mobile Navigation Menu">
+              {links.map((l) => {
+                const Icon = l.icon;
+                const isActive = pathname === l.href;
+                return (
+                  <Link
+                    key={l.label}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-bold transition-all ${
+                      isActive
+                        ? "bg-purple text-white shadow-pop-sm"
+                        : "bg-bg text-ink border border-ink/15 hover:border-purple"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-purple"}`} />
+                    {l.label}
+                  </Link>
+                );
+              })}
+
+              <div className="my-2 border-t border-dashed border-ink/20" />
+
+              <div className="flex gap-2.5 pt-1">
                 <Link
-                  key={l.label}
-                  href={l.href}
+                  href="/write"
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[15px] font-semibold transition-all ${
-                    isActive
-                      ? "bg-purple text-white shadow-pop-sm"
-                      : "bg-card hover:bg-card/80 text-ink border border-ink/10"
-                  }`}
+                  className="btn btn-purple flex-1 py-3 font-bold flex items-center justify-center gap-2 shadow-pop"
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-purple"}`} />
-                  {l.label}
+                  <PenTool className="w-4 h-4" />
+                  Write ✦
                 </Link>
-              );
-            })}
-
-            <div className="my-1 border-t border-dashed border-ink/15" />
-
-            <div className="flex gap-2.5 pt-1">
-              <Link
-                href="/write"
-                onClick={() => setOpen(false)}
-                className="btn btn-purple flex-1 py-2.5 font-bold flex items-center justify-center gap-2"
-              >
-                <PenTool className="w-4 h-4" />
-                Write ✦
-              </Link>
-              <Link
-                href="/signin"
-                onClick={() => setOpen(false)}
-                className="btn btn-lime flex-1 py-2.5 font-bold flex items-center justify-center gap-2"
-              >
-                <LogIn className="w-4 h-4" />
-                Sign In
-              </Link>
-            </div>
-          </nav>
-        </div>
+                <Link
+                  href="/signin"
+                  onClick={() => setOpen(false)}
+                  className="btn btn-lime flex-1 py-3 font-bold flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+                </Link>
+              </div>
+            </nav>
+          </div>
+        </>
       )}
     </div>
   );
