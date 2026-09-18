@@ -8,6 +8,7 @@ const links = [
   { href: "/read", label: "Feed" },
   { href: "/deep-dives", label: "Deep Dives" },
   { href: "/topics", label: "Topics" },
+  { href: "/guestbook", label: "Guestbook" },
   { href: "/about", label: "About" },
   { href: "/search", label: "Search" },
 ];
