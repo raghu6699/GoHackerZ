@@ -76,7 +76,7 @@ function Toolbar({
   const currentLang = (editor.getAttributes("codeBlock").language as string) || "text";
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll py-1.5 px-1 sm:flex-wrap">
       <ToolbarButton title="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
         Bold
       </ToolbarButton>
@@ -109,7 +109,7 @@ function Toolbar({
       <ToolbarButton title="Insert image from file" onClick={onImageUploadClick}>
         Image
       </ToolbarButton>
-      <span className="grow" />
+      <span className="hidden sm:inline grow" />
       <ToolbarButton title="Undo" onClick={() => editor.chain().focus().undo().run()}>
         Undo
       </ToolbarButton>
@@ -122,7 +122,7 @@ function Toolbar({
           onChange={(e) =>
             editor.chain().focus().updateAttributes("codeBlock", { language: e.target.value }).run()
           }
-          className="border-2 border-ink/15 rounded-lg px-2 py-1 text-[12px] bg-card outline-none"
+          className="border-2 border-ink/15 rounded-lg px-2 py-1 text-[12px] bg-card outline-none shrink-0"
         >
           {CODE_LANGS.map((l) => (
             <option key={l} value={l}>

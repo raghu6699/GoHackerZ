@@ -164,6 +164,24 @@ export default async function HomePage({
         </div>
       </header>
 
+      {/* ── Topic Quick Bar ── */}
+      <div className="wrap mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar touch-scroll py-2 px-1 -mx-1">
+          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-subtle shrink-0 mr-1">
+            TOPICS:
+          </span>
+          {allTopics.map((t) => (
+            <Link
+              key={t.slug}
+              href={`/topic/${t.slug}`}
+              className="chip bg-card hover:bg-lime hover:text-[#1A1440] transition-colors shrink-0 text-[13px] py-1.5 px-3 border border-ink/20 shadow-pop-sm"
+            >
+              <span className="mr-1">{t.emoji}</span> {t.name}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* ── Featured ── */}
       <div className="wrap">
         <SectionHead title="Today's headliner" note="// editor's pick" />

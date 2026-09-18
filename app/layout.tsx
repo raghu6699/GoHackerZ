@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Footer } from "@/components/Footer";
 import { StickyWall } from "@/components/StickyWall";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -71,9 +72,10 @@ export default function RootLayout({
         <ThemeProvider>
           <ToastProvider>
             <Nav />
-            <main id="main">{children}</main>
+            <main id="main" className="pb-16 md:pb-0">{children}</main>
             <Footer />
             <StickyWall />
+            <MobileBottomNav />
           </ToastProvider>
         </ThemeProvider>
       </body>

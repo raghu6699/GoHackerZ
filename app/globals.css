@@ -183,10 +183,10 @@
 
   /* ── Section container ── */
   .wrap {
-    @apply mx-auto max-w-[1200px] px-6;
+    @apply mx-auto max-w-[1200px] px-4 sm:px-6;
     /* Respect iPhone notch / Dynamic Island in landscape */
-    padding-left: max(1.5rem, env(safe-area-inset-left));
-    padding-right: max(1.5rem, env(safe-area-inset-right));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
   }
 
   /* ── Avatar ── */
@@ -252,6 +252,20 @@
       transparent
     );
     animation: shimmer 1.4s infinite;
+  }
+
+  /* ── Touch-friendly horizontal scroll containers ────────────── */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .touch-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
 }
 
@@ -749,9 +763,17 @@ img {
   }
 
   @media (max-width: 640px) {
-    .gw-palette { left: 0.5rem; }
-    .gw-note { width: 180px; }
-    .gw-hint { bottom: 3.5rem; }
+    .gw-palette {
+      left: 50%;
+      top: 1rem;
+      transform: translateX(-50%);
+      flex-direction: row;
+      overflow-x: auto;
+      max-width: 90vw;
+      padding: 4px;
+    }
+    .gw-note { width: min(240px, 80vw); }
+    .gw-hint { bottom: 4.5rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -111,43 +111,82 @@ export function ArticleActions({
   };
 
   return (
-    <div className="flex items-center flex-wrap gap-2 sm:gap-3 relative">
-      <button
-        onClick={toggleReaction}
-        disabled={busy}
-        className={`btn btn-sm ${reacted ? "btn-lime" : ""}`}
-        aria-pressed={reacted}
-        title={reacted ? "Remove your reaction" : "React to this post"}
-      >
-        ▲ {formatCount(reactions)}
-      </button>
-      <a
-        href="#comments"
-        className="btn btn-sm"
-        title="Jump to comments"
-      >
-        💬 {formatCount(comments)}
-      </a>
-      <button
-        onClick={toggleSave}
-        disabled={busy}
-        className={`btn btn-sm ${saved ? "btn-purple" : ""}`}
-        aria-pressed={saved}
-        type="button"
-      >
-        {saved ? "★ Saved" : "☆ Save"}
-      </button>
-      <button
-        onClick={handleShare}
-        className={`btn btn-sm transition-all ${
-          copied ? "btn-lime font-bold shadow-pop-sm" : ""
-        }`}
-        type="button"
-        title="Copy article link"
-        aria-label={copied ? "Link copied to clipboard" : "Share article"}
-      >
-        {copied ? "✓ Copied!" : "↗ Share"}
-      </button>
-    </div>
+    <>
+      {/* Standard inline byline buttons */}
+      <div className="flex items-center flex-wrap gap-2 sm:gap-3 relative">
+        <button
+          onClick={toggleReaction}
+          disabled={busy}
+          className={`btn btn-sm ${reacted ? "btn-lime" : ""}`}
+          aria-pressed={reacted}
+          title={reacted ? "Remove your reaction" : "React to this post"}
+        >
+          ▲ {formatCount(reactions)}
+        </button>
+        <a
+          href="#comments"
+          className="btn btn-sm"
+          title="Jump to comments"
+        >
+          💬 {formatCount(comments)}
+        </a>
+        <button
+          onClick={toggleSave}
+          disabled={busy}
+          className={`btn btn-sm ${saved ? "btn-purple" : ""}`}
+          aria-pressed={saved}
+          type="button"
+        >
+          {saved ? "★ Saved" : "☆ Save"}
+        </button>
+        <button
+          onClick={handleShare}
+          className={`btn btn-sm transition-all ${
+            copied ? "btn-lime font-bold shadow-pop-sm" : ""
+          }`}
+          type="button"
+          title="Copy article link"
+          aria-label={copied ? "Link copied to clipboard" : "Share article"}
+        >
+          {copied ? "✓ Copied!" : "↗ Share"}
+        </button>
+      </div>
+
+      {/* Floating mobile bottom quick-actions bar (appears only on mobile viewports <640px) */}
+      <div className="sm:hidden fixed bottom-14 left-0 right-0 z-30 px-3 py-2 bg-bg/95 backdrop-blur-md border-t border-ink/20 shadow-lg flex items-center justify-around gap-1.5">
+        <button
+          onClick={toggleReaction}
+          disabled={busy}
+          className={`btn btn-sm flex-1 py-1.5 text-[12px] ${reacted ? "btn-lime" : ""}`}
+          aria-pressed={reacted}
+        >
+          ▲ {formatCount(reactions)}
+        </button>
+        <a
+          href="#comments"
+          className="btn btn-sm flex-1 py-1.5 text-[12px] text-center"
+        >
+          💬 {formatCount(comments)}
+        </a>
+        <button
+          onClick={toggleSave}
+          disabled={busy}
+          className={`btn btn-sm flex-1 py-1.5 text-[12px] ${saved ? "btn-purple" : ""}`}
+          aria-pressed={saved}
+          type="button"
+        >
+          {saved ? "★ Saved" : "☆ Save"}
+        </button>
+        <button
+          onClick={handleShare}
+          className={`btn btn-sm flex-1 py-1.5 text-[12px] ${
+            copied ? "btn-lime font-bold" : ""
+          }`}
+          type="button"
+        >
+          {copied ? "✓ Copied!" : "↗ Share"}
+        </button>
+      </div>
+    </>
   );
 }

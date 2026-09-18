@@ -119,9 +119,14 @@ export function FloatingToc({ headings }: { headings: TocHeading[] }) {
   return (
     <div
       ref={rootRef}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      className={`fixed right-3 sm:right-4 top-1/2 -translate-y-1/2 z-40 transition-opacity duration-300 ${
+      onMouseEnter={() => {
+        // Only hover-trigger on desktop pointers
+        if (window.innerWidth >= 640) setOpen(true);
+      }}
+      onMouseLeave={() => {
+        if (window.innerWidth >= 640) setOpen(false);
+      }}
+      className={`fixed right-3 sm:right-5 bottom-20 sm:top-1/2 sm:-translate-y-1/2 z-40 transition-opacity duration-300 ${
         revealed ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
@@ -132,7 +137,7 @@ export function FloatingToc({ headings }: { headings: TocHeading[] }) {
           aria-expanded={open}
           aria-label="Story sections"
           title="Story sections"
-          className="grid place-items-center w-10 h-10 rounded-full bg-card border-2 border-ink shadow-pop hover:-translate-y-0.5 transition-transform"
+          className="grid place-items-center w-11 h-11 rounded-full bg-card border-2 border-ink shadow-pop hover:-translate-y-0.5 transition-transform"
         >
           {/* Stack-of-lines glyph, echo the three-dot window chrome */}
           <span aria-hidden className="flex flex-col items-end gap-[4px]">
@@ -143,40 +148,58 @@ export function FloatingToc({ headings }: { headings: TocHeading[] }) {
         </button>
 
         {open && (
-          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 w-[min(76vw,300px)]">
-            <div className="card p-2 shadow-pop-xl">
-              <div className="font-mono text-[10px] font-bold tracking-widest text-subtle px-3 pt-2 pb-1">
-                SECTIONS
-              </div>
-              <div
-                ref={panelRef}
-                className="toc-strip max-h-[min(60vh,420px)] overflow-y-auto"
-              >
-                {headings.map((h) => (
-                  <a
-                    key={h.id}
-                    href={`#${h.id}`}
-                    data-toc={h.id}
-                    aria-current={activeId === h.id ? "true" : undefined}
+          <>
+            {/* Backdrop for mobile */}
+            <div
+              className="sm:hidden fixed inset-0 bg-ink/40 backdrop-blur-xs z-50"
+              onClick={() => setOpen(false)}
+            />
+
+            {/* Content Container (Bottom Sheet on Mobile, Flyout on Desktop) */}
+            <div className="fixed sm:absolute inset-x-4 bottom-4 sm:inset-auto sm:right-full sm:top-1/2 sm:-translate-y-1/2 sm:mr-3 w-auto sm:w-[min(76vw,300px)] z-50 sm:z-auto">
+              <div className="card p-3 shadow-pop-xl bg-bg sm:bg-card">
+                <div className="flex items-center justify-between px-2 pt-1 pb-2 border-b border-ink/15 sm:border-b-0">
+                  <div className="font-mono text-[10px] font-bold tracking-widest text-subtle">
+                    STORY SECTIONS
+                  </div>
+                  <button
+                    type="button"
                     onClick={() => setOpen(false)}
-                    className={`flex items-start gap-2.5 rounded-xl px-3 py-2 text-[13.5px] leading-snug transition-colors ${
-                      activeId === h.id
-                        ? "bg-lime/40 font-bold text-ink"
-                        : "hover:bg-lime/20"
-                    }`}
+                    className="sm:hidden text-xs font-bold text-muted px-2 py-0.5 rounded border border-ink/20"
                   >
-                    <span
-                      aria-hidden
-                      className={`mt-[6px] shrink-0 h-2 w-2 rounded-full border-2 border-ink ${
-                        activeId === h.id ? "bg-lime" : "bg-transparent"
+                    Close ✕
+                  </button>
+                </div>
+                <div
+                  ref={panelRef}
+                  className="toc-strip max-h-[min(50vh,380px)] overflow-y-auto pt-1"
+                >
+                  {headings.map((h) => (
+                    <a
+                      key={h.id}
+                      href={`#${h.id}`}
+                      data-toc={h.id}
+                      aria-current={activeId === h.id ? "true" : undefined}
+                      onClick={() => setOpen(false)}
+                      className={`flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-[14px] leading-snug transition-colors ${
+                        activeId === h.id
+                          ? "bg-lime/40 font-bold text-ink border border-ink/20"
+                          : "hover:bg-lime/20"
                       }`}
-                    />
-                    {h.text}
-                  </a>
-                ))}
+                    >
+                      <span
+                        aria-hidden
+                        className={`mt-[6px] shrink-0 h-2 w-2 rounded-full border-2 border-ink ${
+                          activeId === h.id ? "bg-lime" : "bg-transparent"
+                        }`}
+                      />
+                      {h.text}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
