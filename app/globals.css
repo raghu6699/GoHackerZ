@@ -279,9 +279,32 @@
     content: "";
     @apply absolute -inset-0.5 rounded-full bg-lime/40 animate-ping opacity-75;
   }
+
+  /* ── Interactive Hero Floating Stickers ────────────────────────── */
+  .hero-sticker {
+    @apply border-2 border-ink rounded-2xl font-mono text-[14px] font-bold px-4 py-2.5
+           shadow-[4px_4px_0px_#1A1440] dark:shadow-[4px_4px_0px_#F4F1FF]
+           transition-all duration-300 select-none cursor-pointer;
+  }
+  .hero-sticker:hover {
+    @apply scale-110 z-20 shadow-[7px_7px_0px_#1A1440] dark:shadow-[7px_7px_0px_#F4F1FF];
+    transform: translateY(-8px) scale(1.12) rotate(0deg) !important;
+  }
 }
 
 /* Raw keyframes (usable by both Tailwind animate-* and the classes above) */
+@keyframes float-smooth {
+  0%, 100% { transform: translateY(0px) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-9px) rotate(calc(var(--rot, 0deg) + 2.5deg)); }
+}
+@keyframes float-alt {
+  0%, 100% { transform: translateY(0px) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-11px) rotate(calc(var(--rot, 0deg) - 2.5deg)); }
+}
+.float-anim-1 { animation: float-smooth 4.2s ease-in-out infinite; }
+.float-anim-2 { animation: float-alt 4.8s ease-in-out infinite 0.7s; }
+.float-anim-3 { animation: float-smooth 3.9s ease-in-out infinite 1.4s; }
+
 @keyframes page-in {
   from { opacity: 0; }
   to { opacity: 1; }

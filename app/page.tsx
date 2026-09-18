@@ -153,49 +153,62 @@ export default async function HomePage({
 
       {/* ── Rich Desktop Publication View ── */}
       <div className="hidden md:block">
-        <header className="wrap relative pt-8 sm:pt-14 pb-10 flex items-center justify-between gap-8">
-          <div className="max-w-[580px]">
-            <span className="inline-flex items-center gap-2 bg-card border-2 border-ink rounded-full px-[15px] py-[7px] text-[13px] font-semibold shadow-pop mb-6">
-              <span className="text-[15px]">👋</span> New here?{" "}
-              <b className="text-purple">Join 190k builders →</b>
-            </span>
-            <h1 className="text-[clamp(42px,6.8vw,82px)] leading-[0.98] tracking-tight font-bold mb-6">
-              Where builders <span className="text-purple">actually</span> write.
-            </h1>
-            <p className="text-[20px] leading-relaxed max-w-[520px] font-medium text-muted mb-8">
-              Honest engineering essays, teardowns and post-mortems.{" "}
-              <span className="hl">No sludge, no listicles</span> — just the real
-              stuff you'll want to save.
-            </p>
-            <div className="flex gap-3.5 items-center flex-wrap">
-              <Link href="/signup" className="btn btn-purple">
-                Start reading — free
-              </Link>
-              <Link href="/write" className="btn btn-lime">
-                Write a post ✦
-              </Link>
-            </div>
-          </div>
+        <header className="wrap relative my-6">
+          <div className="relative overflow-hidden bg-card border-2 border-ink rounded-3xl p-6 sm:p-10 lg:p-14 shadow-pop-lg flex flex-col lg:flex-row items-center justify-between gap-10 dotgrid">
+            {/* Background Decorative Mesh Orbs */}
+            <span className="absolute -top-20 -left-20 w-[300px] h-[300px] bg-purple/10 rounded-full blur-3xl pointer-events-none" />
+            <span className="absolute -bottom-20 -right-20 w-[300px] h-[300px] bg-lime/15 rounded-full blur-3xl pointer-events-none" />
 
-          {/* ── Hero Floating Sticker Pills (Laptop / Desktop View) ── */}
-          <div className="hidden lg:block relative w-[380px] h-[350px] shrink-0 select-none">
-            <div className="absolute top-0 right-2 bg-[#ff8da1] text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[-6deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
-              p99 ↓ 40x 🚀
+            <div className="max-w-[600px] relative z-10">
+              <span className="inline-flex items-center gap-2 bg-card border-2 border-ink rounded-full px-4 py-2 text-[13.5px] font-bold shadow-pop mb-6">
+                <span className="badge-pulse text-[15px]">👋</span>
+                <span>Welcome to GoHackerz — </span>
+                <b className="text-purple">Join 190k builders →</b>
+              </span>
+              <h1 className="text-[clamp(44px,6.8vw,82px)] leading-[0.96] tracking-tight font-extrabold mb-6 text-ink">
+                Where builders <span className="text-gradient-purple">actually</span> write.
+              </h1>
+              <p className="text-[20px] sm:text-[22px] leading-relaxed max-w-[530px] font-medium text-muted mb-8">
+                Honest engineering essays, teardowns and post-mortems.{" "}
+                <span className="hl">No sludge, no listicles</span> — just the real
+                stuff you&apos;ll want to save.
+              </p>
+              <div className="flex gap-4 items-center flex-wrap">
+                <Link href="/signup" className="btn btn-purple py-3.5 px-7 text-[15.5px] font-bold shadow-pop">
+                  Start reading — free
+                </Link>
+                <Link href="/write" className="btn btn-lime py-3.5 px-7 text-[15.5px] font-bold shadow-pop">
+                  Write a post ✦
+                </Link>
+              </div>
             </div>
-            <div className="absolute top-14 left-4 bg-peach text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[-3deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
-              no clickbait 🚫
-            </div>
-            <div className="absolute top-28 right-0 bg-sky text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[3deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
-              real engineers
-            </div>
-            <div className="absolute top-44 left-8 bg-lime text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[2deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
-              evals &gt; vibes 📊
-            </div>
-            <div className="absolute top-56 right-6 bg-sky text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[-5deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
-              ✦ Rust
-            </div>
-            <div className="absolute bottom-0 left-12 bg-peach text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[4deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
-              no paywall 🎉
+
+            {/* ── Hero Floating Sticker Pills (Laptop / Desktop View) ── */}
+            <div className="hidden lg:block relative w-[400px] h-[370px] shrink-0 select-none z-10">
+              {/* Sticker 1: Pink */}
+              <div className="hero-sticker float-anim-1 absolute top-2 right-4 bg-[#FF80B5] text-[#1A1440] rotate-[-6deg]" style={{ "--rot": "-6deg" } as React.CSSProperties}>
+                p99 ↓ 40x 🚀
+              </div>
+              {/* Sticker 2: Peach */}
+              <div className="hero-sticker float-anim-2 absolute top-16 left-2 bg-[#FFB870] text-[#1A1440] rotate-[-3deg]" style={{ "--rot": "-3deg" } as React.CSSProperties}>
+                no clickbait 🚫
+              </div>
+              {/* Sticker 3: Sky */}
+              <div className="hero-sticker float-anim-3 absolute top-32 right-0 bg-[#80E5FF] text-[#1A1440] rotate-[3deg]" style={{ "--rot": "3deg" } as React.CSSProperties}>
+                real engineers
+              </div>
+              {/* Sticker 4: Lime */}
+              <div className="hero-sticker float-anim-1 absolute top-48 left-6 bg-[#C6FF3D] text-[#1A1440] rotate-[2deg]" style={{ "--rot": "2deg" } as React.CSSProperties}>
+                evals &gt; vibes 📊
+              </div>
+              {/* Sticker 5: Sky */}
+              <div className="hero-sticker float-anim-2 absolute top-60 right-8 bg-[#70C5FF] text-[#1A1440] rotate-[-5deg]" style={{ "--rot": "-5deg" } as React.CSSProperties}>
+                ✦ Rust
+              </div>
+              {/* Sticker 6: Peach */}
+              <div className="hero-sticker float-anim-3 absolute bottom-2 left-10 bg-[#FFD170] text-[#1A1440] rotate-[4deg]" style={{ "--rot": "4deg" } as React.CSSProperties}>
+                no paywall 🎉
+              </div>
             </div>
           </div>
         </header>
