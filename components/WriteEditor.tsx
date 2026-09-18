@@ -10,6 +10,20 @@ import Link from "@tiptap/extension-link";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Image from "@tiptap/extension-image";
 import { common, createLowlight } from "lowlight";
+import {
+  Bold,
+  Italic,
+  Code,
+  Heading2,
+  Quote,
+  List,
+  ListOrdered,
+  SquareCode,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  Undo,
+  Redo,
+} from "lucide-react";
 import { topics } from "@/lib/data";
 import type { Block } from "@/lib/data";
 import { blocksToHtml, blocksToText, parseBlocks, serializeTiptapDoc } from "@/lib/content";
@@ -50,10 +64,11 @@ function ToolbarButton({
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       title={title}
-      className={`px-2.5 py-1 rounded-lg border-2 font-bold text-[13px] transition-colors ${
+      aria-label={title}
+      className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border-2 transition-all shrink-0 ${
         active
-          ? "bg-purple text-white border-purple is-active"
-          : "bg-card border-ink/15 text-ink hover:border-purple"
+          ? "bg-purple text-white border-purple shadow-sm scale-105"
+          : "bg-card border-ink/15 text-ink hover:border-purple hover:bg-purple/10"
       }`}
     >
       {children}
@@ -72,57 +87,75 @@ function Toolbar({
 }) {
   if (!editor) return null;
 
-
   const currentLang = (editor.getAttributes("codeBlock").language as string) || "text";
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll py-1.5 px-1 sm:flex-wrap">
-      <ToolbarButton title="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
-        Bold
-      </ToolbarButton>
-      <span className="italic">
-        <ToolbarButton title="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
-          Italic
+    <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar touch-scroll py-1 px-1 max-w-full">
+      {/* Text formatting */}
+      <div className="flex items-center gap-1 shrink-0">
+        <ToolbarButton title="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+          <Bold className="w-4 h-4" />
         </ToolbarButton>
-      </span>
-      <ToolbarButton title="Inline code" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
-        Code
-      </ToolbarButton>
-      <ToolbarButton title="Heading" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
-        Heading
-      </ToolbarButton>
-      <ToolbarButton title="Quote" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
-        Quote
-      </ToolbarButton>
-      <ToolbarButton title="Bullet list" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
-        Bullets
-      </ToolbarButton>
-      <ToolbarButton title="Numbered list" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
-        Numbered
-      </ToolbarButton>
-      <ToolbarButton title="Code block" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
-        Code block
-      </ToolbarButton>
-      <ToolbarButton title="Link" active={editor.isActive("link")} onClick={onLinkClick}>
-        Link
-      </ToolbarButton>
-      <ToolbarButton title="Insert image from file" onClick={onImageUploadClick}>
-        Image
-      </ToolbarButton>
-      <span className="hidden sm:inline grow" />
-      <ToolbarButton title="Undo" onClick={() => editor.chain().focus().undo().run()}>
-        Undo
-      </ToolbarButton>
-      <ToolbarButton title="Redo" onClick={() => editor.chain().focus().redo().run()}>
-        Redo
-      </ToolbarButton>
+        <ToolbarButton title="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+          <Italic className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Inline Code" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
+          <Code className="w-4 h-4" />
+        </ToolbarButton>
+      </div>
+
+      <div className="w-[1px] h-5 bg-ink/15 mx-0.5 shrink-0" />
+
+      {/* Block formatting */}
+      <div className="flex items-center gap-1 shrink-0">
+        <ToolbarButton title="Heading (H2)" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+          <Heading2 className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Quote" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+          <Quote className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Bullet List" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+          <List className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Numbered List" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+          <ListOrdered className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Code Block" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+          <SquareCode className="w-4 h-4" />
+        </ToolbarButton>
+      </div>
+
+      <div className="w-[1px] h-5 bg-ink/15 mx-0.5 shrink-0" />
+
+      {/* Media & links */}
+      <div className="flex items-center gap-1 shrink-0">
+        <ToolbarButton title="Insert Link" active={editor.isActive("link")} onClick={onLinkClick}>
+          <LinkIcon className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Insert Image" onClick={onImageUploadClick}>
+          <ImageIcon className="w-4 h-4" />
+        </ToolbarButton>
+      </div>
+
+      <div className="w-[1px] h-5 bg-ink/15 mx-0.5 shrink-0" />
+
+      {/* History */}
+      <div className="flex items-center gap-1 shrink-0">
+        <ToolbarButton title="Undo" onClick={() => editor.chain().focus().undo().run()}>
+          <Undo className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Redo" onClick={() => editor.chain().focus().redo().run()}>
+          <Redo className="w-4 h-4" />
+        </ToolbarButton>
+      </div>
+
       {editor.isActive("codeBlock") && (
         <select
           value={currentLang}
           onChange={(e) =>
             editor.chain().focus().updateAttributes("codeBlock", { language: e.target.value }).run()
           }
-          className="border-2 border-ink/15 rounded-lg px-2 py-1 text-[12px] bg-card outline-none shrink-0"
+          className="border-2 border-ink/15 rounded-lg px-2 py-1 text-[12px] bg-card outline-none shrink-0 ml-1 font-mono"
         >
           {CODE_LANGS.map((l) => (
             <option key={l} value={l}>
