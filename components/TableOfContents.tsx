@@ -114,20 +114,38 @@ export function FloatingToc({ headings }: { headings: TocHeading[] }) {
     };
   }, [open, activeId]);
 
+  const [dockVisible, setDockVisible] = useState(true);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > lastY && currentY > 100) {
+        setDockVisible(false);
+      } else {
+        setDockVisible(true);
+      }
+      lastY = currentY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   if (headings.length === 0) return null;
 
   return (
     <div
       ref={rootRef}
       onMouseEnter={() => {
-        // Only hover-trigger on desktop pointers
         if (window.innerWidth >= 640) setOpen(true);
       }}
       onMouseLeave={() => {
         if (window.innerWidth >= 640) setOpen(false);
       }}
-      className={`fixed right-3 sm:right-5 bottom-20 sm:top-1/2 sm:-translate-y-1/2 z-40 transition-opacity duration-300 ${
-        revealed ? "opacity-100" : "opacity-0 pointer-events-none"
+      className={`fixed right-3 sm:right-5 bottom-20 sm:top-1/2 sm:-translate-y-1/2 z-40 transition-all duration-300 ${
+        revealed && dockVisible
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 pointer-events-none translate-y-6 sm:translate-y-0"
       }`}
     >
       <div className="relative">

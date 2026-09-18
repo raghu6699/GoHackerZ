@@ -92,61 +92,53 @@
 }
 
 @layer components {
-  /* ── Sticker button: chunky border + hard offset shadow ── */
+  /* ── Clean modern button: subtle border + refined interaction ── */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 font-semibold text-[15px]
-           border-2 border-ink rounded-xl px-[18px] py-[10px] bg-card text-ink
-           shadow-pop transition-transform duration-100 select-none;
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-[14px]
+           border-2 border-ink rounded-xl px-4 py-2 bg-card text-ink
+           shadow-pop transition-all duration-150 select-none;
     text-align: center;
-    /* Long labels wrap instead of pushing siblings out of their container */
     max-width: 100%;
   }
   .btn:hover {
-    @apply -translate-x-[2px] -translate-y-[2px] shadow-pop-lg;
+    @apply -translate-y-[1px] shadow-pop-lg;
   }
   .btn:active {
-    @apply translate-x-[2px] translate-y-[2px] shadow-[1px_1px_0_#1A1440];
+    @apply translate-y-[1px] shadow-pop-sm;
   }
   .btn-purple {
-    @apply bg-purple text-white;
+    @apply bg-purple text-white border-purple;
   }
   .btn-lime {
-    @apply bg-lime text-[#1A1440];
+    @apply bg-lime text-[#1A1440] border-ink;
   }
   .btn-sm {
-    @apply text-[13px] px-3 py-2 rounded-lg;
+    @apply text-[12.5px] px-3 py-1.5 rounded-lg;
   }
 
   /* ── Text link ── */
   .tlink {
-    @apply font-semibold text-[15px] px-1 py-2 transition-colors;
+    @apply font-semibold text-[14px] px-1 py-1.5 transition-colors;
   }
   .tlink:hover {
     @apply text-purple;
   }
 
-  /* ── Highlighter marker (always dark text on yellow-green) ── */
+  /* ── Highlighter marker ── */
   .hl {
-    @apply bg-lime text-[#1A1440] rounded px-[0.12em];
+    @apply bg-lime/80 text-[#1A1440] rounded px-[0.2em] font-medium;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
 
-  /* ── Chips / pills ── */
+  /* ── Monochrome / Minimalist Chips ── */
   .chip {
-    @apply inline-flex items-center gap-1 font-mono text-[11px] font-bold
-           rounded-full px-[10px] py-1 bg-card text-ink;
-    /* soft 1px edge instead of the heavy 2px ink border.
-       Plain rgba first: fallback for browsers without color-mix (iOS < 16.2),
-       otherwise those browsers would drop the border entirely. */
-    border: 1px solid rgba(26, 20, 64, 0.25);
-    border: 1px solid color-mix(in srgb, var(--color-ink) 25%, transparent);
+    @apply inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold
+           rounded-lg px-2.5 py-1 bg-card text-ink transition-colors;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 18%, transparent);
   }
-  .chip.bg-lime,
-  .chip.bg-sky,
-  .chip.bg-pink,
-  .chip.bg-peach {
-    @apply text-[#1A1440];
+  .chip:hover {
+    border-color: var(--color-ink);
   }
 
   /* ── Long-form reading mode ── */
@@ -157,28 +149,30 @@
     float: left;
     font-family: "Space Grotesk", system-ui, sans-serif;
     font-weight: 700;
-    font-size: 3.4em;
+    font-size: 3.2em;
     line-height: 0.85;
     padding-right: 0.12em;
     padding-top: 0.06em;
     color: #7c5cff;
   }
 
-  /* ── Sponsored / ad unit (native sticker styling, disclosure required) ── */
+  /* ── Sponsored / ad unit ── */
   .ad-card {
-    @apply bg-card border-2 border-dashed border-ink rounded-2xl shadow-pop overflow-hidden;
+    @apply bg-card rounded-2xl shadow-sm overflow-hidden;
+    border: 1px dashed color-mix(in srgb, var(--color-ink) 30%, transparent);
   }
   .ad-disclosure {
     @apply inline-flex items-center gap-1 font-mono text-[10px] font-bold tracking-wider uppercase
-           border-2 border-ink rounded-full px-2 py-[2px] bg-peach text-[#1A1440];
+           rounded-full px-2 py-[2px] bg-peach text-[#1A1440];
+    border: 1px solid color-mix(in srgb, var(--color-ink) 20%, transparent);
   }
 
-  /* ── Card ── */
+  /* ── Minimalist Clean Card ── */
   .card {
-    @apply bg-card border-2 border-ink rounded-2xl shadow-pop transition-transform duration-150;
+    @apply bg-card border-2 border-ink rounded-2xl shadow-pop transition-all duration-200;
   }
   .card-hover:hover {
-    @apply -translate-x-[3px] -translate-y-[3px] shadow-pop-xl;
+    @apply -translate-y-[2px] shadow-pop-lg border-purple;
   }
 
   /* ── Section container ── */

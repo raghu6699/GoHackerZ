@@ -110,6 +110,23 @@ export function ArticleActions({
     }
   };
 
+  const [dockVisible, setDockVisible] = useState(true);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > lastY && currentY > 100) {
+        setDockVisible(false);
+      } else {
+        setDockVisible(true);
+      }
+      lastY = currentY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
       {/* Standard inline byline buttons */}
@@ -152,26 +169,30 @@ export function ArticleActions({
         </button>
       </div>
 
-      {/* Floating mobile bottom quick-actions bar (appears only on mobile viewports <640px) */}
-      <div className="sm:hidden fixed bottom-14 left-0 right-0 z-30 px-3 py-2 bg-bg/95 backdrop-blur-md border-t border-ink/20 shadow-lg flex items-center justify-around gap-1.5">
+      {/* Auto-hiding floating mobile reading action dock */}
+      <div
+        className={`sm:hidden fixed bottom-3 left-4 right-4 z-40 px-3 py-2 bg-bg/95 backdrop-blur-lg border-2 border-ink rounded-2xl shadow-pop flex items-center justify-around gap-2 transition-transform duration-300 ${
+          dockVisible ? "translate-y-0" : "translate-y-24"
+        }`}
+      >
         <button
           onClick={toggleReaction}
           disabled={busy}
-          className={`btn btn-sm flex-1 py-1.5 text-[12px] ${reacted ? "btn-lime" : ""}`}
+          className={`btn btn-sm flex-1 py-2 text-[13px] ${reacted ? "btn-lime" : ""}`}
           aria-pressed={reacted}
         >
           ▲ {formatCount(reactions)}
         </button>
         <a
           href="#comments"
-          className="btn btn-sm flex-1 py-1.5 text-[12px] text-center"
+          className="btn btn-sm flex-1 py-2 text-[13px] text-center"
         >
           💬 {formatCount(comments)}
         </a>
         <button
           onClick={toggleSave}
           disabled={busy}
-          className={`btn btn-sm flex-1 py-1.5 text-[12px] ${saved ? "btn-purple" : ""}`}
+          className={`btn btn-sm flex-1 py-2 text-[13px] ${saved ? "btn-purple" : ""}`}
           aria-pressed={saved}
           type="button"
         >
@@ -179,7 +200,7 @@ export function ArticleActions({
         </button>
         <button
           onClick={handleShare}
-          className={`btn btn-sm flex-1 py-1.5 text-[12px] ${
+          className={`btn btn-sm flex-1 py-2 text-[13px] ${
             copied ? "btn-lime font-bold" : ""
           }`}
           type="button"
