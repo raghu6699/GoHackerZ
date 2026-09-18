@@ -19,9 +19,12 @@ export async function getCurrentDbUser() {
 
   if (error || !user || !user.email) return null;
 
-  const metaName = (user.user_metadata?.name as string | undefined)?.trim();
+  const metaName =
+    (user.user_metadata?.full_name as string | undefined)?.trim() ||
+    (user.user_metadata?.name as string | undefined)?.trim();
   const fallback = user.email.split("@")[0];
   const name = metaName || fallback;
+  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null;
   // Deterministic, collision-resistant username derived from the auth id
   const username =
     fallback.toLowerCase().replace(/[^a-z0-9]+/g, "") + "_" + user.id.slice(0, 6);
@@ -30,6 +33,22 @@ export async function getCurrentDbUser() {
     // Already linked by authId?
     let byAuthId = await prisma.user.findUnique({ where: { authId: user.id } });
     if (byAuthId) {
+      // Auto-sync real name, email & avatarUrl from Supabase Auth / Gmail
+      if (
+        byAuthId.name === "Test User" ||
+        byAuthId.email === "testuser@gohackerz.com" ||
+        (metaName && byAuthId.name !== metaName) ||
+        (user.email && byAuthId.email !== user.email)
+      ) {
+        byAuthId = await prisma.user.update({
+          where: { id: byAuthId.id },
+          data: {
+            email: user.email,
+            name,
+            avatarUrl: byAuthId.avatarUrl ?? avatarUrl,
+          },
+        });
+      }
       return byAuthId;
     }
 
