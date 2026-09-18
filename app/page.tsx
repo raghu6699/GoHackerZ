@@ -3,7 +3,6 @@ import { Avatar } from "@/components/Avatar";
 import { ArticleCard } from "@/components/ArticleCard";
 import { SponsoredCard } from "@/components/SponsoredCard";
 import { PartnerBanner } from "@/components/PartnerBanner";
-import { StickyWall } from "@/components/StickyWall";
 import { SectionHead } from "@/components/SectionHead";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { MobileFeedView } from "@/components/MobileFeedView";
@@ -154,56 +153,50 @@ export default async function HomePage({
 
       {/* ── Rich Desktop Publication View ── */}
       <div className="hidden md:block">
-        <header className="wrap relative pt-8 sm:pt-12 pb-10 grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 bg-card border-2 border-ink rounded-full px-4 py-1.5 text-[13px] font-semibold shadow-pop mb-6">
-              <span className="badge-pulse text-[15px]">⚡</span>
-              <span>Live Builder Network — </span>
-              <b className="text-purple">100% Free & Open →</b>
+        <header className="wrap relative pt-8 sm:pt-14 pb-10 flex items-center justify-between gap-8">
+          <div className="max-w-[580px]">
+            <span className="inline-flex items-center gap-2 bg-card border-2 border-ink rounded-full px-[15px] py-[7px] text-[13px] font-semibold shadow-pop mb-6">
+              <span className="text-[15px]">👋</span> New here?{" "}
+              <b className="text-purple">Join 190k builders →</b>
             </span>
-            <h1 className="text-[clamp(38px,5.2vw,72px)] leading-[0.98] tracking-tight font-bold mb-6">
-              Where builders <span className="text-gradient-purple">actually</span> write.
+            <h1 className="text-[clamp(42px,6.8vw,82px)] leading-[0.98] tracking-tight font-bold mb-6">
+              Where builders <span className="text-purple">actually</span> write.
             </h1>
-            <p className="text-[19px] sm:text-[21px] leading-relaxed max-w-[540px] font-medium text-muted mb-8">
-              Honest engineering essays, architecture teardowns, and postmortems from practitioners who ship in production.{" "}
-              <span className="hl">No sludge, no listicles.</span>
+            <p className="text-[20px] leading-relaxed max-w-[520px] font-medium text-muted mb-8">
+              Honest engineering essays, teardowns and post-mortems.{" "}
+              <span className="hl">No sludge, no listicles</span> — just the real
+              stuff you'll want to save.
             </p>
-
-            <form action="/search" className="flex items-center gap-2 max-w-md mb-6 bg-card border-2 border-ink rounded-2xl p-1.5 shadow-pop">
-              <input
-                name="q"
-                placeholder="Search postmortems, Rust, AI systems..."
-                className="flex-1 bg-transparent px-3 py-1.5 text-[14px] font-medium outline-none text-ink placeholder:text-subtle"
-              />
-              <button type="submit" className="btn btn-purple btn-sm">
-                Search ✦
-              </button>
-            </form>
-
             <div className="flex gap-3.5 items-center flex-wrap">
-              <Link href="/signup" className="btn btn-purple py-3 px-6 text-[15px]">
+              <Link href="/signup" className="btn btn-purple">
                 Start reading — free
               </Link>
-              <Link href="/write" className="btn btn-lime py-3 px-6 text-[15px]">
+              <Link href="/write" className="btn btn-lime">
                 Write a post ✦
-              </Link>
-              <Link href="/guestbook" className="btn btn-sm">
-                📌 Corkboard Wall
               </Link>
             </div>
           </div>
 
-          {/* Hero Interactive Corkboard Showcase Card */}
-          <div className="hidden lg:block relative bg-card border-2 border-ink rounded-3xl p-5 shadow-pop-lg">
-            <div className="flex items-center justify-between mb-3 border-b-2 border-dashed border-ink/20 pb-2.5">
-              <span className="font-mono text-[11px] font-bold uppercase text-purple flex items-center gap-1.5">
-                <span>📌</span> LIVE COMMUNITY WALL PREVIEW
-              </span>
-              <Link href="/guestbook" className="font-mono text-[11px] font-bold text-subtle hover:text-purple transition-colors">
-                Full Corkboard →
-              </Link>
+          {/* ── Hero Floating Sticker Pills (Laptop / Desktop View) ── */}
+          <div className="hidden lg:block relative w-[380px] h-[350px] shrink-0 select-none">
+            <div className="absolute top-0 right-2 bg-[#ff8da1] text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[-6deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
+              p99 ↓ 40x 🚀
             </div>
-            <StickyWall mode="embedded" />
+            <div className="absolute top-14 left-4 bg-peach text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[-3deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
+              no clickbait 🚫
+            </div>
+            <div className="absolute top-28 right-0 bg-sky text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[3deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
+              real engineers
+            </div>
+            <div className="absolute top-44 left-8 bg-lime text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[2deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
+              evals &gt; vibes 📊
+            </div>
+            <div className="absolute top-56 right-6 bg-sky text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[-5deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
+              ✦ Rust
+            </div>
+            <div className="absolute bottom-0 left-12 bg-peach text-[#1A1440] border-2 border-ink shadow-pop rounded-2xl font-mono text-[14px] font-bold px-4.5 py-2.5 rotate-[4deg] hover:scale-110 hover:rotate-0 transition-all cursor-pointer">
+              no paywall 🎉
+            </div>
           </div>
         </header>
 
