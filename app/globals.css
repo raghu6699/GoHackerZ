@@ -729,7 +729,7 @@ img {
   .gw-chip:active { cursor: grabbing; transform: scale(0.95); }
 
   .gw-close {
-    @apply fixed top-4 right-4 z-10 w-11 h-11 flex items-center justify-center
+    @apply fixed top-4 right-4 z-50 w-11 h-11 flex items-center justify-center
            text-[18px] font-bold text-ink bg-card border-2 border-ink rounded-full
            shadow-pop cursor-pointer;
     transition: transform 100ms ease;
@@ -737,12 +737,12 @@ img {
   .gw-close:hover { transform: rotate(90deg); }
 
   .gw-scrub {
-    @apply fixed bottom-5 left-1/2 -translate-x-1/2 w-[min(420px,80vw)] z-10 cursor-pointer;
+    @apply fixed bottom-5 left-1/2 -translate-x-1/2 w-[min(420px,80vw)] z-30 cursor-pointer;
     accent-color: #7c5cff;
   }
 
   .gw-scrub-label {
-    @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-10 m-0 whitespace-nowrap
+    @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-30 m-0 whitespace-nowrap
            font-mono text-[12px] font-bold text-muted border-2
            rounded-full px-4 py-2 pointer-events-none;
     /* bg-card/90 + border-ink/20 — var()-based colors can't take Tailwind /alpha */
@@ -751,7 +751,7 @@ img {
   }
 
   .gw-hint {
-    @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-10 m-0 whitespace-nowrap
+    @apply fixed bottom-12 left-1/2 -translate-x-1/2 z-30 m-0 whitespace-nowrap
            font-mono text-[12px] font-bold text-muted border-2
            rounded-full px-4 py-2 pointer-events-none;
     /* bg-card/90 + border-ink/20 — var()-based colors can't take Tailwind /alpha */
@@ -762,15 +762,21 @@ img {
   @media (max-width: 640px) {
     .gw-palette {
       left: 50%;
-      top: 1rem;
+      top: 4.5rem;
       transform: translateX(-50%);
       flex-direction: row;
       overflow-x: auto;
-      max-width: 90vw;
-      padding: 4px;
+      max-width: 92vw;
+      padding: 6px 8px;
+      z-index: 30;
+      background: color-mix(in srgb, var(--color-card) 85%, transparent);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid color-mix(in srgb, var(--color-ink) 20%, transparent);
+      border-radius: 12px;
     }
-    .gw-note { width: min(240px, 80vw); }
-    .gw-hint { bottom: 4.5rem; }
+    .gw-note { width: min(250px, 85vw); z-index: 20; }
+    .gw-draft { z-index: 40; }
+    .gw-hint { bottom: 4.5rem; text-align: center; white-space: normal; font-size: 11px; max-width: 88vw; }
   }
 
   @media (prefers-reduced-motion: reduce) {

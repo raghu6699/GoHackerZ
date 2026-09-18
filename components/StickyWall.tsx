@@ -105,7 +105,7 @@ function clampPos(
   };
 }
 
-export function StickyWall() {
+export function StickyWall({ variant = "both" }: { variant?: "launcher" | "inline" | "both" }) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]); // oldest first
   const [loadError, setLoadError] = useState(false);
@@ -180,8 +180,8 @@ export function StickyWall() {
       color,
       msg: prev?.msg ?? "",
       name: prev?.name ?? rememberedName(),
-      x: prev?.x ?? null,
-      y: prev?.y ?? null,
+      x: prev?.x ?? 0.5,
+      y: prev?.y ?? 0.45,
     }));
   };
 
@@ -191,8 +191,6 @@ export function StickyWall() {
   const onChipPointerDown = (e: React.PointerEvent, color: number) => {
     if (posting || e.button !== 0) return;
     e.preventDefault();
-    // Tapping a chip while a draft is out recolours rather than replaces:
-    // remember where the old draft sat so a plain tap keeps it there.
     const prev = draft ? { x: draft.x, y: draft.y } : null;
     startDraft(color);
     dragRef.current = {
@@ -205,11 +203,32 @@ export function StickyWall() {
   };
 
   const onCanvasPointerDown = (e: React.PointerEvent) => {
-    if (!draft || posting) return;
+    if (posting) return;
     const target = e.target as HTMLElement;
-    if (!draftRef.current?.contains(target)) return;
+    if (draftRef.current?.contains(target)) return;
     if (target.closest("textarea, input, button")) return;
     e.preventDefault();
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.max(0.15, Math.min(0.85, (e.clientX - rect.left) / rect.width));
+      const y = Math.max(0.2, Math.min(0.8, (e.clientY - rect.top) / rect.height));
+
+      if (!draft) {
+        setPostError("");
+        setDraft({
+          color: 0,
+          msg: "",
+          name: rememberedName(),
+          x,
+          y,
+        });
+      } else {
+        setDraft((d) => (d ? { ...d, x, y } : d));
+      }
+    }
+
     dragRef.current = {
       sx: e.clientX,
       sy: e.clientY,
@@ -244,14 +263,12 @@ export function StickyWall() {
       if (!drag) return;
       if (drag.fromChip && !drag.moved) {
         if (cancelled) {
-          discardDraft(); // touch taken away before anything happened
+          discardDraft();
         } else {
-          // A tap is not a placement. Recolouring still works: a tap leaves
-          // the draft where it already was; with no prior draft it discards.
           setDraft((d) => {
             if (!d) return d;
             if (!drag.prev || drag.prev.x == null || drag.prev.y == null)
-              return null;
+              return { ...d, x: 0.5, y: 0.45 };
             return { ...d, x: drag.prev.x, y: drag.prev.y };
           });
         }
@@ -267,8 +284,6 @@ export function StickyWall() {
     };
 
     const onUp = (e: PointerEvent) => finishDrag(e, false);
-    // The browser can take a touch away mid-drag (system gesture, incoming
-    // call). Without this the draft stays glued to a finger that is gone.
     const onCancel = () => finishDrag(null, true);
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -297,7 +312,7 @@ export function StickyWall() {
           web: webRef.current?.value ?? "", // honeypot — should stay empty
           color: draft.color,
           x: draft.x ?? 0.5,
-          y: draft.y ?? 0.5,
+          y: draft.y ?? 0.45,
         }),
       });
       const d = (await r.json().catch(() => ({}))) as {
@@ -325,9 +340,21 @@ export function StickyWall() {
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <>
-      <button type="button" className="gw-launcher hidden md:inline-flex" onClick={show}>
-        <span aria-hidden>📌</span> Leave a note
-      </button>
+      {(variant === "inline" || variant === "both") && (
+        <button
+          type="button"
+          onClick={show}
+          className="btn btn-purple py-3 px-6 text-[15px] sm:text-[16px] font-bold shadow-pop hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-2"
+        >
+          <span>📌</span> Open Guestbook Wall & Leave a Note
+        </button>
+      )}
+
+      {(variant === "launcher" || variant === "both") && (
+        <button type="button" className="gw-launcher inline-flex" onClick={show}>
+          <span aria-hidden>📌</span> Leave a note
+        </button>
+      )}
 
       {open && (
         <section
@@ -457,6 +484,18 @@ export function StickyWall() {
                 className={`gw-chip ${NOTE_COLORS[i]}`}
                 aria-label={`New note (color ${i + 1})`}
                 onPointerDown={(e) => onChipPointerDown(e, i)}
+                onClick={() => {
+                  setDraft((d) => {
+                    if (d) return { ...d, color: i, x: d.x ?? 0.5, y: d.y ?? 0.45 };
+                    return {
+                      color: i,
+                      msg: "",
+                      name: rememberedName(),
+                      x: 0.5,
+                      y: 0.45,
+                    };
+                  });
+                }}
               />
             ))}
           </div>
@@ -492,7 +531,7 @@ export function StickyWall() {
 
           {!draft && scrub >= SCRUB_MAX && (
             <p className="gw-hint">
-              grab a color → drag it onto the wall → write → stick it up
+              tap or drag a color → write your note → stick it up
             </p>
           )}
         </section>

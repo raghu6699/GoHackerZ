@@ -17,7 +17,7 @@ export default function GuestbookPage() {
           Drag a colored chip onto the wall, type your message, and stick your note up for all visitors to see.
         </p>
         <div className="flex justify-center">
-          <StickyWall />
+          <StickyWall variant="inline" />
         </div>
       </div>
     </div>
