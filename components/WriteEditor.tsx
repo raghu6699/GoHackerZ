@@ -487,40 +487,64 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
       setBusy("");
     }
   }
+
+  const [mobileTab, setMobileTab] = useState<"write" | "preview">("write");
+
   return (
-    <div className="wrap py-8">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <div className="wrap max-w-full px-3 sm:px-6 py-4 sm:py-8 overflow-x-hidden">
+      {/* ── Editor Header Controls ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
         <div>
-          <span className="chip bg-lime mb-2">
+          <span className="chip bg-lime mb-1 text-[11px]">
             {editing ? "✎ editing draft" : "✎ Draft"}
           </span>
-          <h1 className="text-[32px] font-bold">
+          <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight">
             {editing ? "Edit your post" : "Write a post"}
           </h1>
         </div>
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="font-mono text-[12px] text-subtle">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-mono text-[11px] sm:text-[12px] text-subtle shrink-0">
             {words} words · {readingTime} min
           </span>
-          <button type="button" onClick={saveDraft} disabled={!title.trim() || busy !== ""} className="btn btn-sm disabled:opacity-40">
+          <button type="button" onClick={saveDraft} disabled={!title.trim() || busy !== ""} className="btn btn-sm disabled:opacity-40 flex-1 sm:flex-initial">
             {busy === "save" ? "Saving…" : "Save draft"}
           </button>
-          <button type="button" onClick={publishOrSubmit} disabled={!title.trim() || busy !== ""} className="btn btn-purple disabled:opacity-40">
+          <button type="button" onClick={publishOrSubmit} disabled={!title.trim() || busy !== ""} className="btn btn-purple btn-sm sm:btn-md disabled:opacity-40 flex-1 sm:flex-initial">
             {busy === "publish" ? "Working…" : editing ? "Submit →" : "Publish ✦"}
           </button>
         </div>
       </div>
 
+      {/* ── Mobile Mode Switcher (Write vs Live Preview) ── */}
+      <div className="lg:hidden flex bg-card border border-ink/15 rounded-xl p-1 mb-4 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setMobileTab("write")}
+          className={`flex-1 py-1.5 text-[13px] font-bold rounded-lg transition-all ${
+            mobileTab === "write" ? "bg-purple text-white shadow-sm" : "text-muted hover:text-ink"
+          }`}
+        >
+          Write ✎
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("preview")}
+          className={`flex-1 py-1.5 text-[13px] font-bold rounded-lg transition-all ${
+            mobileTab === "preview" ? "bg-purple text-white shadow-sm" : "text-muted hover:text-ink"
+          }`}
+        >
+          Preview 👁
+        </button>
+      </div>
+
       {recovered && (
-        <div className="font-mono text-[12px] bg-sky border-2 border-ink rounded-xl px-4 py-2.5 mb-5 flex items-center gap-3 justify-between flex-wrap">
-          <span>
-            💾 Unsaved draft from {new Date(recovered.savedAt).toLocaleString()} found.
-          </span>
+        <div className="font-mono text-[12px] bg-sky border-2 border-ink rounded-xl px-3.5 py-2.5 mb-4 flex items-center gap-2 justify-between flex-wrap">
+          <span>💾 Unsaved draft found.</span>
           <span className="flex gap-2">
-            <button type="button" className="btn btn-sm" onClick={() => restoreDraft(recovered)}>
+            <button type="button" className="btn btn-sm py-1 px-2 text-[11px]" onClick={() => restoreDraft(recovered)}>
               Restore
             </button>
-            <button type="button" className="btn btn-sm" onClick={discardRecovered}>
+            <button type="button" className="btn btn-sm py-1 px-2 text-[11px]" onClick={discardRecovered}>
               Discard
             </button>
           </span>
@@ -528,42 +552,42 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
       )}
 
       {error && (
-        <p className="font-mono text-[12px] font-bold bg-peach border-2 border-ink rounded-xl px-4 py-2.5 text-[#8a2b00] mb-5">
+        <p className="font-mono text-[12px] font-bold bg-peach border-2 border-ink rounded-xl px-4 py-2.5 text-[#8a2b00] mb-4">
           ⚠ {error}
         </p>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* editor */}
-        <section className="card p-6 space-y-4">
+      <div className="grid lg:grid-cols-2 gap-6 items-start max-w-full overflow-hidden">
+        {/* Editor Pane */}
+        <section className={`card p-4 sm:p-6 space-y-4 max-w-full overflow-hidden ${mobileTab === "preview" ? "hidden lg:block" : "block"}`}>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="The three assumptions destroying your…"
-            className="w-full text-[26px] font-bold outline-none placeholder:text-[#c3bfe0] bg-transparent"
+            placeholder="Article Title..."
+            className="w-full text-[20px] sm:text-[26px] font-bold outline-none placeholder:text-[#c3bfe0] bg-transparent"
           />
           <textarea
             value={dek}
             onChange={(e) => setDek(e.target.value)}
-            placeholder="One or two sentences that make someone stop scrolling."
+            placeholder="Short summary that hooks the reader."
             rows={2}
-            className="w-full text-[15px] outline-none resize-none placeholder:text-[#c3bfe0] bg-transparent"
+            className="w-full text-[14px] sm:text-[15px] outline-none resize-none placeholder:text-[#c3bfe0] bg-transparent"
           />
           <div>
             <span className="font-mono text-[11px] text-subtle font-bold">TOPIC</span>
-            <div className="flex gap-2 flex-wrap mt-2">
+            <div className="flex gap-1.5 flex-wrap mt-1.5 max-h-[120px] overflow-y-auto no-scrollbar">
               {topics.map((t) => (
                 <button
                   key={t.slug}
                   onClick={() => setTopic(t.slug)}
-                  className={`chip ${topic === t.slug ? "bg-purple text-white" : "bg-card text-ink"}`}
+                  className={`chip text-[12px] ${topic === t.slug ? "bg-purple text-white" : "bg-card text-ink"}`}
                 >
                   {t.emoji} {t.name}
                 </button>
               ))}
             </div>
           </div>
-          <div className="border-t-2 border-dashed border-ink/20 pt-4 space-y-3">
+          <div className="border-t border-dashed border-ink/20 pt-3 space-y-3 max-w-full overflow-hidden">
             <div className="relative">
               <Toolbar
                 editor={editor}
@@ -573,7 +597,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
               {popover && (
                 <div
                   onMouseDown={(e) => e.preventDefault()}
-                  className="absolute z-30 top-full mt-2 left-0 w-[320px] max-w-[90vw] border-2 border-ink rounded-xl bg-card shadow-pop p-3 space-y-2 text-[13px]"
+                  className="absolute z-30 top-full mt-2 left-0 w-[300px] max-w-[88vw] border-2 border-ink rounded-xl bg-card shadow-pop p-3 space-y-2 text-[13px]"
                 >
                   {popover.kind === "link" ? (
                     <>
@@ -585,7 +609,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                         }
                         onKeyDown={(e) => e.key === "Enter" && applyLink()}
                         placeholder="https://example.com"
-                        className="w-full border-2 border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple"
+                        className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple"
                       />
                       <div className="flex gap-2 justify-end items-center">
                         {editor?.isActive("link") && (
@@ -618,9 +642,9 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                             busy: false,
                           })
                         }
-                        placeholder="Image URL — or pick a file above"
+                        placeholder="Image URL"
                         disabled={popover.busy}
-                        className="w-full border-2 border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
+                        className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
                       />
                       <input
                         value={popover.caption}
@@ -635,7 +659,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                         onKeyDown={(e) => e.key === "Enter" && applyImage()}
                         placeholder={popover.busy ? "Uploading…" : "Caption (optional)"}
                         disabled={popover.busy || !popover.src.trim()}
-                        className="w-full border-2 border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
+                        className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
                       />
                       <div className="flex gap-2 justify-end items-center">
                         <button
@@ -667,16 +691,16 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) handleInlineImageFile(f);
-                e.target.value = ""; // allow re-selecting the same file
+                e.target.value = "";
               }}
             />
-            <div className="border-2 border-ink/10 rounded-2xl px-5 py-4 bg-white/40">
+            <div className="border border-ink/15 rounded-xl p-3 sm:p-4 bg-bg/50 max-w-full overflow-hidden">
               <EditorContent editor={editor} />
             </div>
           </div>
-          {/* extras */}
-          <div className="border-t-2 border-dashed border-ink/20 pt-4 space-y-3">
-            <div className="flex items-center gap-3 flex-wrap">
+          {/* Extras */}
+          <div className="border-t border-dashed border-ink/20 pt-3 space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
               <label className="btn btn-sm cursor-pointer">
                 {uploadingCover ? "Uploading…" : coverUrl ? "↻ Change cover" : "🖼 Add cover image"}
                 <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleCover} className="hidden" />
@@ -693,7 +717,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                 type="datetime-local"
                 value={schedule}
                 onChange={(e) => setSchedule(e.target.value)}
-                className="w-full mt-1 border-2 border-ink rounded-xl px-3 py-2 text-[13px] outline-none bg-card text-ink font-normal"
+                className="w-full mt-1 border border-ink/20 rounded-xl px-3 py-2 text-[13px] outline-none bg-card text-ink font-normal"
               />
             </label>
             <details>
@@ -706,7 +730,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                   onChange={(e) => setSeoTitle(e.target.value)}
                   maxLength={60}
                   placeholder="Custom SEO title"
-                  className="w-full border-2 border-ink rounded-xl px-3 py-2 text-[13px] outline-none bg-card text-ink"
+                  className="w-full border border-ink/20 rounded-xl px-3 py-2 text-[13px] outline-none bg-card text-ink"
                 />
                 <textarea
                   value={seoDescription}
@@ -714,46 +738,46 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                   maxLength={160}
                   rows={2}
                   placeholder="Custom meta description"
-                  className="w-full border-2 border-ink rounded-xl px-3 py-2 text-[13px] outline-none resize-none bg-card text-ink"
+                  className="w-full border border-ink/20 rounded-xl px-3 py-2 text-[13px] outline-none resize-none bg-card text-ink"
                 />
               </div>
             </details>
           </div>
         </section>
 
-        {/* live preview */}
-        <section className="card p-5 lg:p-8 lg:sticky lg:top-24 self-start">
-          <div className="font-mono text-[11px] text-purple font-bold mb-4">// live preview</div>
+        {/* Live Preview Pane */}
+        <section className={`card p-4 sm:p-6 lg:sticky lg:top-24 self-start max-w-full overflow-hidden ${mobileTab === "write" ? "hidden lg:block" : "block"}`}>
+          <div className="font-mono text-[11px] text-purple font-bold mb-3">// live preview</div>
           {coverUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverUrl} alt="" className="w-full h-40 object-cover rounded-2xl border-2 border-ink mb-4" />
+            <img src={coverUrl} alt="" className="w-full h-36 sm:h-40 object-cover rounded-xl border border-ink/20 mb-3" />
           )}
-          <span className="chip bg-sky text-[#1A1440] mb-4 inline-block">
+          <span className="chip bg-sky text-[#1A1440] mb-3 inline-block">
             {activeTopic.emoji} {activeTopic.name}
           </span>
-          <h2 className="text-[30px] font-bold leading-tight mb-3">
+          <h2 className="text-[22px] sm:text-[28px] font-bold leading-snug mb-2 break-words">
             {title || "Your title appears here"}
           </h2>
-          <p className="text-[16px] text-muted mb-6">
-            {dek || "Your summary shows up right here to hook the reader."}
+          <p className="text-[14px] sm:text-[15px] text-muted mb-4 break-words">
+            {dek || "Your summary shows up right here."}
           </p>
-          <div className="border-t-2 border-ink pt-5 space-y-3 text-[16px] leading-relaxed text-body">
+          <div className="border-t border-ink/20 pt-4 space-y-3 text-[15px] sm:text-[16px] leading-relaxed text-body break-words overflow-hidden">
             {body ? (
               parseBlocks(body).map((b, i) => {
                 switch (b.type) {
                   case "h2":
-                    return <h3 key={i} className="text-[20px] font-bold pt-1">{b.text}</h3>;
+                    return <h3 key={i} className="text-[18px] sm:text-[20px] font-bold pt-1 break-words">{b.text}</h3>;
                   case "quote":
-                    return <blockquote key={i} className="border-l-4 border-purple pl-4 italic font-semibold">{b.text}</blockquote>;
+                    return <blockquote key={i} className="border-l-4 border-purple pl-3 italic font-semibold">{b.text}</blockquote>;
                   case "ul":
                     return (
-                      <ul key={i} className="list-disc pl-6 space-y-1">
-                        {b.items.map((it, j) => <li key={j}>{it}</li>)}
+                      <ul key={i} className="list-disc pl-5 space-y-1">
+                        {b.items.map((it, j) => <li key={j} className="break-words">{it}</li>)}
                       </ul>
                     );
                   case "code":
                     return (
-                      <pre key={i} className="bg-[#0f0b24] text-[#e8e4ff] rounded-xl p-4 font-mono text-[13px] overflow-x-auto">
+                      <pre key={i} className="bg-[#0f0b24] text-[#e8e4ff] rounded-xl p-3 font-mono text-[12.5px] overflow-x-auto touch-scroll">
                         <code>{b.code}</code>
                       </pre>
                     );
@@ -766,7 +790,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                           alt={b.alt}
                           loading="lazy"
                           decoding="async"
-                          className="w-full rounded-xl border-2 border-ink"
+                          className="w-full rounded-xl border border-ink/20"
                         />
                         {b.caption && (
                           <figcaption className="font-mono text-[11px] text-subtle mt-1 text-center">
@@ -775,15 +799,13 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                         )}
                       </figure>
                     );
-                  case "footnotes":
-                    return null; // definitions render on the published page
                   default:
-                    return b.text ? <p key={i}>{b.text}</p> : null;
+                    return "text" in b && b.text ? <p key={i} className="break-words">{b.text}</p> : null;
                 }
               })
             ) : (
               <span className="text-subtle">
-                As you type, your post renders here in the GoHackerz reading style.
+                As you type, your post renders here in the reading style.
               </span>
             )}
           </div>
