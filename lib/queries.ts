@@ -97,11 +97,18 @@ const liveWhere = {
 export async function getFeatured(): Promise<Article | undefined> {
   if (!isDbAvailable()) return undefined;
   try {
-    const a = await prisma.article.findFirst({
+    let a = await prisma.article.findFirst({
       where: { ...liveWhere, featured: true },
       include: INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
+    if (!a) {
+      a = await prisma.article.findFirst({
+        where: liveWhere,
+        include: INCLUDE,
+        orderBy: { publishedAt: "desc" },
+      });
+    }
     return a ? mapArticle(a) : undefined;
   } catch {
     return undefined;

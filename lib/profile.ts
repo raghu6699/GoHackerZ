@@ -27,10 +27,16 @@ export async function getCurrentDbUser() {
     fallback.toLowerCase().replace(/[^a-z0-9]+/g, "") + "_" + user.id.slice(0, 6);
 
   try {
-    // Already linked?
-    const byAuthId = await prisma.user.findUnique({ where: { authId: user.id } });
+    // Already linked by authId?
+    let byAuthId = await prisma.user.findUnique({ where: { authId: user.id } });
     if (byAuthId) {
       return byAuthId;
+    }
+
+    // Already linked by id?
+    const byId = await prisma.user.findUnique({ where: { id: user.id } });
+    if (byId) {
+      return byId;
     }
 
     // Same email signed up before (e.g. re-registered after an auth reset)?
