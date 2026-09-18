@@ -23,6 +23,14 @@ export function MobileFeedView({
 }: MobileFeedProps) {
   const [activeTab, setActiveTab] = useState<"feed" | "trending" | "topics">("feed");
 
+  // Deduplicate articles by unique slug to guarantee clean feed without duplicate cards
+  const uniqueArticles = Array.from(
+    new Map(articles.filter(Boolean).map((a) => [a.slug, a])).values()
+  );
+  const uniqueTrending = Array.from(
+    new Map(trending.filter(Boolean).map((a) => [a.slug, a])).values()
+  );
+
   return (
     <div className="md:hidden w-full pb-8">
       {/* ── Native Segmented Mobile Tabs ── */}
@@ -67,7 +75,7 @@ export function MobileFeedView({
       {/* ── Tab Content: FEED ── */}
       {activeTab === "feed" && (
         <div className="px-4 space-y-3.5">
-          {articles.map((article) => {
+          {uniqueArticles.map((article) => {
             const author = authors.get(article.authorUsername);
             const topic = topicsMap.get(article.topicSlug);
             return (
@@ -121,7 +129,7 @@ export function MobileFeedView({
       {/* ── Tab Content: TRENDING ── */}
       {activeTab === "trending" && (
         <div className="px-4 space-y-3">
-          {trending.map((article, idx) => {
+          {uniqueTrending.map((article, idx) => {
             const author = authors.get(article.authorUsername);
             const topic = topicsMap.get(article.topicSlug);
             return (
