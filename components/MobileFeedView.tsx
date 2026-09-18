@@ -33,8 +33,8 @@ export function MobileFeedView({
 
   return (
     <div className="md:hidden w-full pb-8">
-      {/* ── Native Segmented Mobile Tabs ── */}
-      <div className="sticky top-14 z-30 bg-bg/95 backdrop-blur-md pt-2 pb-3 px-4 border-b border-ink/10 mb-4">
+      {/* ── Segmented Mobile Tabs (In-flow) ── */}
+      <div className="pt-2 pb-3 px-4 mb-4">
         <div className="flex bg-card border border-ink/15 rounded-xl p-1 shadow-sm">
           <button
             type="button"
