@@ -363,177 +363,278 @@ export function StickyWall({ variant = "both" }: { variant?: "launcher" | "inlin
           aria-modal="true"
           aria-label="Guestbook — notes on the wall"
         >
-          <div
-            className="gw-canvas"
-            ref={canvasRef}
-            onPointerDown={onCanvasPointerDown}
-          >
-            {visible.map((n) => (
-              <div
-                key={n.id}
-                className={`gw-note ${NOTE_COLORS[n.color] ?? "gw-nc0"}`}
-                style={
-                  {
-                    left: `${n.x * 100}%`,
-                    top: `${n.y * 100}%`,
-                    "--rot": `${rotOf(n.id).toFixed(1)}deg`,
-                  } as React.CSSProperties
-                }
+          {/* ── Mobile View (< md): Clean, touch-native scrollable feed & composer ── */}
+          <div className="block md:hidden h-full overflow-y-auto p-4 max-w-lg mx-auto pb-24">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#e8e4f7]/90 dark:bg-[#14102b]/90 backdrop-blur-md py-2.5 px-2 z-30 rounded-xl border border-ink/15 shadow-sm">
+              <div>
+                <h2 className="text-[19px] font-bold flex items-center gap-2 text-ink">
+                  <span>📌</span> Guestbook Wall
+                </h2>
+                <p className="font-mono text-[11px] text-muted">{notes.length} notes posted</p>
+              </div>
+              <button
+                type="button"
+                className="w-10 h-10 flex items-center justify-center text-[18px] font-bold text-ink bg-card border-2 border-ink rounded-full shadow-pop cursor-pointer active:scale-95"
+                onClick={hide}
               >
-                <p className="gw-note-txt">{n.msg}</p>
-                <p className="gw-note-foot">
-                  {(n.name ? `${n.name} · ` : "") + fmtDate(n.ts)}
-                </p>
-              </div>
-            ))}
+                ✕
+              </button>
+            </div>
 
-            {total === 0 && !loadError && (
-              <div className="gw-empty">
-                <span aria-hidden>🗒️</span> The wall is empty — be the first to
-                stick something up.
-              </div>
-            )}
-            {loadError && (
-              <div className="gw-empty">
-                Couldn&apos;t load the wall right now — you can still leave a
-                note.
-              </div>
-            )}
+            {/* Mobile Composer */}
+            <div className="mb-6">
+              {!draft ? (
+                <button
+                  type="button"
+                  onClick={() => startDraft(0)}
+                  className="w-full btn btn-purple py-3 text-[15px] font-bold shadow-pop flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>✍️</span> Leave a Note on the Wall
+                </button>
+              ) : (
+                <div className={`gw-note gw-draft w-full !max-w-full !relative !transform-none !left-auto !top-auto ${NOTE_COLORS[draft.color] ?? "gw-nc0"} p-4 rounded-2xl shadow-pop`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-[11px] font-bold uppercase text-[#1A1440]/60">// Select Color</span>
+                    <button type="button" onClick={discardDraft} className="text-[12px] font-bold text-[#1A1440]/60 hover:underline">Cancel</button>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
+                    {Array.from({ length: COLORS }, (_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => startDraft(i)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all shrink-0 ${NOTE_COLORS[i]} ${draft.color === i ? "border-ink scale-110 shadow-sm" : "border-transparent opacity-75"}`}
+                      />
+                    ))}
+                  </div>
+                  <textarea
+                    className="gw-write w-full h-[110px] resize-none bg-transparent border-0 outline-none text-[19px] leading-[1.25] font-semibold text-[#1A1440] placeholder:text-[#1A1440]/40"
+                    maxLength={MSG_MAX}
+                    placeholder="Type your note…"
+                    autoFocus
+                    value={draft.msg}
+                    onChange={(e) => setDraft((d) => (d ? { ...d, msg: e.target.value.slice(0, MSG_MAX) } : d))}
+                  />
+                  <input ref={webRef} type="text" name="web" className="gw-hp" tabIndex={-1} autoComplete="off" />
+                  <input
+                    type="text"
+                    className="gw-name w-full rounded-sm px-2 py-1 mb-3 text-[16px] font-semibold text-[#1A1440] outline-none border-b-2 border-ink/30 bg-transparent"
+                    maxLength={NAME_MAX}
+                    placeholder="Your name (optional)"
+                    value={draft.name}
+                    onChange={(e) => setDraft((d) => (d ? { ...d, name: e.target.value } : d))}
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-semibold text-pink">{postError}</span>
+                    <button
+                      type="button"
+                      className="btn btn-purple btn-sm px-5 py-2 font-bold disabled:opacity-50"
+                      disabled={posting || !draft.msg.trim()}
+                      onClick={stick}
+                    >
+                      {posting ? "Sticking…" : "Stick Note 📌"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
-            {draft && (
-              <div
-                ref={draftRef}
-                data-testid="gw-draft"
-                className={`gw-note gw-draft ${NOTE_COLORS[draft.color] ?? "gw-nc0"}`}
-                style={
-                  {
-                    ...(draft.x != null &&
-                      draft.y != null && {
-                        left: `${draft.x * 100}%`,
-                        top: `${draft.y * 100}%`,
-                      }),
-                  } as React.CSSProperties
-                }
-              >
-                <textarea
-                  className="gw-write"
-                  maxLength={MSG_MAX}
-                  aria-label="Your note"
-                  placeholder="type your note…"
-                  autoFocus
-                  value={draft.msg}
-                  onChange={(e) =>
-                    setDraft((d) =>
-                      d ? { ...d, msg: e.target.value.slice(0, MSG_MAX) } : d
-                    )
+            {/* Mobile Notes Card List */}
+            <div className="space-y-4">
+              {notes.slice().reverse().map((n) => (
+                <div
+                  key={n.id}
+                  className={`gw-note !relative !transform-none !left-auto !top-auto w-full !max-w-full p-4 rounded-xl shadow-sm ${NOTE_COLORS[n.color] ?? "gw-nc0"}`}
+                >
+                  <p className="gw-note-txt">{n.msg}</p>
+                  <p className="gw-note-foot">
+                    {(n.name ? `${n.name} · ` : "") + fmtDate(n.ts)}
+                  </p>
+                </div>
+              ))}
+              {total === 0 && !loadError && (
+                <div className="text-center py-8 text-muted font-mono text-[13px]">
+                  🗒️ The wall is empty — be the first to stick something up!
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Desktop View (md+): Full interactive 2D corkboard canvas ── */}
+          <div className="hidden md:block absolute inset-0">
+            <div
+              className="gw-canvas"
+              ref={canvasRef}
+              onPointerDown={onCanvasPointerDown}
+            >
+              {visible.map((n) => (
+                <div
+                  key={n.id}
+                  className={`gw-note ${NOTE_COLORS[n.color] ?? "gw-nc0"}`}
+                  style={
+                    {
+                      left: `${n.x * 100}%`,
+                      top: `${n.y * 100}%`,
+                      "--rot": `${rotOf(n.id).toFixed(1)}deg`,
+                    } as React.CSSProperties
                   }
-                />
-                {/* Honeypot: hidden from humans, irresistible to bots */}
-                <input
-                  ref={webRef}
-                  type="text"
-                  name="web"
-                  className="gw-hp"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  aria-hidden="true"
-                />
-                <input
-                  type="text"
-                  className="gw-name"
-                  maxLength={NAME_MAX}
-                  placeholder="your name"
-                  aria-label="Your name (optional)"
-                  value={draft.name}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setDraft((d) => (d ? { ...d, name: v } : d));
+                >
+                  <p className="gw-note-txt">{n.msg}</p>
+                  <p className="gw-note-foot">
+                    {(n.name ? `${n.name} · ` : "") + fmtDate(n.ts)}
+                  </p>
+                </div>
+              ))}
+
+              {total === 0 && !loadError && (
+                <div className="gw-empty">
+                  <span aria-hidden>🗒️</span> The wall is empty — be the first to
+                  stick something up.
+                </div>
+              )}
+              {loadError && (
+                <div className="gw-empty">
+                  Couldn&apos;t load the wall right now — you can still leave a
+                  note.
+                </div>
+              )}
+
+              {draft && (
+                <div
+                  ref={draftRef}
+                  data-testid="gw-draft"
+                  className={`gw-note gw-draft ${NOTE_COLORS[draft.color] ?? "gw-nc0"}`}
+                  style={
+                    {
+                      ...(draft.x != null &&
+                        draft.y != null && {
+                          left: `${draft.x * 100}%`,
+                          top: `${draft.y * 100}%`,
+                        }),
+                    } as React.CSSProperties
+                  }
+                >
+                  <textarea
+                    className="gw-write"
+                    maxLength={MSG_MAX}
+                    aria-label="Your note"
+                    placeholder="type your note…"
+                    autoFocus
+                    value={draft.msg}
+                    onChange={(e) =>
+                      setDraft((d) =>
+                        d ? { ...d, msg: e.target.value.slice(0, MSG_MAX) } : d
+                      )
+                    }
+                  />
+                  {/* Honeypot: hidden from humans, irresistible to bots */}
+                  <input
+                    ref={webRef}
+                    type="text"
+                    name="web"
+                    className="gw-hp"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="text"
+                    className="gw-name"
+                    maxLength={NAME_MAX}
+                    placeholder="your name"
+                    aria-label="Your name (optional)"
+                    value={draft.name}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDraft((d) => (d ? { ...d, name: v } : d));
+                    }}
+                  />
+                  <div className="gw-draft-foot">
+                    <span className="gw-note-err" role="status">
+                      {postError}
+                    </span>
+                    <button
+                      type="button"
+                      className="gw-stick"
+                      disabled={posting || !draft.msg.trim()}
+                      onClick={stick}
+                    >
+                      {posting ? "…" : "Stick"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className="gw-close"
+              aria-label="Close"
+              onClick={hide}
+            >
+              ✕
+            </button>
+
+            <div className="gw-palette">
+              {Array.from({ length: COLORS }, (_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`gw-chip ${NOTE_COLORS[i]}`}
+                  aria-label={`New note (color ${i + 1})`}
+                  onPointerDown={(e) => onChipPointerDown(e, i)}
+                  onClick={() => {
+                    setDraft((d) => {
+                      if (d) return { ...d, color: i, x: d.x ?? 0.5, y: d.y ?? 0.45 };
+                      return {
+                        color: i,
+                        msg: "",
+                        name: rememberedName(),
+                        x: 0.5,
+                        y: 0.45,
+                      };
+                    });
                   }}
                 />
-                <div className="gw-draft-foot">
-                  <span className="gw-note-err" role="status">
-                    {postError}
-                  </span>
-                  <button
-                    type="button"
-                    className="gw-stick"
-                    disabled={posting || !draft.msg.trim()}
-                    onClick={stick}
-                  >
-                    {posting ? "…" : "Stick"}
-                  </button>
-                </div>
-              </div>
+              ))}
+            </div>
+
+            {total >= 2 && (
+              <>
+                <input
+                  className="gw-scrub"
+                  type="range"
+                  min={0}
+                  max={SCRUB_MAX}
+                  value={scrub}
+                  step={1}
+                  aria-label="Travel back through the wall's history"
+                  aria-valuetext={
+                    scrub >= SCRUB_MAX
+                      ? "now"
+                      : `notes ${lo + 1} to ${hi + 1} of ${total}`
+                  }
+                  onChange={(e) => {
+                    if (!draft) setScrub(Number(e.target.value));
+                  }}
+                />
+                {/* Where am I on the timeline — only shown while traveling */}
+                {scrub < SCRUB_MAX && hi >= 0 && (
+                  <p className="gw-scrub-label" aria-hidden="true">
+                    notes {lo + 1}–{hi + 1} of {total} · wall as of{" "}
+                    {fmtDate(notes[hi].ts)}
+                  </p>
+                )}
+              </>
+            )}
+
+            {!draft && scrub >= SCRUB_MAX && (
+              <p className="gw-hint">
+                tap or drag a color → write your note → stick it up
+              </p>
             )}
           </div>
-
-          <button
-            type="button"
-            className="gw-close"
-            aria-label="Close"
-            onClick={hide}
-          >
-            ✕
-          </button>
-
-          <div className="gw-palette">
-            {Array.from({ length: COLORS }, (_, i) => (
-              <button
-                key={i}
-                type="button"
-                className={`gw-chip ${NOTE_COLORS[i]}`}
-                aria-label={`New note (color ${i + 1})`}
-                onPointerDown={(e) => onChipPointerDown(e, i)}
-                onClick={() => {
-                  setDraft((d) => {
-                    if (d) return { ...d, color: i, x: d.x ?? 0.5, y: d.y ?? 0.45 };
-                    return {
-                      color: i,
-                      msg: "",
-                      name: rememberedName(),
-                      x: 0.5,
-                      y: 0.45,
-                    };
-                  });
-                }}
-              />
-            ))}
-          </div>
-
-          {total >= 2 && (
-            <>
-              <input
-                className="gw-scrub"
-                type="range"
-                min={0}
-                max={SCRUB_MAX}
-                value={scrub}
-                step={1}
-                aria-label="Travel back through the wall's history"
-                aria-valuetext={
-                  scrub >= SCRUB_MAX
-                    ? "now"
-                    : `notes ${lo + 1} to ${hi + 1} of ${total}`
-                }
-                onChange={(e) => {
-                  if (!draft) setScrub(Number(e.target.value));
-                }}
-              />
-              {/* Where am I on the timeline — only shown while traveling */}
-              {scrub < SCRUB_MAX && hi >= 0 && (
-                <p className="gw-scrub-label" aria-hidden="true">
-                  notes {lo + 1}–{hi + 1} of {total} · wall as of{" "}
-                  {fmtDate(notes[hi].ts)}
-                </p>
-              )}
-            </>
-          )}
-
-          {!draft && scrub >= SCRUB_MAX && (
-            <p className="gw-hint">
-              tap or drag a color → write your note → stick it up
-            </p>
-          )}
         </section>
       )}
     </>
