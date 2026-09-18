@@ -621,7 +621,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
             </div>
           </div>
           <div className="border-t border-dashed border-ink/20 pt-3 space-y-3 max-w-full overflow-hidden">
-            <div className="relative">
+            <div className="relative sticky top-[64px] z-30 bg-card/95 backdrop-blur-md py-1 px-1 border-y border-ink/15 rounded-xl shadow-pop-sm">
               <Toolbar
                 editor={editor}
                 onLinkClick={openLinkPopover}

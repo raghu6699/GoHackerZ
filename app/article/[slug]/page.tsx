@@ -121,7 +121,7 @@ export default async function ArticlePage({
   ];
 
   return (
-    <article className="wrap max-w-[820px] pt-8 pb-4">
+    <article className="wrap max-w-[1240px] pt-8 pb-12">
       <ReadingProgress />
       {showToc && <FloatingToc headings={headings} />}
       <ViewPing slug={article.slug} />
@@ -129,125 +129,167 @@ export default async function ArticlePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* cover */}
-      {article.coverImage && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={article.coverImage}
-          alt=""
-          className="w-full h-[280px] sm:h-[360px] object-cover rounded-3xl border-2 border-ink shadow-pop-lg mb-8"
-        />
-      )}
-      {/* breadcrumb */}
-      <div className="flex items-center gap-2 font-mono text-[12px] text-subtle mb-6">
-        <Link href="/" className="hover:text-purple">
-          Home
-        </Link>
-        <span>/</span>
-        <Link href={`/topic/${topic.slug}`} className="hover:text-purple">
-          {topic.name}
-        </Link>
-      </div>
 
-      {/* header */}
-      <Link href={`/topic/${topic.slug}`} className={`chip ${topicChipClass[topic.color]} mb-5`}>
-        {topic.emoji} {topic.name}
-      </Link>
-      <h1 className="text-[clamp(34px,5.5vw,56px)] font-bold leading-[1.02] tracking-tight mt-4 mb-5">
-        {article.title}
-      </h1>
-      <p className="font-serif italic text-[21px] leading-relaxed text-muted mb-8">
-        {article.dek}
-      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_340px] gap-8 xl:gap-12 items-start">
+        {/* Main Article Content */}
+        <div className="min-w-0 max-w-[820px] mx-auto lg:mx-0 w-full">
+          {/* cover */}
+          {article.coverImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={article.coverImage}
+              alt=""
+              className="w-full h-[280px] sm:h-[380px] object-cover rounded-3xl border-2 border-ink shadow-pop-lg mb-8"
+            />
+          )}
 
-      {/* byline */}
-      <div className="flex flex-wrap items-center gap-4 justify-between pb-8 border-b-2 border-ink mb-8">
-        <Link
-          href={`/writer/${author.username}`}
-          className="flex items-center gap-3"
-        >
-          <Avatar initials={author.initials} color={author.avatarColor} size="lg" src={author.avatarUrl} />
-          <div>
-            <b className="text-[17px]">{author.name}</b>
-            <div className="font-mono text-[12px] text-subtle">
-              {formatDate(article.publishedAt)} · {article.readingTime} min read
-            </div>
+          {/* breadcrumb */}
+          <div className="flex items-center gap-2 font-mono text-[12px] text-subtle mb-6">
+            <Link href="/" className="hover:text-purple">
+              Home
+            </Link>
+            <span>/</span>
+            <Link href={`/topic/${topic.slug}`} className="hover:text-purple">
+              {topic.name}
+            </Link>
           </div>
-        </Link>
-        <ArticleActions
-          slug={article.slug}
-          initialReactions={article.reactions}
-          comments={article.comments}
-        />
-      </div>
 
-      {/* table of contents — reveal probe tells the floating TOC button when the intro is done */}
-      {showToc && (
-        <>
-          <span id="toc-reveal" aria-hidden className="block h-0" />
-          <TableOfContentsCard headings={headings} />
-        </>
-      )}
-
-      {/* text-size control */}
-      <div className="flex justify-end mb-3 -mt-2">
-        <TextSizeControl />
-      </div>
-
-      {/* body */}
-      <ArticleBody content={article.content} />
-
-      {/* tags */}
-      <div className="flex gap-2 flex-wrap mt-10">
-        {article.tags.map((t) => (
-          <span key={t} className="chip bg-peach text-[#1A1440]">
-            #{t}
-          </span>
-        ))}
-      </div>
-
-      {/* author card */}
-      <section className="card p-5 sm:p-7 mt-10 flex flex-col sm:flex-row gap-5 items-start">
-        <Avatar initials={author.initials} color={author.avatarColor} size="xl" src={author.avatarUrl} />
-        <div>
-          <div className="font-mono text-[11px] text-subtle mb-1">
-            WRITTEN BY
-          </div>
-          <Link
-            href={`/writer/${author.username}`}
-            className="text-[24px] font-bold hover:text-purple transition-colors"
-          >
-            {author.name}
+          {/* header */}
+          <Link href={`/topic/${topic.slug}`} className={`chip ${topicChipClass[topic.color]} mb-5`}>
+            {topic.emoji} {topic.name}
           </Link>
-          <div className="font-mono text-[12px] text-purple mb-3">
-            {author.role} @ {author.company}
-          </div>
-          <p className="text-[15px] leading-relaxed text-muted mb-4 max-w-[520px]">
-            {author.bio}
+          <h1 className="text-[clamp(34px,5vw,54px)] font-bold leading-[1.04] tracking-tight mt-4 mb-5">
+            {article.title}
+          </h1>
+          <p className="font-serif italic text-[20px] sm:text-[22px] leading-relaxed text-muted mb-8">
+            {article.dek}
           </p>
-          <div className="flex gap-2.5 items-center">
+
+          {/* byline */}
+          <div className="flex flex-wrap items-center gap-4 justify-between pb-8 border-b-2 border-ink mb-8">
+            <Link
+              href={`/writer/${author.username}`}
+              className="flex items-center gap-3"
+            >
+              <Avatar initials={author.initials} color={author.avatarColor} size="lg" src={author.avatarUrl} />
+              <div>
+                <b className="text-[17px]">{author.name}</b>
+                <div className="font-mono text-[12px] text-subtle">
+                  {formatDate(article.publishedAt)} · {article.readingTime} min read
+                </div>
+              </div>
+            </Link>
+            <ArticleActions
+              slug={article.slug}
+              initialReactions={article.reactions}
+              comments={article.comments}
+            />
+          </div>
+
+          {/* mobile table of contents */}
+          {showToc && (
+            <div className="lg:hidden mb-6">
+              <span id="toc-reveal" aria-hidden className="block h-0" />
+              <TableOfContentsCard headings={headings} />
+            </div>
+          )}
+
+          {/* text-size control */}
+          <div className="flex justify-end mb-3 -mt-2">
+            <TextSizeControl />
+          </div>
+
+          {/* body */}
+          <ArticleBody content={article.content} />
+
+          {/* tags */}
+          <div className="flex gap-2 flex-wrap mt-10">
+            {article.tags.map((t) => (
+              <span key={t} className="chip bg-peach text-[#1A1440]">
+                #{t}
+              </span>
+            ))}
+          </div>
+
+          {/* author card */}
+          <section className="card p-5 sm:p-7 mt-10 flex flex-col sm:flex-row gap-5 items-start">
+            <Avatar initials={author.initials} color={author.avatarColor} size="xl" src={author.avatarUrl} />
+            <div>
+              <div className="font-mono text-[11px] text-subtle mb-1">
+                WRITTEN BY
+              </div>
+              <Link
+                href={`/writer/${author.username}`}
+                className="text-[24px] font-bold hover:text-purple transition-colors"
+              >
+                {author.name}
+              </Link>
+              <div className="font-mono text-[12px] text-purple mb-3">
+                {author.role} @ {author.company}
+              </div>
+              <p className="text-[15px] leading-relaxed text-muted mb-4 max-w-[520px]">
+                {author.bio}
+              </p>
+              <div className="flex gap-2.5 items-center">
+                <FollowButton
+                  authorName={author.name}
+                  authorUsername={author.username}
+                  variant="purple"
+                />
+                <Link
+                  href={`/writer/${author.username}`}
+                  className="btn btn-sm"
+                >
+                  Profile →
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* comments section */}
+          <CommentSection articleSlug={article.slug} articleTitle={article.title} />
+        </div>
+
+        {/* Desktop Sticky Sidebar */}
+        <aside className="hidden lg:block space-y-6 sticky top-24">
+          {showToc && (
+            <div>
+              <span id="toc-reveal" aria-hidden className="block h-0" />
+              <TableOfContentsCard headings={headings} />
+            </div>
+          )}
+
+          <div className="card p-5 shadow-pop">
+            <div className="flex items-center gap-3 mb-3">
+              <Avatar initials={author.initials} color={author.avatarColor} size="md" src={author.avatarUrl} />
+              <div className="min-w-0">
+                <Link
+                  href={`/writer/${author.username}`}
+                  className="font-bold text-[15px] hover:text-purple transition-colors block truncate"
+                >
+                  {author.name}
+                </Link>
+                <div className="font-mono text-[11px] text-purple truncate">
+                  {author.role} @ {author.company}
+                </div>
+              </div>
+            </div>
+            <p className="text-[13px] text-muted leading-relaxed line-clamp-3 mb-4">
+              {author.bio}
+            </p>
             <FollowButton
               authorName={author.name}
               authorUsername={author.username}
               variant="purple"
             />
-            <Link
-              href={`/writer/${author.username}`}
-              className="btn btn-sm"
-            >
-              Profile →
-            </Link>
           </div>
-        </div>
-      </section>
-
-      {/* comments section */}
-      <CommentSection articleSlug={article.slug} articleTitle={article.title} />
+        </aside>
+      </div>
 
       {/* related */}
       {related.length > 0 && (
-        <>
-          <h2 className="text-[28px] font-bold mt-14 mb-6">
+        <div className="mt-16 pt-10 border-t-2 border-ink/15">
+          <h2 className="text-[28px] font-bold mb-6">
             More in {topic.name} {topic.emoji}
           </h2>
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -260,7 +302,7 @@ export default async function ArticlePage({
               />
             ))}
           </section>
-        </>
+        </div>
       )}
     </article>
   );

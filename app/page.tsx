@@ -157,7 +157,7 @@ export default async function HomePage({
           <span className="text-[15px]">👋</span> New here?{" "}
           <b className="text-purple">Every essay is free, forever →</b>
         </span>
-        <h1 className="text-[clamp(42px,7.5vw,86px)] leading-[0.98] tracking-tight font-bold max-w-[12ch] mb-6">
+        <h1 className="text-[clamp(36px,5.2vw,72px)] leading-[0.98] tracking-tight font-bold max-w-[14ch] mb-6">
           Where builders <span className="text-purple">actually</span> write.
         </h1>
         <p className="text-[20px] leading-relaxed max-w-[520px] font-medium text-muted mb-8">

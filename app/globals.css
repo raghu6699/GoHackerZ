@@ -180,7 +180,7 @@
 
   /* ── Section container ── */
   .wrap {
-    @apply mx-auto max-w-[1200px] px-4 sm:px-6;
+    @apply mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8;
     /* Respect iPhone notch / Dynamic Island in landscape */
     padding-left: max(1rem, env(safe-area-inset-left));
     padding-right: max(1rem, env(safe-area-inset-right));
