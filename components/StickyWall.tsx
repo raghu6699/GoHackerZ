@@ -105,8 +105,14 @@ function clampPos(
   };
 }
 
-export function StickyWall({ variant = "both" }: { variant?: "launcher" | "inline" | "both" }) {
-  const [open, setOpen] = useState(false);
+export function StickyWall({
+  mode = "embedded",
+  variant = "both",
+}: {
+  mode?: "embedded" | "modal";
+  variant?: "launcher" | "inline" | "both";
+}) {
+  const [open, setOpen] = useState(mode === "embedded");
   const [notes, setNotes] = useState<Note[]>([]); // oldest first
   const [loadError, setLoadError] = useState(false);
   const [scrub, setScrub] = useState(SCRUB_MAX); // 1000 = now
@@ -127,45 +133,57 @@ export function StickyWall({ variant = "both" }: { variant?: "launcher" | "inlin
     prev: { x: number | null; y: number | null } | null; // draft pos before a recolour tap
   } | null>(null);
 
-  // ── Open / close ────────────────────────────────────────────────────────
-  const show = useCallback(() => {
-    setOpen(true);
+  // ── Open / close / fetch ──────────────────────────────────────────────────
+  const fetchNotes = useCallback(() => {
     setLoadError(false);
     fetch(API, { headers: { Accept: "application/json" } })
       .then((r) =>
         r.ok ? r.json() : Promise.reject(new Error(String(r.status)))
       )
       .then((d) => setNotes(Array.isArray(d.notes) ? d.notes : []))
-      .catch(() => setLoadError(true)); // a failed load still allows sticking
+      .catch(() => setLoadError(true));
   }, []);
 
+  const show = useCallback(() => {
+    setOpen(true);
+    fetchNotes();
+  }, [fetchNotes]);
+
   const hide = useCallback(() => {
-    setOpen(false);
+    if (mode === "modal") {
+      setOpen(false);
+    }
     setDraft(null); // unstuck notes never persist
     setPostError("");
     setPosting(false);
     setScrub(SCRUB_MAX); // next open starts at now
-  }, []);
+  }, [mode]);
 
-  // Lock page scroll behind the overlay.
   useEffect(() => {
-    if (!open) return;
+    if (mode === "embedded") {
+      fetchNotes();
+    }
+  }, [mode, fetchNotes]);
+
+  // Lock page scroll behind the overlay only when in modal mode.
+  useEffect(() => {
+    if (!open || mode === "embedded") return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [open]);
+  }, [open, mode]);
 
-  // Escape closes — any draft out there is simply discarded.
+  // Escape closes in modal mode — any draft out there is simply discarded.
   useEffect(() => {
-    if (!open) return;
+    if (!open || mode === "embedded") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") hide();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, hide]);
+  }, [open, mode, hide]);
 
   // ── Time travel ─────────────────────────────────────────────────────────
   const total = notes.length;
@@ -203,39 +221,17 @@ export function StickyWall({ variant = "both" }: { variant?: "launcher" | "inlin
   };
 
   const onCanvasPointerDown = (e: React.PointerEvent) => {
-    if (posting) return;
-    const target = e.target as HTMLElement;
-    if (draftRef.current?.contains(target)) return;
-    if (target.closest("textarea, input, button")) return;
-    e.preventDefault();
-
+    if (!draft || posting || e.button !== 0) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("textarea, input, button")) return;
     const canvas = canvasRef.current;
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.max(0.15, Math.min(0.85, (e.clientX - rect.left) / rect.width));
-      const y = Math.max(0.2, Math.min(0.8, (e.clientY - rect.top) / rect.height));
-
-      if (!draft) {
-        setPostError("");
-        setDraft({
-          color: 0,
-          msg: "",
-          name: rememberedName(),
-          x,
-          y,
-        });
-      } else {
-        setDraft((d) => (d ? { ...d, x, y } : d));
-      }
-    }
-
-    dragRef.current = {
-      sx: e.clientX,
-      sy: e.clientY,
-      moved: false,
-      fromChip: false,
-      prev: null,
-    };
+    const el = draftRef.current;
+    if (!canvas || !el) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) / rect.width;
+    const cy = (e.clientY - rect.top) / rect.height;
+    const clamped = clampPos(canvas, el, cx, cy);
+    setDraft((d) => (d ? { ...d, x: clamped.x, y: clamped.y } : d));
   };
 
   useEffect(() => {
@@ -297,34 +293,31 @@ export function StickyWall({ variant = "both" }: { variant?: "launcher" | "inlin
 
   // ── Stick ───────────────────────────────────────────────────────────────
   const stick = async () => {
-    if (!draft || posting) return;
-    const msg = draft.msg.trim();
-    if (!msg) return;
+    if (!draft || !draft.msg.trim() || posting) return;
+    if (webRef.current && webRef.current.value !== "") return;
+
     setPosting(true);
     setPostError("");
     try {
-      const r = await fetch(API, {
+      const res = await fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          msg,
-          name: draft.name.trim(),
-          web: webRef.current?.value ?? "", // honeypot — should stay empty
+          msg: draft.msg.trim(),
+          name: draft.name.trim() || undefined,
+          web: webRef.current?.value ?? "",
           color: draft.color,
           x: draft.x ?? 0.5,
           y: draft.y ?? 0.45,
         }),
       });
-      const d = (await r.json().catch(() => ({}))) as {
-        note?: Note;
-        error?: string;
-      };
-      if (!r.ok) throw new Error(d.error || "something went wrong - try again");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "something went wrong - try again");
       try {
         localStorage.setItem("wall-name", draft.name.trim());
       } catch {}
-      if (d.note) {
-        setNotes((ns) => [...ns, d.note as Note]);
+      if (data.note) {
+        setNotes((ns) => [...ns, data.note as Note]);
         setScrub(SCRUB_MAX); // sticking returns you to now
       }
       setDraft(null);
@@ -337,7 +330,222 @@ export function StickyWall({ variant = "both" }: { variant?: "launcher" | "inlin
     }
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────
+  // ── Render Embedded Mode ─────────────────────────────────────────────────
+  if (mode === "embedded") {
+    return (
+      <div className="w-full space-y-6">
+        {/* Desktop interactive 2D corkboard */}
+        <div className="hidden md:block relative w-full h-[620px] rounded-3xl border-2 border-ink shadow-pop-lg overflow-hidden bg-[#e8e4f7] dark:bg-[#14102b] dotgrid">
+          {/* Corkboard canvas */}
+          <div
+            className="gw-canvas"
+            ref={canvasRef}
+            onPointerDown={onCanvasPointerDown}
+          >
+            {visible.map((n) => (
+              <div
+                key={n.id}
+                className={`gw-note ${NOTE_COLORS[n.color] ?? "gw-nc0"}`}
+                style={
+                  {
+                    left: `${n.x * 100}%`,
+                    top: `${n.y * 100}%`,
+                    "--rot": `${rotOf(n.id).toFixed(1)}deg`,
+                  } as React.CSSProperties
+                }
+              >
+                <p className="gw-note-txt">{n.msg}</p>
+                <p className="gw-note-foot">
+                  {(n.name ? `${n.name} · ` : "") + fmtDate(n.ts)}
+                </p>
+              </div>
+            ))}
+
+            {total === 0 && !loadError && (
+              <div className="gw-empty">
+                <span aria-hidden>🗒️</span> The wall is empty — be the first to stick something up.
+              </div>
+            )}
+            {loadError && (
+              <div className="gw-empty">
+                Couldn&apos;t load the wall right now — you can still leave a note.
+              </div>
+            )}
+
+            {draft && (
+              <div
+                ref={draftRef}
+                data-testid="gw-draft"
+                className={`gw-note gw-draft ${NOTE_COLORS[draft.color] ?? "gw-nc0"}`}
+                style={
+                  {
+                    ...(draft.x != null &&
+                      draft.y != null && {
+                        left: `${draft.x * 100}%`,
+                        top: `${draft.y * 100}%`,
+                      }),
+                  } as React.CSSProperties
+                }
+              >
+                <textarea
+                  className="gw-write"
+                  maxLength={MSG_MAX}
+                  aria-label="Your note"
+                  placeholder="type your note…"
+                  autoFocus
+                  value={draft.msg}
+                  onChange={(e) =>
+                    setDraft((d) =>
+                      d ? { ...d, msg: e.target.value.slice(0, MSG_MAX) } : d
+                    )
+                  }
+                />
+                <input
+                  ref={webRef}
+                  type="text"
+                  name="web"
+                  className="gw-hp"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
+                <input
+                  type="text"
+                  className="gw-name"
+                  maxLength={NAME_MAX}
+                  placeholder="your name"
+                  aria-label="Your name (optional)"
+                  value={draft.name}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setDraft((d) => (d ? { ...d, name: v } : d));
+                  }}
+                />
+                <div className="gw-draft-foot">
+                  <span className="gw-note-err" role="status">
+                    {postError}
+                  </span>
+                  <button
+                    type="button"
+                    className="gw-stick"
+                    disabled={posting || !draft.msg.trim()}
+                    onClick={stick}
+                  >
+                    {posting ? "…" : "Stick"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Palette selector top-left */}
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-card/90 backdrop-blur-md p-2 rounded-2xl border-2 border-ink shadow-pop-sm">
+            <span className="font-mono text-[11px] font-bold text-subtle px-1">CHOOSE COLOR:</span>
+            {Array.from({ length: COLORS }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`w-7 h-7 rounded-lg border-2 transition-transform hover:scale-110 ${NOTE_COLORS[i]} ${
+                  draft?.color === i ? "border-ink scale-110 shadow-sm" : "border-ink/20 opacity-80 hover:opacity-100"
+                }`}
+                aria-label={`New note (color ${i + 1})`}
+                onPointerDown={(e) => onChipPointerDown(e, i)}
+                onClick={() => startDraft(i)}
+              />
+            ))}
+          </div>
+
+          {/* Scrub / Hint at bottom */}
+          {!draft && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 font-mono text-[12px] font-bold text-muted bg-card/95 backdrop-blur-md border-2 border-ink rounded-full px-4 py-1.5 shadow-pop-sm pointer-events-none">
+              💡 Drag or tap a color swatch to write & stick your note
+            </div>
+          )}
+        </div>
+
+        {/* Mobile View (< md) */}
+        <div className="block md:hidden space-y-4">
+          <div className="card p-4 shadow-sm">
+            {!draft ? (
+              <button
+                type="button"
+                onClick={() => startDraft(0)}
+                className="w-full btn btn-purple py-3 text-[15px] font-bold shadow-pop flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>✍️</span> Leave a Note on the Wall
+              </button>
+            ) : (
+              <div className={`gw-note gw-draft w-full !max-w-full !relative !transform-none !left-auto !top-auto ${NOTE_COLORS[draft.color] ?? "gw-nc0"} p-4 rounded-2xl shadow-pop`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-[11px] font-bold uppercase text-[#1A1440]/60">// Select Color</span>
+                  <button type="button" onClick={discardDraft} className="text-[12px] font-bold text-[#1A1440]/60 hover:underline">Cancel</button>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
+                  {Array.from({ length: COLORS }, (_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => startDraft(i)}
+                      className={`w-8 h-8 rounded-full border-2 transition-all shrink-0 ${NOTE_COLORS[i]} ${draft.color === i ? "border-ink scale-110 shadow-sm" : "border-transparent opacity-75"}`}
+                    />
+                  ))}
+                </div>
+                <textarea
+                  className="gw-write w-full h-[110px] resize-none bg-transparent border-0 outline-none text-[19px] leading-[1.25] font-semibold text-[#1A1440] placeholder:text-[#1A1440]/40"
+                  maxLength={MSG_MAX}
+                  placeholder="Type your note…"
+                  autoFocus
+                  value={draft.msg}
+                  onChange={(e) => setDraft((d) => (d ? { ...d, msg: e.target.value.slice(0, MSG_MAX) } : d))}
+                />
+                <input ref={webRef} type="text" name="web" className="gw-hp" tabIndex={-1} autoComplete="off" />
+                <input
+                  type="text"
+                  className="gw-name w-full rounded-sm px-2 py-1 mb-3 text-[16px] font-semibold text-[#1A1440] outline-none border-b-2 border-ink/30 bg-transparent"
+                  maxLength={NAME_MAX}
+                  placeholder="Your name (optional)"
+                  value={draft.name}
+                  onChange={(e) => setDraft((d) => (d ? { ...d, name: e.target.value } : d))}
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-semibold text-pink">{postError}</span>
+                  <button
+                    type="button"
+                    className="btn btn-purple btn-sm px-5 py-2 font-bold disabled:opacity-50"
+                    disabled={posting || !draft.msg.trim()}
+                    onClick={stick}
+                  >
+                    {posting ? "Sticking…" : "Stick Note 📌"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {notes.slice().reverse().map((n) => (
+              <div
+                key={n.id}
+                className={`gw-note !relative !transform-none !left-auto !top-auto w-full !max-w-full p-4 rounded-xl shadow-sm ${NOTE_COLORS[n.color] ?? "gw-nc0"}`}
+              >
+                <p className="gw-note-txt">{n.msg}</p>
+                <p className="gw-note-foot">
+                  {(n.name ? `${n.name} · ` : "") + fmtDate(n.ts)}
+                </p>
+              </div>
+            ))}
+            {total === 0 && !loadError && (
+              <div className="text-center py-8 text-muted font-mono text-[13px]">
+                🗒️ The wall is empty — be the first to stick something up!
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Render Modal Mode ─────────────────────────────────────────────────────
   return (
     <>
       {(variant === "inline" || variant === "both") && (

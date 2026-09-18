@@ -3,7 +3,6 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Footer } from "@/components/Footer";
-import { StickyWall } from "@/components/StickyWall";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { SITE_URL } from "@/lib/site";
@@ -74,7 +73,6 @@ export default function RootLayout({
             <Nav />
             <main id="main" className="pb-16 md:pb-0">{children}</main>
             <Footer />
-            <StickyWall />
             <MobileBottomNav />
           </ToastProvider>
         </ThemeProvider>

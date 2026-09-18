@@ -8,18 +8,18 @@ export const metadata = {
 
 export default function GuestbookPage() {
   return (
-    <div className="wrap py-10">
+    <div className="wrap py-8 sm:py-12">
       <SectionHead title="Community Guestbook Wall" note="// leave your mark" />
-      <div className="card p-8 sm:p-12 text-center my-6">
-        <div className="text-[56px] mb-4">📌</div>
-        <h1 className="text-3xl font-bold tracking-tight mb-3">The GoHackerz Corkboard</h1>
-        <p className="text-muted text-lg max-w-xl mx-auto mb-8">
-          Drag a colored chip onto the wall, type your message, and stick your note up for all visitors to see.
+      <div className="mb-6">
+        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-2">
+          The GoHackerz Corkboard 📌
+        </h1>
+        <p className="text-muted text-base sm:text-lg max-w-2xl">
+          Pick a colored sticky note, type your message, and pin it to the board for all builders to see.
         </p>
-        <div className="flex justify-center">
-          <StickyWall variant="both" />
-        </div>
       </div>
+
+      <StickyWall mode="embedded" />
     </div>
   );
 }
