@@ -3,6 +3,14 @@ import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 import { EVENT_TYPES, recordArticleEvent, trackingContext } from "@/lib/analytics";
 
+function safeAfter(fn: () => Promise<void>) {
+  try {
+    after(fn);
+  } catch {
+    fn().catch(console.error);
+  }
+}
+
 function timeAgo(date: Date): string {
   const s = Math.floor((Date.now() - date.getTime()) / 1000);
   if (s < 60) return "just now";
@@ -18,10 +26,11 @@ function timeAgo(date: Date): string {
 /** GET — all comments on this article (+ viewer's like state). */
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ slug: string }> }) {
+  { params }: { params: Promise<{ slug: string }> }
+) {
   const { slug } = await params;
   const article = await prisma.article.findUnique({
-    where: { slug: (await params).slug },
+    where: { slug },
     select: { id: true },
   });
   if (!article) {
@@ -67,7 +76,8 @@ export async function GET(
 /** POST — add a comment (auth required). */
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ slug: string }> }) {
+  { params }: { params: Promise<{ slug: string }> }
+) {
   const { slug } = await params;
   const user = await getCurrentDbUser();
   if (!user) {
@@ -93,17 +103,33 @@ export async function POST(
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: (await params).slug },
+    where: { slug },
     select: { id: true },
   });
   if (!article) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Ensure user exists in Postgres User table
+  let dbUser = await prisma.user.findFirst({
+    where: { OR: [{ id: user.id }, { authId: user.authId ?? user.id }, { email: user.email }] },
+  });
+  if (!dbUser) {
+    const fallback = user.email.split("@")[0];
+    dbUser = await prisma.user.create({
+      data: {
+        authId: user.authId ?? user.id,
+        email: user.email,
+        name: user.name || fallback,
+        username: user.username || fallback + "_" + user.id.slice(0, 6),
+      },
+    });
+  }
+
   try {
     const [comment] = await prisma.$transaction([
       prisma.comment.create({
-        data: { body: text, userId: user.id, articleId: article.id },
+        data: { body: text, userId: dbUser.id, articleId: article.id },
       }),
       prisma.article.update({
         where: { id: article.id },
@@ -112,7 +138,7 @@ export async function POST(
     ]);
 
     const ctx = trackingContext(req);
-    after(async () => {
+    safeAfter(async () => {
       await recordArticleEvent({
         articleId: article.id,
         type: EVENT_TYPES.COMMENT,
@@ -125,9 +151,9 @@ export async function POST(
       ok: true,
       comment: {
         id: comment.id,
-        authorName: user.name,
-        username: user.username,
-        avatarUrl: user.avatarUrl,
+        authorName: dbUser.name,
+        username: dbUser.username,
+        avatarUrl: dbUser.avatarUrl,
         content: comment.body,
         createdAt: "just now",
         likes: 0,

@@ -82,33 +82,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const msg = typeof body.msg === "string" ? body.msg.trim().slice(0, MSG_MAX) : "";
-  const name =
-    typeof body.name === "string" ? body.name.trim().slice(0, NAME_MAX) : "";
-  if (!msg) {
+  const rawMsg = typeof body.msg === "string" ? body.msg.trim() : "";
+  const rawName = typeof body.name === "string" ? body.name.trim() : "";
+
+  if (!rawMsg) {
     return NextResponse.json({ error: "write something first!" }, { status: 400 });
   }
+  if (rawMsg.length > MSG_MAX) {
+    return NextResponse.json({ error: "note must be 280 characters or less." }, { status: 400 });
+  }
+  if (rawName.length > NAME_MAX) {
+    return NextResponse.json({ error: "name must be 40 characters or less." }, { status: 400 });
+  }
 
-  const fakeNote = (): NextResponse => {
-    const id = Math.random().toString(36).slice(2, 10);
-    return NextResponse.json(
-      {
-        note: {
-          id,
-          name,
-          msg,
-          ts: Math.floor(Date.now() / 1000),
-          color: 0,
-          x: 0.5,
-          y: 0.5,
-        },
-      },
-      { status: 201 }
-    );
-  };
-  // Honeypot tripped: answer like a success so the bot thinks it landed,
-  // but store nothing. Same for absurd payloads missing coordinates.
-  if (typeof body.web === "string" && body.web.length > 0) return fakeNote();
+  // Honeypot tripped: reject bot traffic
+  if (typeof body.web === "string" && body.web.length > 0) {
+    return NextResponse.json({ error: "Spam detected." }, { status: 400 });
+  }
+
+  const msg = rawMsg;
+  const name = rawName;
 
   const color =
     Number.isInteger(body.color) && body.color! >= 0 && body.color! < COLORS
