@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase-browser";
+import { Avatar } from "./Avatar";
+import type { User } from "@supabase/supabase-js";
 import {
   BookOpen,
   Sparkles,
@@ -11,6 +14,8 @@ import {
   Search,
   PenTool,
   LogIn,
+  LogOut,
+  User as UserIcon,
   X,
   Menu,
   MessageSquare,
@@ -27,7 +32,27 @@ const links = [
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Listen to Supabase auth session state
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Close whenever the route changes
   useEffect(() => {
@@ -43,6 +68,20 @@ export function MobileMenu() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
+
+  async function handleSignOut() {
+    setOpen(false);
+    const supabase = createClient();
+    if (supabase) await supabase.auth.signOut();
+    setUser(null);
+    router.push("/");
+    router.refresh();
+  }
+
+  const userName =
+    (user?.user_metadata?.name as string | undefined)?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "Writer";
 
   return (
     <div className="md:hidden">
@@ -71,6 +110,27 @@ export function MobileMenu() {
             className="fixed left-0 right-0 top-[57px] bg-card border-b-2 border-ink shadow-2xl z-50 p-5 anim-pop max-h-[85vh] overflow-y-auto"
           >
             <nav className="flex flex-col gap-2.5" aria-label="Mobile Navigation Menu">
+              {/* If user is logged in, show user info header */}
+              {user && (
+                <Link
+                  href="/profile"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 p-3 bg-purple/10 border-2 border-ink/20 rounded-xl mb-1 hover:border-purple transition-all"
+                >
+                  <Avatar
+                    initials={userName.slice(0, 2).toUpperCase()}
+                    color="purple"
+                    size="sm"
+                    src={user.user_metadata?.avatar_url as string | undefined}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-[14px] text-ink truncate">{userName}</div>
+                    <div className="font-mono text-[11px] text-subtle truncate">{user.email}</div>
+                  </div>
+                  <UserIcon className="w-4 h-4 text-purple shrink-0" />
+                </Link>
+              )}
+
               {links.map((l) => {
                 const Icon = l.icon;
                 const isActive = pathname === l.href;
@@ -102,14 +162,26 @@ export function MobileMenu() {
                   <PenTool className="w-4 h-4" />
                   Write ✦
                 </Link>
-                <Link
-                  href="/signin"
-                  onClick={() => setOpen(false)}
-                  className="btn btn-lime flex-1 py-3 font-bold flex items-center justify-center gap-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  Sign In
-                </Link>
+
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="btn bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border-rose-500/30 flex-1 py-3 font-bold flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-600" />
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link
+                    href="/signin"
+                    onClick={() => setOpen(false)}
+                    className="btn btn-lime flex-1 py-3 font-bold flex items-center justify-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Sign In
+                  </Link>
+                )}
               </div>
             </nav>
           </div>

@@ -47,8 +47,8 @@ export function Nav() {
         </div>
         <div className="flex items-center gap-2 md:gap-2.5">
           <ThemeToggle />
+          <NavAuth />
           <div className="hidden md:flex items-center gap-2.5">
-            <NavAuth />
             <Link href="/write" className="btn btn-purple">
               <span>Start writing</span> <span aria-hidden>✎</span>
             </Link>
