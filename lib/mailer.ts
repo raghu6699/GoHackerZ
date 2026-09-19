@@ -20,6 +20,15 @@ export interface SendResult {
   rawResponse?: unknown;
 }
 
+function getFormattedMailFrom(): string {
+  const raw = (process.env.MAIL_FROM ?? "").trim();
+  if (!raw) return "GoHackerz <hello@gohackerz.com>";
+  if (raw.includes("<") && !raw.endsWith(">")) {
+    return `${raw}>`;
+  }
+  return raw;
+}
+
 export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY;
 
@@ -37,6 +46,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
   }
 
   try {
+    const from = getFormattedMailFrom();
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -44,7 +54,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.MAIL_FROM ?? "GoHackerz <onboarding@resend.dev>",
+        from,
         to: msg.to,
         subject: msg.subject,
         html: msg.html,
