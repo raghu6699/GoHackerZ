@@ -11,27 +11,17 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("Wiping all mock articles, comments, reactions, and mock users...");
+  console.log("Wiping all articles, comments, reactions, and user profiles...");
 
-  await prisma.reaction.deleteMany({});
   await prisma.comment.deleteMany({});
+  await prisma.reaction.deleteMany({});
   await prisma.bookmark.deleteMany({});
   await prisma.follow.deleteMany({});
   await prisma.wallNote.deleteMany({});
+  await prisma.article.deleteMany({});
 
-  const deletedArticles = await prisma.article.deleteMany({});
-  console.log(`Deleted ${deletedArticles.count} mock articles.`);
-
-  const deletedUsers = await prisma.user.deleteMany({
-    where: {
-      OR: [
-        { authId: null },
-        { email: { endsWith: "@gohackerz.com" } },
-        { username: { in: ["maya", "jordan", "dan", "sofia", "devon", "priya", "marcus", "alex", "amara"] } },
-      ],
-    },
-  });
-  console.log(`Deleted ${deletedUsers.count} mock user profiles.`);
+  const deletedUsers = await prisma.user.deleteMany({});
+  console.log(`Deleted ${deletedUsers.count} user profiles.`);
 
   const [usersCount, articlesCount] = await prisma.$transaction([
     prisma.user.count(),
