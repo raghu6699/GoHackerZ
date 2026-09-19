@@ -249,6 +249,15 @@ export async function getAuthor(username: string): Promise<Author | undefined> {
   }
 }
 
+export async function getUserCount(): Promise<number> {
+  if (!isDbAvailable()) return 0;
+  try {
+    return await prisma.user.count();
+  } catch {
+    return 0;
+  }
+}
+
 export async function getAllAuthors(): Promise<Author[]> {
   if (!isDbAvailable()) return [];
   try {

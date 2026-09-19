@@ -12,6 +12,7 @@ interface MobileFeedProps {
   topics: Topic[];
   authors: Map<string, Author>;
   topicsMap: Map<string, Topic>;
+  userCount?: number;
 }
 
 export function MobileFeedView({
@@ -20,8 +21,14 @@ export function MobileFeedView({
   topics,
   authors,
   topicsMap,
+  userCount,
 }: MobileFeedProps) {
   const [activeTab, setActiveTab] = useState<"feed" | "trending" | "topics">("feed");
+
+  const builderText =
+    typeof userCount === "number" && userCount > 0
+      ? `Join ${formatCount(userCount)} builders →`
+      : "Join fellow builders →";
 
   // Deduplicate articles by unique slug to guarantee clean feed without duplicate cards
   const uniqueArticles = Array.from(
@@ -40,7 +47,7 @@ export function MobileFeedView({
             <span className="badge-pulse text-[13px]">👋</span>
             <span className="text-[#1A1440] dark:text-ink font-semibold">New here? </span>
             <Link href="/signup" className="text-[#5850EC] dark:text-[#997BFF] font-bold hover:underline">
-              190k builders →
+              {builderText}
             </Link>
           </span>
           <h1 className="text-[28px] leading-[1.05] tracking-tight font-extrabold text-ink mb-2.5">
