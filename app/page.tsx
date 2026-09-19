@@ -154,7 +154,7 @@ export default async function HomePage({
       {/* ── Rich Desktop Publication View ── */}
       <div className="hidden md:block">
         <header className="wrap relative my-6">
-          <div className="relative overflow-hidden bg-[#EEF2FC] dark:bg-[#14102B] border-2 border-ink rounded-3xl p-6 sm:p-10 lg:p-14 shadow-pop-lg flex flex-col lg:flex-row items-center justify-between gap-10">
+          <div className="relative overflow-hidden bg-[#EEF2FC] dark:bg-[#14102B] border-2 border-ink rounded-3xl p-6 sm:p-10 lg:p-14 shadow-pop-lg flex flex-col md:flex-row items-center justify-between gap-10">
             {/* Background Decorative Mesh Orbs */}
             <span className="absolute -top-20 -left-20 w-[300px] h-[300px] bg-purple/10 rounded-full blur-3xl pointer-events-none" />
             <span className="absolute -bottom-20 -right-20 w-[300px] h-[300px] bg-lime/15 rounded-full blur-3xl pointer-events-none" />
@@ -194,45 +194,45 @@ export default async function HomePage({
             </div>
 
             {/* ── Hero Floating Sticker Pills (Laptop / Desktop View) ── */}
-            <div className="hidden lg:block relative w-[420px] h-[360px] shrink-0 select-none z-10">
+            <div className="relative w-full max-w-[420px] md:w-[380px] lg:w-[420px] h-[360px] shrink-0 select-none z-10">
               {/* Sticker 1: Pink */}
               <div
-                className="hero-sticker float-anim-1 absolute top-1 right-6 bg-[#FF85C0] text-[#1A1440] rotate-[6deg]"
+                className="hero-sticker float-anim-1 absolute top-1 right-4 bg-[#FF85C0] text-[#1A1440] rotate-[6deg]"
                 style={{ "--rot": "6deg" } as React.CSSProperties}
               >
                 p99 ↓ 40x 🚀
               </div>
               {/* Sticker 2: Orange */}
               <div
-                className="hero-sticker float-anim-2 absolute top-16 left-4 bg-[#FFAB76] text-[#1A1440] rotate-[-4deg]"
+                className="hero-sticker float-anim-2 absolute top-16 left-2 bg-[#FFAB76] text-[#1A1440] rotate-[-4deg]"
                 style={{ "--rot": "-4deg" } as React.CSSProperties}
               >
                 no clickbait 🚫
               </div>
               {/* Sticker 3: Sky Blue */}
               <div
-                className="hero-sticker float-anim-3 absolute top-32 right-2 bg-[#70C5FF] text-[#1A1440] rotate-[3deg]"
+                className="hero-sticker float-anim-3 absolute top-32 right-0 bg-[#70C5FF] text-[#1A1440] rotate-[3deg]"
                 style={{ "--rot": "3deg" } as React.CSSProperties}
               >
                 real engineers
               </div>
               {/* Sticker 4: Lime Green */}
               <div
-                className="hero-sticker float-anim-1 absolute top-48 left-2 bg-[#C6FF3D] text-[#1A1440] rotate-[-3deg]"
+                className="hero-sticker float-anim-1 absolute top-48 left-0 bg-[#C6FF3D] text-[#1A1440] rotate-[-3deg]"
                 style={{ "--rot": "-3deg" } as React.CSSProperties}
               >
                 evals &gt; vibes 📊
               </div>
               {/* Sticker 5: Cyan/Teal */}
               <div
-                className="hero-sticker float-anim-2 absolute top-60 right-8 bg-[#6FE8FF] text-[#1A1440] rotate-[5deg]"
+                className="hero-sticker float-anim-2 absolute top-60 right-4 bg-[#6FE8FF] text-[#1A1440] rotate-[5deg]"
                 style={{ "--rot": "5deg" } as React.CSSProperties}
               >
                 ✦ Rust
               </div>
               {/* Sticker 6: Peach/Yellow */}
               <div
-                className="hero-sticker float-anim-3 absolute bottom-2 left-6 bg-[#FFD670] text-[#1A1440] rotate-[-3deg]"
+                className="hero-sticker float-anim-3 absolute bottom-2 left-4 bg-[#FFD670] text-[#1A1440] rotate-[-3deg]"
                 style={{ "--rot": "-3deg" } as React.CSSProperties}
               >
                 no paywall 🎉
