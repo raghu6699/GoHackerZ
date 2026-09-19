@@ -58,28 +58,35 @@ export async function getCurrentDbUser() {
       return byId;
     }
 
-    // Same email signed up before (e.g. re-registered after an auth reset)?
+    // Same email signed up before (e.g. re-registered after an auth reset or DB wipe)?
     // Re-link the existing profile instead of violating the unique email index.
     const byEmail = await prisma.user.findUnique({ where: { email: user.email } });
     if (byEmail) {
-      return await prisma.user.update({
+      const updated = await prisma.user.update({
         where: { id: byEmail.id },
         data: { authId: user.id, name: byEmail.name || name },
       });
+      // Send Welcome Email via Resend (AWAITED to prevent Vercel serverless function termination)
+      try {
+        const { sendEmail, welcomeEmail } = await import("@/lib/mailer");
+        await sendEmail(welcomeEmail(user.email));
+      } catch (err) {
+        console.error("Error triggering welcome email on re-link:", err);
+      }
+      return updated;
     }
 
     const newDbUser = await prisma.user.create({
       data: { authId: user.id, email: user.email, name, username, role: "READER" },
     });
 
-    // Send Welcome Email via Resend asynchronously on first sign-up
+    // Send Welcome Email via Resend (AWAITED to prevent Vercel serverless function termination)
     try {
       const { sendEmail, welcomeEmail } = await import("@/lib/mailer");
-      sendEmail(welcomeEmail(user.email)).catch((err) =>
-        console.error("Failed to send welcome email:", err)
-      );
+      const mailRes = await sendEmail(welcomeEmail(user.email));
+      console.info("Onboarding welcome email result:", JSON.stringify(mailRes));
     } catch (err) {
-      console.error("Error triggering welcome email:", err);
+      console.error("Error triggering welcome email on signup:", err);
     }
 
     return newDbUser;
