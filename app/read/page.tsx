@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
-import { HeroBanner } from "@/components/HeroBanner";
 import { getLatest, preloadCardData } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -14,8 +13,14 @@ export default async function ReadPage() {
   const cardData = await preloadCardData(posts);
 
   return (
-    <div className="wrap py-6">
-      <HeroBanner />
+    <div className="wrap py-10 sm:py-14">
+      <header className="mb-8 rounded-3xl border-2 border-ink bg-card p-6 shadow-pop-lg sm:p-10">
+        <div className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-purple">Read</div>
+        <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">Fresh essays from the engineering frontier.</h1>
+        <p className="mt-4 max-w-2xl text-lg text-muted">
+          Postmortems, architecture decisions, database trade-offs, systems thinking, and AI work from people who ship in production.
+        </p>
+      </header>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {posts.map((article) => (

@@ -34,57 +34,34 @@ export function MobileFeedView({
   return (
     <div className="md:hidden w-full pb-8">
       {/* ── Mobile Hero Banner ── */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="bg-[#EEF2FC] dark:bg-[#14102B] border-2 border-ink rounded-2xl p-5 shadow-pop">
-          <span className="inline-flex items-center gap-1.5 bg-white dark:bg-card border border-ink/20 rounded-full px-3 py-1 text-[11px] font-bold shadow-pop-sm mb-3">
-            <span className="badge-pulse text-[12px]">👋</span>
+      <div className="px-4 pt-4 pb-3">
+        <div className="relative overflow-hidden bg-[#EEF2FC] dark:bg-[#14102B] border-2 border-ink rounded-2xl p-5 shadow-pop">
+          <span className="inline-flex items-center gap-2 bg-white dark:bg-card border-2 border-ink rounded-full px-3 py-1 text-[11.5px] font-bold shadow-pop-sm mb-3">
+            <span className="badge-pulse text-[13px]">👋</span>
             <span className="text-[#1A1440] dark:text-ink font-semibold">New here? </span>
-            <Link href="/signup" className="text-[#5850EC] dark:text-[#997BFF] font-bold">
-              Join 190k builders →
+            <Link href="/signup" className="text-[#5850EC] dark:text-[#997BFF] font-bold hover:underline">
+              190k builders →
             </Link>
           </span>
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-ink mb-2">
+          <h1 className="text-[28px] leading-[1.05] tracking-tight font-extrabold text-ink mb-2.5">
             Where builders <span className="text-[#5850EC] dark:text-[#997BFF]">actually</span> write.
           </h1>
-          <p className="text-[14px] text-muted leading-relaxed font-medium mb-4">
-            Honest engineering essays & postmortems.{" "}
-            <span className="bg-[#C6FF3D] text-[#1A1440] font-bold px-1 py-0.5 rounded border border-ink/20">
-              No sludge, no listicles.
+          <p className="text-[14px] leading-relaxed text-muted font-medium mb-4">
+            Honest engineering essays & post-mortems.{" "}
+            <span className="bg-[#C6FF3D] text-[#1A1440] font-bold px-1.5 py-0.5 rounded border border-ink/20">
+              No sludge, no listicles
             </span>
           </p>
-
-          {/* Floating Sticker Chips horizontal strip for Mobile */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar touch-scroll py-1 mb-4">
-            <span className="chip bg-[#FF85C0] text-[#1A1440] font-bold border-2 border-ink shrink-0 rotate-[-2deg]">
-              p99 ↓ 40x 🚀
-            </span>
-            <span className="chip bg-[#FFAB76] text-[#1A1440] font-bold border-2 border-ink shrink-0 rotate-[1deg]">
-              no clickbait 🚫
-            </span>
-            <span className="chip bg-[#70C5FF] text-[#1A1440] font-bold border-2 border-ink shrink-0 rotate-[-1deg]">
-              real engineers
-            </span>
-            <span className="chip bg-[#C6FF3D] text-[#1A1440] font-bold border-2 border-ink shrink-0 rotate-[2deg]">
-              evals &gt; vibes 📊
-            </span>
-            <span className="chip bg-[#6FE8FF] text-[#1A1440] font-bold border-2 border-ink shrink-0 rotate-[-2deg]">
-              ✦ Rust
-            </span>
-            <span className="chip bg-[#FFD670] text-[#1A1440] font-bold border-2 border-ink shrink-0 rotate-[1deg]">
-              no paywall 🎉
-            </span>
-          </div>
-
-          <div className="flex gap-2.5 items-center">
+          <div className="flex gap-2.5 items-center flex-wrap">
             <Link
               href="/signup"
-              className="flex-1 bg-[#5850EC] text-white border-2 border-ink rounded-xl font-bold py-2.5 text-center text-[13.5px] shadow-pop-sm"
+              className="bg-[#5850EC] active:bg-[#4B44D4] text-white border-2 border-ink rounded-xl font-bold px-4 py-2 text-[13px] shadow-pop-sm"
             >
               Start reading — free
             </Link>
             <Link
               href="/write"
-              className="flex-1 bg-[#C6FF3D] text-[#1A1440] border-2 border-ink rounded-xl font-bold py-2.5 text-center text-[13.5px] shadow-pop-sm"
+              className="bg-[#C6FF3D] active:bg-[#B5F524] text-[#1A1440] border-2 border-ink rounded-xl font-bold px-4 py-2 text-[13px] shadow-pop-sm"
             >
               Write a post ✦
             </Link>
