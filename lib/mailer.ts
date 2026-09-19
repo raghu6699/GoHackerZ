@@ -29,6 +29,14 @@ function getFormattedMailFrom(): string {
   return raw;
 }
 
+function stripHtmlToText(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY;
 
@@ -47,6 +55,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
 
   try {
     const from = getFormattedMailFrom();
+    const text = stripHtmlToText(msg.html);
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -58,6 +67,8 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
         to: msg.to,
         subject: msg.subject,
         html: msg.html,
+        text,
+        reply_to: "hello@gohackerz.com",
       }),
     });
     const data = await res.json().catch(() => null);
