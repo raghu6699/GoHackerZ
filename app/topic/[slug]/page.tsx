@@ -21,6 +21,9 @@ export async function generateMetadata({
   return { title: `${topic.name} — GoHackerz`, description: topic.description };
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function TopicPage({
   params,
 }: {

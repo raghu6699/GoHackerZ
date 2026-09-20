@@ -31,7 +31,7 @@ export async function POST(
 
   const article = await prisma.article.findUnique({
     where: { slug },
-    select: { id: true, title: true, status: true, author: { select: { email: true } } },
+    select: { id: true, title: true, status: true, scheduledAt: true, author: { select: { email: true } } },
   });
   if (!article) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -44,9 +44,10 @@ export async function POST(
   }
 
   if (body.action === "approve") {
+    const targetPublishedAt = article.scheduledAt ?? new Date();
     await prisma.article.update({
       where: { id: article.id },
-      data: { status: "PUBLISHED", publishedAt: new Date(), rejectionFeedback: null },
+      data: { status: "PUBLISHED", publishedAt: targetPublishedAt, rejectionFeedback: null },
     });
 
     if (article.author?.email) {

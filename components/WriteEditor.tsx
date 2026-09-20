@@ -532,7 +532,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
   const [mobileTab, setMobileTab] = useState<"write" | "preview">("write");
 
   return (
-    <div className="wrap max-w-full px-3 sm:px-6 py-4 sm:py-8 overflow-x-hidden">
+    <div className="wrap max-w-full px-3 sm:px-6 py-4 sm:py-8">
       {/* ── Editor Header Controls ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
         <div>
@@ -598,9 +598,9 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
         </p>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6 items-start max-w-full overflow-hidden">
+      <div className="grid lg:grid-cols-2 gap-6 items-start max-w-full">
         {/* Editor Pane */}
-        <section className={`card p-4 sm:p-6 space-y-4 max-w-full overflow-hidden ${mobileTab === "preview" ? "hidden lg:block" : "block"}`}>
+        <section className={`card p-4 sm:p-6 space-y-4 max-w-full ${mobileTab === "preview" ? "hidden lg:block" : "block"}`}>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -628,9 +628,9 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
               ))}
             </div>
           </div>
-          <div className="border-t border-dashed border-ink/20 pt-3 max-w-full overflow-hidden">
-            <div className="border-2 border-ink/15 rounded-2xl bg-card overflow-hidden shadow-sm">
-              <div className="sticky top-[56px] sm:top-[64px] z-20 bg-card border-b border-ink/15 p-1.5 sm:p-2">
+          <div className="border-t border-dashed border-ink/20 pt-3 max-w-full">
+            <div className="border-2 border-ink/15 rounded-2xl bg-card shadow-sm">
+              <div className="bg-card border-b border-ink/15 p-1.5 sm:p-2 rounded-t-2xl relative">
                 <Toolbar
                   editor={editor}
                   onLinkClick={openLinkPopover}
@@ -736,7 +736,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
                   e.target.value = "";
                 }}
               />
-              <div className="p-3 sm:p-5 bg-bg/40 max-w-full overflow-hidden">
+              <div className="p-3 sm:p-5 bg-bg/30 rounded-b-2xl">
                 <EditorContent editor={editor} />
               </div>
             </div>

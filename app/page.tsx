@@ -19,6 +19,9 @@ import {
 } from "@/lib/queries";
 import { formatCount, formatDate } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function HomePage({
   searchParams,
 }: {
