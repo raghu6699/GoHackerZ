@@ -187,30 +187,55 @@ export default async function HomePage({
                 </div>
               </Link>
             </div>
-            <div className="relative bg-card border-2 border-ink rounded-2xl text-ink p-6 flex flex-col justify-center">
-              <div className="font-mono text-[11px] text-subtle font-bold mb-3">
-                INSIDE THIS ESSAY
-              </div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[44px] leading-none">
-                  {featuredTopic.emoji}
-                </span>
-                <span className="text-[20px] font-bold leading-tight">
-                  {featuredTopic.name}
-                </span>
-              </div>
-              <div className="font-mono text-[12px] text-subtle font-bold mb-5">
-                {formatDate(featured.publishedAt).toUpperCase()} ·{" "}
-                {featured.readingTime} MIN READ
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {featured.tags.map((t) => (
-                  <span key={t} className="chip bg-sky text-[#1A1440]">
-                    #{t}
+            {featured.coverImage ? (
+              <Link
+                href={`/article/${featured.slug}`}
+                className="relative group overflow-hidden bg-card border-2 border-ink rounded-2xl shadow-pop flex flex-col justify-end min-h-[240px] sm:min-h-[280px]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={featured.coverImage}
+                  alt={featured.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                <div className="relative p-4 sm:p-5 text-white z-10">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="chip bg-lime text-[#1A1440] font-bold text-[11px] border border-ink/30 shadow-pop-sm">
+                      {featuredTopic.emoji} {featuredTopic.name}
+                    </span>
+                    <span className="font-mono text-[11px] text-white/90 font-bold">
+                      {formatDate(featured.publishedAt).toUpperCase()} · {featured.readingTime} MIN READ
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ) : (
+              <div className="relative bg-card border-2 border-ink rounded-2xl text-ink p-6 flex flex-col justify-center">
+                <div className="font-mono text-[11px] text-subtle font-bold mb-3">
+                  INSIDE THIS ESSAY
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[44px] leading-none">
+                    {featuredTopic.emoji}
                   </span>
-                ))}
+                  <span className="text-[20px] font-bold leading-tight">
+                    {featuredTopic.name}
+                  </span>
+                </div>
+                <div className="font-mono text-[12px] text-subtle font-bold mb-5">
+                  {formatDate(featured.publishedAt).toUpperCase()} ·{" "}
+                  {featured.readingTime} MIN READ
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {featured.tags.map((t) => (
+                    <span key={t} className="chip bg-sky text-[#1A1440]">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </section>
 
           {/* ── Fresh drops ── */}
