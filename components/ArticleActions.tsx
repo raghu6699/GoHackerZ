@@ -53,7 +53,10 @@ export function ArticleActions({
         return;
       }
       const data = await res.json();
-      if (res.ok) setSaved(data.saved);
+      if (res.ok) {
+        setSaved(data.saved);
+        showToast(data.saved ? "Saved to your profile ★" : "Removed from saved posts");
+      }
     } catch {
       setSaved(!next);
       showToast("Couldn't save — try again.");

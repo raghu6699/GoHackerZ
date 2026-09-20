@@ -37,15 +37,36 @@ export async function generateMetadata({
   const article = await getArticle(slug);
   if (!article) return { title: "Not found — GoHackerz" };
 
-  const ogImage = article.coverImage || `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}`;
+  let ogImage = article.coverImage || null;
+  if (ogImage && !ogImage.startsWith("http://") && !ogImage.startsWith("https://")) {
+    ogImage = `${SITE_URL}${ogImage.startsWith("/") ? "" : "/"}${ogImage}`;
+  }
+  if (!ogImage) {
+    ogImage = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}`;
+  }
+
+  const title = `${article.seoTitle || article.title} — GoHackerz`;
+  const description = article.seoDescription || article.dek;
+  const articleUrl = `${SITE_URL}/article/${article.slug}`;
 
   return {
-    title: `${article.seoTitle || article.title} — GoHackerz`,
-    description: article.seoDescription || article.dek,
+    title,
+    description,
     openGraph: {
       title: article.seoTitle || article.title,
       description: article.seoDescription || article.dek,
-      images: [{ url: ogImage, width: 1200, height: 630 }],
+      url: articleUrl,
+      siteName: "GoHackerz",
+      type: "article",
+      publishedTime: new Date(article.publishedAt).toISOString(),
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",

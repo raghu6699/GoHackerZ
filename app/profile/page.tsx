@@ -6,6 +6,7 @@ import {
   getUserArticles,
   getFollowingFeed,
   getFollowedAuthors,
+  getUserSavedArticles,
   preloadCardData,
   type WithStatus,
 } from "@/lib/queries";
@@ -19,6 +20,7 @@ export const metadata: Metadata = { title: "Your profile — GoHackerz" };
 const TABS = [
   { key: "edit", label: "Edit profile", emoji: "👤" },
   { key: "posts", label: "Your posts", emoji: "📝" },
+  { key: "saved", label: "Saved articles", emoji: "★" },
   { key: "following", label: "Following", emoji: "💜" },
 ] as const;
 
@@ -40,13 +42,16 @@ export default async function ProfilePage({
   const sp = await searchParams;
   const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "edit";
 
-  const [posts, followedAuthors] = await Promise.all([
+  const [posts, followedAuthors, savedArticles] = await Promise.all([
     getUserArticles(user.id),
     getFollowedAuthors(user.id),
+    getUserSavedArticles(user.id),
   ]);
   const followingFeed =
     tab === "following" ? await getFollowingFeed(user.id) : [];
   const feedCardData = await preloadCardData(followingFeed);
+  const savedCardData =
+    tab === "saved" ? await preloadCardData(savedArticles) : { authors: new Map(), topics: new Map() };
 
   const published = posts.filter((p) => p.status === "PUBLISHED").length;
   const inProgress = posts.length - published;
@@ -82,6 +87,7 @@ export default async function ProfilePage({
         <div className="relative flex gap-2.5 flex-wrap mt-5">
           <span className="chip bg-lime text-[#1A1440]">{published} published</span>
           <span className="chip bg-sky text-[#1A1440]">{inProgress} in progress</span>
+          <span className="chip bg-peach text-[#1A1440]">{savedArticles.length} saved</span>
           <span className="chip bg-pink text-[#1A1440]">{followedAuthors.length} following</span>
         </div>
       </header>
@@ -165,6 +171,36 @@ export default async function ProfilePage({
                 </div>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* ── panel: saved ── */}
+      {tab === "saved" && (
+        <div className="anim">
+          {savedArticles.length > 0 ? (
+            <section className="grid grid-cols-1 sm:grid-cols-2 gap-5 anim-stagger">
+              {savedArticles.map((a) => (
+                <ArticleCard
+                  key={a.slug}
+                  article={a}
+                  author={savedCardData.authors.get(a.authorUsername)}
+                  topic={savedCardData.topics.get(a.topicSlug)}
+                />
+              ))}
+            </section>
+          ) : (
+            <div className="card p-10 text-center">
+              <p className="font-semibold text-[17px] mb-2">
+                No saved articles yet.
+              </p>
+              <p className="text-[14px] text-muted mb-5">
+                Click ★ Save on any essay to bookmark it for later.
+              </p>
+              <Link href="/" className="btn btn-purple">
+                Explore articles →
+              </Link>
+            </div>
           )}
         </div>
       )}

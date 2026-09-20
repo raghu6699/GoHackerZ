@@ -485,3 +485,19 @@ export async function countTopicArticles(slug: string): Promise<number> {
     return 0;
   }
 }
+
+export async function getUserSavedArticles(userId: string): Promise<Article[]> {
+  if (!isDbAvailable()) return [];
+  try {
+    const rows = await prisma.bookmark.findMany({
+      where: { userId },
+      include: { article: { include: INCLUDE } },
+      orderBy: { createdAt: "desc" },
+    });
+    return rows
+      .map((b: any) => mapArticle(b.article))
+      .filter((a: Article) => Boolean(a && a.slug));
+  } catch {
+    return [];
+  }
+}
