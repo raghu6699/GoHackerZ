@@ -98,19 +98,25 @@ const liveWhere = {
 export async function getFeatured(): Promise<Article | undefined> {
   if (!isDbAvailable()) return undefined;
   try {
-    let a = await prisma.article.findFirst({
+    const newest = await prisma.article.findFirst({
+      where: liveWhere,
+      include: INCLUDE,
+      orderBy: { publishedAt: "desc" },
+    });
+    const pinned = await prisma.article.findFirst({
       where: { ...liveWhere, featured: true },
       include: INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
-    if (!a) {
-      a = await prisma.article.findFirst({
-        where: liveWhere,
-        include: INCLUDE,
-        orderBy: { publishedAt: "desc" },
-      });
+
+    if (pinned && newest) {
+      const pinnedTime = (pinned.publishedAt ?? pinned.createdAt).getTime();
+      const newestTime = (newest.publishedAt ?? newest.createdAt).getTime();
+      if (Date.now() - pinnedTime < 48 * 3600 * 1000 || pinnedTime >= newestTime) {
+        return mapArticle(pinned);
+      }
     }
-    return a ? mapArticle(a) : undefined;
+    return newest ? mapArticle(newest) : pinned ? mapArticle(pinned) : undefined;
   } catch {
     return undefined;
   }
@@ -183,9 +189,13 @@ export async function getArticle(slug: string): Promise<Article | undefined> {
 
 export async function getArticlesByTopic(slug: string): Promise<Article[]> {
   if (!isDbAvailable()) return [];
+  const normalizedSlug = (slug || "").trim().toLowerCase();
   try {
     const rows = await prisma.article.findMany({
-      where: { ...liveWhere, topic: { slug } },
+      where: {
+        ...liveWhere,
+        topic: { slug: { equals: normalizedSlug, mode: "insensitive" } },
+      },
       include: INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
@@ -223,12 +233,15 @@ export async function getAllTopics(): Promise<Topic[]> {
 }
 
 export async function getTopic(slug: string): Promise<Topic | undefined> {
-  if (!isDbAvailable()) return mockData.getTopic(slug);
+  const normalizedSlug = (slug || "").trim().toLowerCase();
+  if (!isDbAvailable()) return mockData.getTopic(normalizedSlug);
   try {
-    const t = await prisma.topic.findUnique({ where: { slug } });
-    return t ? mapTopic(t) : mockData.getTopic(slug);
+    const t = await prisma.topic.findFirst({
+      where: { slug: { equals: normalizedSlug, mode: "insensitive" } },
+    });
+    return t ? mapTopic(t) : mockData.getTopic(normalizedSlug);
   } catch {
-    return mockData.getTopic(slug);
+    return mockData.getTopic(normalizedSlug);
   }
 }
 
@@ -479,8 +492,14 @@ export async function getEditableArticle(
 
 export async function countTopicArticles(slug: string): Promise<number> {
   if (!isDbAvailable()) return 0;
+  const normalizedSlug = (slug || "").trim().toLowerCase();
   try {
-    return await prisma.article.count({ where: { ...liveWhere, topic: { slug } } });
+    return await prisma.article.count({
+      where: {
+        ...liveWhere,
+        topic: { slug: { equals: normalizedSlug, mode: "insensitive" } },
+      },
+    });
   } catch {
     return 0;
   }

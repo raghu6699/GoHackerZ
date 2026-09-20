@@ -105,8 +105,12 @@ export default async function HomePage({
     slug: featured.topicSlug,
   };
 
-  const latest = (await getLatest(3)).filter((a) => !a.featured && !isPlaceholderArticle(`${a.title} ${a.dek}`));
-  const trending = (await getTrending(4)).filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`));
+  const latest = (await getLatest(6))
+    .filter((a) => a.slug !== featured.slug && !isPlaceholderArticle(`${a.title} ${a.dek}`))
+    .slice(0, 3);
+  const trending = (await getTrending(6))
+    .filter((a) => a.slug !== featured.slug && !isPlaceholderArticle(`${a.title} ${a.dek}`))
+    .slice(0, 4);
 
   const all = (await getLatest()).filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`));
   const shownSlugs = new Set([featured.slug, ...all.slice(0, 3).map((a) => a.slug), ...trending.map((a) => a.slug)]);
