@@ -51,6 +51,7 @@ export interface Article {
   coverImage?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
+  scheduledAt?: string | null;
 }
 
 // ── Production Topic Categories ────────────────────────────────

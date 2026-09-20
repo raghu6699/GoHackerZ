@@ -82,6 +82,7 @@ function mapArticle(a: any): Article {
     coverImage: a.coverImage,
     seoTitle: a.seoTitle,
     seoDescription: a.seoDescription,
+    scheduledAt: a.scheduledAt ? a.scheduledAt.toISOString() : null,
     content: a.content as Article["content"],
   };
 }

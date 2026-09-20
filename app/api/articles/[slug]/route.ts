@@ -51,9 +51,13 @@ export async function PATCH(
   if (body.seoTitle !== undefined) data.seoTitle = body.seoTitle?.trim() || null;
   if (body.seoDescription !== undefined) data.seoDescription = body.seoDescription?.trim() || null;
   if (body.scheduledAt !== undefined) {
-    data.scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
-    if (body.scheduledAt && isNaN(new Date(body.scheduledAt).getTime())) {
+    const sched = body.scheduledAt ? new Date(body.scheduledAt) : null;
+    if (body.scheduledAt && isNaN(sched!.getTime())) {
       return NextResponse.json({ error: "Invalid schedule date." }, { status: 400 });
+    }
+    data.scheduledAt = sched;
+    if (sched) {
+      data.publishedAt = sched;
     }
   }
   if (typeof body.readingTime === "number") data.readingTime = body.readingTime;

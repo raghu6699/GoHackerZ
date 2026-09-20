@@ -18,7 +18,7 @@ export async function POST(
 
   const article = await prisma.article.findUnique({
     where: { slug: (await params).slug },
-    select: { id: true, authorId: true, status: true },
+    select: { id: true, authorId: true, status: true, scheduledAt: true },
   });
   if (!article) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -33,11 +33,13 @@ export async function POST(
   const autoPublish =
     user.role === "EDITOR" || user.role === "ADMIN" || user.trustLevel >= 2;
 
+  const targetPublishedAt = article.scheduledAt ?? (autoPublish ? new Date() : null);
+
   const updated = await prisma.article.update({
     where: { id: article.id },
     data: {
       status: autoPublish ? "PUBLISHED" : "SUBMITTED",
-      publishedAt: autoPublish ? new Date() : null,
+      publishedAt: targetPublishedAt,
       rejectionFeedback: null,
     },
   });

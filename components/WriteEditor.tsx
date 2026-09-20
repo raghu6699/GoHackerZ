@@ -206,6 +206,14 @@ function clearSnapshot(key: string): void {
   } catch {}
 }
 
+function toDatetimeLocal(d: Date | string | null | undefined): string {
+  if (!d) return "";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export function WriteEditor({ initial }: { initial?: EditorInitial }) {
   const router = useRouter();
   const editing = !!initial;
@@ -220,7 +228,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
   const [seoTitle, setSeoTitle] = useState(initial?.seoTitle ?? "");
   const [seoDescription, setSeoDescription] = useState(initial?.seoDescription ?? "");
   const [schedule, setSchedule] = useState(
-    initial?.scheduledAt ? new Date(initial.scheduledAt).toISOString().slice(0, 16) : ""
+    initial?.scheduledAt ? toDatetimeLocal(initial.scheduledAt) : ""
   );
 
   const [busy, setBusy] = useState<"" | "save" | "publish">("");
@@ -388,7 +396,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
     setCoverUrl(snap.coverImage ?? "");
     setSeoTitle(snap.seoTitle ?? "");
     setSeoDescription(snap.seoDescription ?? "");
-    setSchedule(snap.scheduledAt ?? "");
+    setSchedule(snap.scheduledAt ? toDatetimeLocal(snap.scheduledAt) : "");
     if (editor && snap.body) {
       editor.commands.setContent(blocksToHtml(parseBlocks(snap.body)));
     }
@@ -620,115 +628,117 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
               ))}
             </div>
           </div>
-          <div className="border-t border-dashed border-ink/20 pt-3 space-y-3 max-w-full overflow-hidden">
-            <div className="relative sticky top-[64px] z-30 bg-card/95 backdrop-blur-md py-1 px-1 border-y border-ink/15 rounded-xl shadow-pop-sm">
-              <Toolbar
-                editor={editor}
-                onLinkClick={openLinkPopover}
-                onImageUploadClick={() => imgInputRef.current?.click()}
-              />
-              {popover && (
-                <div
-                  onMouseDown={(e) => e.preventDefault()}
-                  className="absolute z-30 top-full mt-2 left-0 w-[300px] max-w-[88vw] border-2 border-ink rounded-xl bg-card shadow-pop p-3 space-y-2 text-[13px]"
-                >
-                  {popover.kind === "link" ? (
-                    <>
-                      <input
-                        autoFocus
-                        value={popover.url}
-                        onChange={(e) =>
-                          setPopover({ kind: "link", url: e.target.value })
-                        }
-                        onKeyDown={(e) => e.key === "Enter" && applyLink()}
-                        placeholder="https://example.com"
-                        className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple"
-                      />
-                      <div className="flex gap-2 justify-end items-center">
-                        {editor?.isActive("link") && (
+          <div className="border-t border-dashed border-ink/20 pt-3 max-w-full overflow-hidden">
+            <div className="border-2 border-ink/15 rounded-2xl bg-card overflow-hidden shadow-sm">
+              <div className="sticky top-[56px] sm:top-[64px] z-20 bg-card border-b border-ink/15 p-1.5 sm:p-2">
+                <Toolbar
+                  editor={editor}
+                  onLinkClick={openLinkPopover}
+                  onImageUploadClick={() => imgInputRef.current?.click()}
+                />
+                {popover && (
+                  <div
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="absolute z-30 top-full mt-2 left-2 w-[300px] max-w-[88vw] border-2 border-ink rounded-xl bg-card shadow-pop p-3 space-y-2 text-[13px]"
+                  >
+                    {popover.kind === "link" ? (
+                      <>
+                        <input
+                          autoFocus
+                          value={popover.url}
+                          onChange={(e) =>
+                            setPopover({ kind: "link", url: e.target.value })
+                          }
+                          onKeyDown={(e) => e.key === "Enter" && applyLink()}
+                          placeholder="https://example.com"
+                          className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple"
+                        />
+                        <div className="flex gap-2 justify-end items-center">
+                          {editor?.isActive("link") && (
+                            <button
+                              type="button"
+                              onClick={removeLink}
+                              className="font-mono text-[11px] font-bold text-pink hover:underline cursor-pointer"
+                            >
+                              Remove link
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={removeLink}
-                            className="font-mono text-[11px] font-bold text-pink hover:underline cursor-pointer"
+                            onClick={applyLink}
+                            className="btn btn-sm btn-purple !py-1 !px-3 text-[12px]"
                           >
-                            Remove link
+                            Apply
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={applyLink}
-                          className="btn btn-sm btn-purple !py-1 !px-3 text-[12px]"
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <input
-                        value={popover.src}
-                        onChange={(e) =>
-                          setPopover({
-                            kind: "image",
-                            src: e.target.value,
-                            caption: popover.caption,
-                            busy: false,
-                          })
-                        }
-                        placeholder="Image URL"
-                        disabled={popover.busy}
-                        className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
-                      />
-                      <input
-                        value={popover.caption}
-                        onChange={(e) =>
-                          setPopover({
-                            kind: "image",
-                            src: popover.src,
-                            caption: e.target.value,
-                            busy: false,
-                          })
-                        }
-                        onKeyDown={(e) => e.key === "Enter" && applyImage()}
-                        placeholder={popover.busy ? "Uploading…" : "Caption (optional)"}
-                        disabled={popover.busy || !popover.src.trim()}
-                        className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
-                      />
-                      <div className="flex gap-2 justify-end items-center">
-                        <button
-                          type="button"
-                          onClick={() => setPopover(null)}
-                          className="font-mono text-[11px] font-bold text-subtle hover:underline cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={applyImage}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          value={popover.src}
+                          onChange={(e) =>
+                            setPopover({
+                              kind: "image",
+                              src: e.target.value,
+                              caption: popover.caption,
+                              busy: false,
+                            })
+                          }
+                          placeholder="Image URL"
+                          disabled={popover.busy}
+                          className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
+                        />
+                        <input
+                          value={popover.caption}
+                          onChange={(e) =>
+                            setPopover({
+                              kind: "image",
+                              src: popover.src,
+                              caption: e.target.value,
+                              busy: false,
+                            })
+                          }
+                          onKeyDown={(e) => e.key === "Enter" && applyImage()}
+                          placeholder={popover.busy ? "Uploading…" : "Caption (optional)"}
                           disabled={popover.busy || !popover.src.trim()}
-                          className="btn btn-sm btn-purple !py-1 !px-3 text-[12px] disabled:opacity-40"
-                        >
-                          {popover.busy ? "Uploading…" : "Insert image"}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-            <input
-              ref={imgInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleInlineImageFile(f);
-                e.target.value = "";
-              }}
-            />
-            <div className="border border-ink/15 rounded-xl p-3 sm:p-4 bg-bg/50 max-w-full overflow-hidden">
-              <EditorContent editor={editor} />
+                          className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
+                        />
+                        <div className="flex gap-2 justify-end items-center">
+                          <button
+                            type="button"
+                            onClick={() => setPopover(null)}
+                            className="font-mono text-[11px] font-bold text-subtle hover:underline cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={applyImage}
+                            disabled={popover.busy || !popover.src.trim()}
+                            className="btn btn-sm btn-purple !py-1 !px-3 text-[12px] disabled:opacity-40"
+                          >
+                            {popover.busy ? "Uploading…" : "Insert image"}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              <input
+                ref={imgInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleInlineImageFile(f);
+                  e.target.value = "";
+                }}
+              />
+              <div className="p-3 sm:p-5 bg-bg/40 max-w-full overflow-hidden">
+                <EditorContent editor={editor} />
+              </div>
             </div>
           </div>
           {/* Extras */}

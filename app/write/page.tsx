@@ -74,10 +74,10 @@ export default async function WritePage({
         dek: existing.dek,
         topicSlug: existing.topicSlug,
         content: existing.content,
-        coverImage: null,
-        seoTitle: null,
-        seoDescription: null,
-        scheduledAt: null,
+        coverImage: existing.coverImage ?? null,
+        seoTitle: existing.seoTitle ?? null,
+        seoDescription: existing.seoDescription ?? null,
+        scheduledAt: existing.scheduledAt ?? null,
       };
     }
   }
