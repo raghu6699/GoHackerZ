@@ -110,25 +110,44 @@ export function MobileMenu() {
             className="fixed left-0 right-0 top-[57px] bg-card border-b-2 border-ink shadow-2xl z-50 p-5 anim-pop max-h-[85vh] overflow-y-auto"
           >
             <nav className="flex flex-col gap-2.5" aria-label="Mobile Navigation Menu">
-              {/* If user is logged in, show user info header */}
+              {/* If user is logged in, show user info header & quick profile links */}
               {user && (
-                <Link
-                  href="/profile"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 p-3 bg-purple/10 border-2 border-ink/20 rounded-xl mb-1 hover:border-purple transition-all"
-                >
-                  <Avatar
-                    initials={userName.slice(0, 2).toUpperCase()}
-                    color="purple"
-                    size="sm"
-                    src={user.user_metadata?.avatar_url as string | undefined}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-bold text-[14px] text-ink truncate">{userName}</div>
-                    <div className="font-mono text-[11px] text-subtle truncate">{user.email}</div>
+                <div className="space-y-2 mb-1">
+                  <Link
+                    href="/profile"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 p-3 bg-purple/10 border-2 border-ink/20 rounded-xl hover:border-purple transition-all"
+                  >
+                    <Avatar
+                      initials={userName.slice(0, 2).toUpperCase()}
+                      color="purple"
+                      size="sm"
+                      src={user.user_metadata?.avatar_url as string | undefined}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-[14px] text-ink truncate">{userName}</div>
+                      <div className="font-mono text-[11px] text-subtle truncate">{user.email}</div>
+                    </div>
+                    <UserIcon className="w-4 h-4 text-purple shrink-0" />
+                  </Link>
+
+                  <div className="grid grid-cols-2 gap-1.5 font-mono text-[12px] font-bold">
+                    <Link
+                      href="/profile?tab=posts"
+                      onClick={() => setOpen(false)}
+                      className="chip justify-center bg-card hover:bg-purple hover:text-white py-1.5"
+                    >
+                      📝 Your Posts
+                    </Link>
+                    <Link
+                      href="/profile?tab=saved"
+                      onClick={() => setOpen(false)}
+                      className="chip justify-center bg-card hover:bg-purple hover:text-white py-1.5"
+                    >
+                      ★ Saved Articles
+                    </Link>
                   </div>
-                  <UserIcon className="w-4 h-4 text-purple shrink-0" />
-                </Link>
+                </div>
               )}
 
               {links.map((l) => {

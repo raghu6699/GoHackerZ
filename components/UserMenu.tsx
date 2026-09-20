@@ -90,6 +90,7 @@ export function NavAuth() {
   const items = [
     { href: "/profile", label: "Edit profile", emoji: "👤" },
     { href: "/profile?tab=posts", label: "Your posts", emoji: "📝" },
+    { href: "/profile?tab=saved", label: "Saved articles", emoji: "★" },
     { href: "/profile?tab=following", label: "Following", emoji: "💜" },
   ];
 

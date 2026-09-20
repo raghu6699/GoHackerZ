@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "./Avatar";
+import { QuickSaveButton } from "./QuickSaveButton";
 import { getAuthor, getTopic } from "@/lib/queries";
 import {
   type Article,
@@ -36,12 +37,9 @@ export async function ArticleCard({
 
   if (variant === "compact") {
     return (
-      <Link
-        href={`/article/${article.slug}`}
-        className="group flex items-center gap-3.5 px-4 sm:px-5 py-3.5 border-b border-ink/10 last:border-b-0 hover:bg-card/60 transition-colors"
-      >
+      <div className="group flex items-center gap-3.5 px-4 sm:px-5 py-3.5 border-b border-ink/10 last:border-b-0 hover:bg-card/60 transition-colors">
         <span className="shrink-0 w-2 h-2 rounded-full bg-purple" />
-        <div className="min-w-0 flex-1">
+        <Link href={`/article/${article.slug}`} className="min-w-0 flex-1">
           <h4 className="text-[15px] sm:text-[16px] font-semibold leading-snug truncate group-hover:text-purple transition-colors">
             {article.title}
           </h4>
@@ -49,16 +47,19 @@ export async function ArticleCard({
             {author.name} · <span className="text-ink font-semibold">{topic.name}</span> ·{" "}
             {article.readingTime} min · {formatDateRelative(article.publishedAt)}
           </div>
+        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="hidden sm:inline-block font-mono text-[11px] font-semibold bg-bg border border-ink/15 rounded-md px-2 py-0.5 text-muted whitespace-nowrap">
+            ▲ {formatCount(article.reactions)}
+          </span>
+          <QuickSaveButton slug={article.slug} />
         </div>
-        <span className="hidden sm:inline-block shrink-0 font-mono text-[11px] font-semibold bg-bg border border-ink/15 rounded-md px-2 py-0.5 text-muted whitespace-nowrap">
-          ▲ {formatCount(article.reactions)}
-        </span>
-      </Link>
+      </div>
     );
   }
 
   return (
-    <article className="card card-hover p-5 sm:p-6 flex flex-col h-full bg-card">
+    <article className="card card-hover p-5 sm:p-6 flex flex-col h-full bg-card relative">
       <div className="flex justify-between items-center mb-3.5">
         <Link
           href={`/topic/${topic.slug}`}
@@ -66,9 +67,12 @@ export async function ArticleCard({
         >
           {topic.emoji} {topic.name}
         </Link>
-        <span className="font-mono text-[11px] text-subtle font-medium">
-          {article.readingTime} min read
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[11px] text-subtle font-medium">
+            {article.readingTime} min read
+          </span>
+          <QuickSaveButton slug={article.slug} />
+        </div>
       </div>
 
       <Link href={`/article/${article.slug}`} className="group">
