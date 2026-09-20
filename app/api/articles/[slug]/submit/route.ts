@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 
@@ -43,6 +44,11 @@ export async function POST(
       rejectionFeedback: null,
     },
   });
+
+  revalidatePath("/");
+  revalidatePath(`/article/${slug}`);
+  revalidatePath("/drafts");
+  revalidatePath("/review");
 
   return NextResponse.json({
     ok: true,

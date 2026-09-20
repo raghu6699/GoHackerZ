@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, articleApprovedEmail, articleRejectedEmail } from "@/lib/mailer";
@@ -53,6 +54,11 @@ export async function POST(
     if (article.author?.email) {
       sendEmail(articleApprovedEmail(article.author.email, article.title, slug)).catch(() => {});
     }
+
+    revalidatePath("/");
+    revalidatePath(`/article/${slug}`);
+    revalidatePath("/drafts");
+    revalidatePath("/review");
 
     return NextResponse.json({ ok: true, status: "PUBLISHED" });
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 import { parseBlocks } from "@/lib/content";
@@ -143,6 +144,13 @@ export async function POST(req: Request) {
         topicId: topic.id,
       },
     });
+
+    revalidatePath("/");
+    revalidatePath(`/topic/${topic.slug}`);
+    revalidatePath(`/article/${article.slug}`);
+    revalidatePath(`/writer/${dbAuthor.username}`);
+    revalidatePath("/drafts");
+    revalidatePath("/review");
 
     return NextResponse.json({
       ok: true,
