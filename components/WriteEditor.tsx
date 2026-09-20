@@ -25,7 +25,7 @@ import {
   Redo,
 } from "lucide-react";
 import { topics } from "@/lib/data";
-import type { Block } from "@/lib/data";
+import type { Block, Topic } from "@/lib/data";
 import { blocksToHtml, blocksToText, parseBlocks, serializeTiptapDoc } from "@/lib/content";
 
 export interface EditorInitial {
@@ -214,13 +214,20 @@ function toDatetimeLocal(d: Date | string | null | undefined): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function WriteEditor({ initial }: { initial?: EditorInitial }) {
+export function WriteEditor({
+  initial,
+  availableTopics,
+}: {
+  initial?: EditorInitial;
+  availableTopics?: Topic[];
+}) {
   const router = useRouter();
   const editing = !!initial;
+  const topicList = availableTopics && availableTopics.length ? availableTopics : topics;
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [dek, setDek] = useState(initial?.dek ?? "");
-  const [topic, setTopic] = useState(initial?.topicSlug ?? topics[0].slug);
+  const [topic, setTopic] = useState(initial?.topicSlug ?? topicList[0].slug);
   const [body, setBody] = useState(
     initial?.content ? blocksToText(initial.content) : ""
   );
@@ -237,7 +244,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
 
   const words = body.trim() ? body.trim().split(/\s+/).length : 0;
   const readingTime = Math.max(1, Math.round(words / 200));
-  const activeTopic = topics.find((t) => t.slug === topic) ?? topics[0];
+  const activeTopic = topicList.find((t) => t.slug === topic) ?? topicList[0];
 
   const editor = useEditor({
     extensions: [
@@ -391,7 +398,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
   function restoreDraft(snap: DraftSnapshot) {
     setTitle(snap.title);
     setDek(snap.dek);
-    setTopic(snap.topicSlug || topics[0].slug);
+    setTopic(snap.topicSlug || topicList[0].slug);
     setBody(snap.body);
     setCoverUrl(snap.coverImage ?? "");
     setSeoTitle(snap.seoTitle ?? "");
@@ -617,7 +624,7 @@ export function WriteEditor({ initial }: { initial?: EditorInitial }) {
           <div>
             <span className="font-mono text-[11px] text-subtle font-bold">TOPIC</span>
             <div className="flex gap-1.5 flex-wrap mt-1.5 max-h-[120px] overflow-y-auto no-scrollbar">
-              {topics.map((t) => (
+              {topicList.map((t) => (
                 <button
                   key={t.slug}
                   onClick={() => setTopic(t.slug)}

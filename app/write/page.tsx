@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentDbUser } from "@/lib/profile";
-import { getEditableArticle } from "@/lib/queries";
+import { getEditableArticle, getAllTopics } from "@/lib/queries";
 import { WriteEditor } from "@/components/WriteEditor";
 
 export const metadata: Metadata = { title: "Write — GoHackerz" };
@@ -12,7 +12,10 @@ export default async function WritePage({
   searchParams: Promise<{ edit?: string }>;
 }) {
   const sp = await searchParams;
-  const user = await getCurrentDbUser();
+  const [user, allTopics] = await Promise.all([
+    getCurrentDbUser(),
+    getAllTopics(),
+  ]);
 
   if (!user) {
     return (
@@ -82,5 +85,5 @@ export default async function WritePage({
     }
   }
 
-  return <WriteEditor initial={initial} />;
+  return <WriteEditor initial={initial} availableTopics={allTopics} />;
 }
