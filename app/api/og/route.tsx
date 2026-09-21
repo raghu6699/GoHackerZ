@@ -82,39 +82,13 @@ export async function GET(request: Request) {
                 boxShadow: "0 4px 16px rgba(124, 92, 255, 0.4)",
               }}
             >
-              {/* GoHackerz Icon Mark Badge */}
-              <svg
+              {/* GoHackerz Exact Icon Mark */}
+              <img
+                src={`${new URL(request.url).origin}/logo/logo-mark-white.png`}
                 width="24"
                 height="24"
-                viewBox="0 0 100 100"
-                fill="none"
-              >
-                <path
-                  d="M 68 30 C 60 22, 44 22, 33 30 C 20 40, 20 60, 33 70 C 44 78, 62 77, 68 68 C 72 62, 72 52, 72 49 L 46 49"
-                  fill="none"
-                  stroke="#FFFFFF"
-                  strokeWidth="11"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M 39 37 L 46 43 L 39 49"
-                  fill="none"
-                  stroke="#C6FF3D"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <line
-                  x1="52"
-                  y1="36"
-                  x2="52"
-                  y2="50"
-                  stroke="#C6FF3D"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                />
-              </svg>
+                style={{ objectFit: "contain" }}
+              />
               <span>GoHackerz</span>
             </div>
             <div
