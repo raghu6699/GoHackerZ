@@ -48,6 +48,8 @@ export async function generateMetadata({
   const description = article.seoDescription || article.dek;
   const articleUrl = `${SITE_URL}/article/${article.slug}`;
 
+  const primaryImage = rawCover || ogApiUrl;
+
   return {
     title,
     description,
@@ -61,18 +63,20 @@ export async function generateMetadata({
       publishedTime: new Date(article.publishedAt).toISOString(),
       images: [
         {
-          url: ogApiUrl,
-          secureUrl: ogApiUrl,
+          url: primaryImage,
+          secureUrl: primaryImage,
           width: 1200,
           height: 630,
-          type: "image/png",
           alt: article.title,
         },
         ...(rawCover
           ? [
               {
-                url: rawCover,
-                secureUrl: rawCover,
+                url: ogApiUrl,
+                secureUrl: ogApiUrl,
+                width: 1200,
+                height: 630,
+                type: "image/png",
                 alt: article.title,
               },
             ]
@@ -83,7 +87,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: article.seoTitle || article.title,
       description: article.seoDescription || article.dek,
-      images: [ogApiUrl],
+      images: [primaryImage],
     },
   };
 }

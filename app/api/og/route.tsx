@@ -9,7 +9,28 @@ export async function GET(request: Request) {
     const author = searchParams.get("author") ?? "Community Contributor";
     const topic = searchParams.get("topic") ?? "Engineering";
     const readingTime = searchParams.get("time") ?? "5";
-    const cover = searchParams.get("cover");
+    const coverUrl = searchParams.get("cover");
+
+    let coverBase64: string | null = null;
+    if (coverUrl && coverUrl.startsWith("http")) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(coverUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (res.ok) {
+          const buf = await res.arrayBuffer();
+          // Safe buffer size limit for Satori memory (< 1.5MB)
+          if (buf.byteLength > 0 && buf.byteLength < 1.5 * 1024 * 1024) {
+            const mime = res.headers.get("content-type") || "image/png";
+            coverBase64 = `data:${mime};base64,${Buffer.from(buf).toString("base64")}`;
+          }
+        }
+      } catch {
+        /* Fallback to clean branded background if fetch times out or fails */
+      }
+    }
 
     return new ImageResponse(
       (
@@ -29,11 +50,11 @@ export async function GET(request: Request) {
             overflow: "hidden",
           }}
         >
-          {/* Background cover image if uploaded by author */}
-          {cover && (
+          {/* Background cover image as Base64 data URL */}
+          {coverBase64 && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={cover}
+              src={coverBase64}
               alt=""
               style={{
                 position: "absolute",
@@ -47,7 +68,7 @@ export async function GET(request: Request) {
           )}
 
           {/* Dark gradient overlay for text readability & 1.91:1 ratio framing */}
-          {cover && (
+          {coverBase64 && (
             <div
               style={{
                 position: "absolute",
