@@ -15,26 +15,50 @@ export const metadata: Metadata = {
   },
   description:
     "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship. No sludge, no listicles.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
-    title: "GoHackerz",
+    title: "GoHackerz — Where builders actually write",
     description:
       "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship.",
     url: SITE_URL,
     siteName: "GoHackerz",
+    images: [
+      {
+        url: `${SITE_URL}/api/og`,
+        width: 1200,
+        height: 630,
+        alt: "GoHackerz — Where builders actually write",
+      },
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "GoHackerz Logo",
+      },
+    ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "GoHackerz",
+    title: "GoHackerz — Where builders actually write",
     description:
       "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship.",
+    images: [`${SITE_URL}/api/og`, `${SITE_URL}/og-image.png`],
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Draw edge-to-edge on notched iPhones (safe areas handled via env() in CSS)
   viewportFit: "cover",
 };
 
@@ -51,8 +75,21 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#EEF1FF" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#0C081A" media="(prefers-color-scheme: dark)" />
-        {/* Turbopack strips remote @import() from globals.css — load Google Fonts
-            here instead or the webfonts (incl. Caveat for sticky notes) never ship */}
+
+        {/* Favicons & Apple Touch Icons */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+
+        {/* OpenGraph & Twitter Card Fallback Metas */}
+        <meta property="og:image" content={`${SITE_URL}/api/og`} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+        <meta name="twitter:image" content={`${SITE_URL}/api/og`} />
+        <meta name="twitter:card" content="summary_large_image" />
+
+        {/* Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
