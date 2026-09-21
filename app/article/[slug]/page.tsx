@@ -204,6 +204,8 @@ export default async function ArticlePage({
               slug={article.slug}
               initialReactions={article.reactions}
               comments={article.comments}
+              title={article.title}
+              dek={article.dek}
             />
           </div>
 

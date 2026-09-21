@@ -8,19 +8,23 @@ export function ArticleActions({
   slug,
   initialReactions,
   comments,
+  title,
+  dek,
 }: {
   slug: string;
   initialReactions: number;
   comments: number;
+  title?: string;
+  dek?: string;
 }) {
   const [reactions, setReactions] = useState(initialReactions);
   const [reacted, setReacted] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const { showToast } = useToast();
 
-  // Load the real reaction + bookmark state for this viewer
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/articles/${slug}/react`)
@@ -44,7 +48,7 @@ export function ArticleActions({
     if (busy) return;
     setBusy(true);
     const next = !saved;
-    setSaved(next); // optimistic
+    setSaved(next);
     try {
       const res = await fetch(`/api/articles/${slug}/bookmark`, { method: "POST" });
       if (res.status === 401) {
@@ -68,7 +72,6 @@ export function ArticleActions({
   async function toggleReaction() {
     if (busy) return;
     setBusy(true);
-    // optimistic update
     const nextReacted = !reacted;
     const nextCount = Math.max(0, reactions + (nextReacted ? 1 : -1));
     setReacted(nextReacted);
@@ -77,7 +80,6 @@ export function ArticleActions({
     try {
       const res = await fetch(`/api/articles/${slug}/react`, { method: "POST" });
       if (res.status === 401) {
-        // revert
         setReacted(!nextReacted);
         setReactions(reactions);
         showToast("Sign in to react to posts ✦");
@@ -89,7 +91,6 @@ export function ArticleActions({
         setReactions(data.count);
       }
     } catch {
-      // revert on network failure
       setReacted(!nextReacted);
       setReactions(reactions);
       showToast("Couldn't save your reaction — try again.");
@@ -98,19 +99,58 @@ export function ArticleActions({
     }
   }
 
-  const handleShare = async () => {
+  const getArticleUrl = () =>
+    typeof window !== "undefined"
+      ? window.location.href
+      : `https://go-hacker.vercel.app/article/${slug}`;
+
+  const copyToClipboard = async () => {
     try {
-      const url = typeof window !== "undefined" ? window.location.href : "";
+      const url = getArticleUrl();
       if (navigator.clipboard && url) {
         await navigator.clipboard.writeText(url);
       }
       setCopied(true);
+      showToast("Link copied to clipboard! ✦");
       setTimeout(() => setCopied(false), 2200);
     } catch {
-      // fallback
       setCopied(true);
+      showToast("Link copied!");
       setTimeout(() => setCopied(false), 2200);
     }
+  };
+
+  const shareToPlatform = (platform: "twitter" | "whatsapp" | "facebook" | "linkedin" | "instagram") => {
+    const url = getArticleUrl();
+    const shareTitle = title || "Check out this engineering essay on GoHackerz";
+
+    if (platform === "twitter") {
+      const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        `${shareTitle}\n\n`
+      )}&url=${encodeURIComponent(url)}`;
+      window.open(tweetUrl, "_blank", "noopener,noreferrer");
+    } else if (platform === "whatsapp") {
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+        `${shareTitle}: ${url}`
+      )}`;
+      window.open(waUrl, "_blank", "noopener,noreferrer");
+    } else if (platform === "facebook") {
+      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+      window.open(fbUrl, "_blank", "noopener,noreferrer");
+    } else if (platform === "linkedin") {
+      const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+        url
+      )}`;
+      window.open(liUrl, "_blank", "noopener,noreferrer");
+    } else if (platform === "instagram") {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        navigator.share({ title: shareTitle, text: dek || shareTitle, url }).catch(() => {});
+      } else {
+        copyToClipboard();
+        showToast("Link copied! Share on Instagram Stories or DM ✦");
+      }
+    }
+    setShareMenuOpen(false);
   };
 
   const [dockVisible, setDockVisible] = useState(true);
@@ -143,11 +183,7 @@ export function ArticleActions({
         >
           ▲ {formatCount(reactions)}
         </button>
-        <a
-          href="#comments"
-          className="btn btn-sm"
-          title="Jump to comments"
-        >
+        <a href="#comments" className="btn btn-sm" title="Jump to comments">
           💬 {formatCount(comments)}
         </a>
         <button
@@ -159,17 +195,65 @@ export function ArticleActions({
         >
           {saved ? "★ Saved" : "☆ Save"}
         </button>
-        <button
-          onClick={handleShare}
-          className={`btn btn-sm transition-all ${
-            copied ? "btn-lime font-bold shadow-pop-sm" : ""
-          }`}
-          type="button"
-          title="Copy article link"
-          aria-label={copied ? "Link copied to clipboard" : "Share article"}
-        >
-          {copied ? "✓ Copied!" : "↗ Share"}
-        </button>
+
+        <div className="relative inline-block">
+          <button
+            onClick={() => setShareMenuOpen(!shareMenuOpen)}
+            className={`btn btn-sm transition-all ${
+              copied ? "btn-lime font-bold shadow-pop-sm" : ""
+            }`}
+            type="button"
+            title="Share options"
+            aria-expanded={shareMenuOpen}
+          >
+            {copied ? "✓ Copied!" : "↗ Share"}
+          </button>
+
+          {/* Social Share Dropdown */}
+          {shareMenuOpen && (
+            <div className="absolute right-0 sm:left-0 top-full mt-2 z-50 w-56 bg-card border-2 border-ink rounded-2xl p-2 shadow-pop space-y-1">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-subtle px-3 py-1 border-b border-ink/10 mb-1">
+                Share Essay
+              </div>
+              <button
+                onClick={() => shareToPlatform("twitter")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-purple hover:text-white rounded-xl transition-colors text-left"
+              >
+                <span>𝕏</span> Twitter / X
+              </button>
+              <button
+                onClick={() => shareToPlatform("whatsapp")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-lime hover:text-[#1A1440] rounded-xl transition-colors text-left"
+              >
+                <span>💬</span> WhatsApp
+              </button>
+              <button
+                onClick={() => shareToPlatform("facebook")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-sky hover:text-[#1A1440] rounded-xl transition-colors text-left"
+              >
+                <span>📘</span> Facebook
+              </button>
+              <button
+                onClick={() => shareToPlatform("linkedin")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-purple hover:text-white rounded-xl transition-colors text-left"
+              >
+                <span>💼</span> LinkedIn
+              </button>
+              <button
+                onClick={() => shareToPlatform("instagram")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-peach hover:text-[#1A1440] rounded-xl transition-colors text-left"
+              >
+                <span>📸</span> Instagram
+              </button>
+              <button
+                onClick={copyToClipboard}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-bold text-ink hover:bg-lime hover:text-[#1A1440] rounded-xl transition-colors text-left border-t border-ink/10 mt-1"
+              >
+                <span>🔗</span> Copy Link
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Auto-hiding floating mobile reading action dock */}
@@ -202,7 +286,7 @@ export function ArticleActions({
           {saved ? "★ Saved" : "☆ Save"}
         </button>
         <button
-          onClick={handleShare}
+          onClick={() => setShareMenuOpen(!shareMenuOpen)}
           className={`btn btn-sm flex-1 py-2 text-[13px] ${
             copied ? "btn-lime font-bold" : ""
           }`}

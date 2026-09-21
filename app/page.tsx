@@ -105,30 +105,27 @@ export default async function HomePage({
     slug: featured.topicSlug,
   };
 
-  const latest = (await getLatest(6))
-    .filter((a) => a.slug !== featured.slug && !isPlaceholderArticle(`${a.title} ${a.dek}`))
-    .slice(0, 3);
+  const allArticles = (await getLatest()).filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`));
+  const feedArticles = allArticles.filter((a) => a.slug !== featured?.slug);
+  const latest = feedArticles.slice(0, 3);
   const trending = (await getTrending(6))
-    .filter((a) => a.slug !== featured.slug && !isPlaceholderArticle(`${a.title} ${a.dek}`))
+    .filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`))
     .slice(0, 4);
 
-  const all = (await getLatest()).filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`));
-  const shownSlugs = new Set([featured.slug, ...all.slice(0, 3).map((a) => a.slug), ...trending.map((a) => a.slug)]);
-  const pool = all.filter((a) => !shownSlugs.has(a.slug));
-  const PAGE_SIZE = 6;
+  const PAGE_SIZE = 12;
   const pageNum = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
-  const totalPages = Math.max(1, Math.ceil(pool.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(feedArticles.length / PAGE_SIZE));
   const page = Math.min(pageNum, totalPages);
-  const moreStories = pool.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const moreStories = feedArticles;
 
-  const cardData = await preloadCardData([...latest, ...trending, ...moreStories]);
+  const cardData = await preloadCardData([featured, ...feedArticles, ...trending].filter(Boolean));
 
   return (
     <>
       {/* ── Native Streamlined Mobile View ── */}
       <MobileFeedView
-        articles={[featured, ...latest, ...moreStories]}
-        trending={[featured, ...trending]}
+        articles={allArticles}
+        trending={trending.length ? trending : allArticles.slice(0, 4)}
         topics={allTopics}
         authors={cardData.authors}
         topicsMap={cardData.topics}
