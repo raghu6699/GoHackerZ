@@ -72,24 +72,16 @@ export async function GET(request: Request) {
                 display: "flex",
                 alignItems: "center",
                 gap: "10px",
-                backgroundColor: "#7C5CFF",
-                color: "#FFFFFF",
-                fontSize: "16px",
-                fontWeight: 800,
-                letterSpacing: "0.05em",
-                padding: "8px 18px",
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(124, 92, 255, 0.4)",
+                padding: "4px 8px",
               }}
             >
-              {/* GoHackerz Exact Icon Mark */}
+              {/* GoHackerz Neon Terminal Logo */}
               <img
-                src={`${new URL(request.url).origin}/logo/mark-logo.png`}
-                width="24"
-                height="24"
+                src={`${new URL(request.url).origin}/logo/header-logo.png`}
+                width="160"
+                height="50"
                 style={{ objectFit: "contain" }}
               />
-              <span>GoHackerz</span>
             </div>
             <div
               style={{
