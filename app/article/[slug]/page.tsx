@@ -28,6 +28,18 @@ import {
 } from "@/lib/data";
 import { SITE_URL } from "@/lib/site";
 
+function formatMetaTitle(rawTitle: string): string {
+  const brand = " — GoHackerz";
+  const clean = (rawTitle || "").trim();
+  if (clean.length + brand.length <= 60) {
+    return `${clean}${brand}`;
+  }
+  if (clean.length <= 60) {
+    return clean;
+  }
+  return `${clean.slice(0, 57).replace(/\s+\S*$/, "")}…`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -44,39 +56,35 @@ export async function generateMetadata({
 
   const ogApiUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}${rawCover ? `&cover=${encodeURIComponent(rawCover)}` : ""}`;
 
-  const title = `${article.seoTitle || article.title} — GoHackerz`;
+  const title = formatMetaTitle(article.seoTitle || article.title);
   const description = article.seoDescription || article.dek;
   const articleUrl = `${SITE_URL}/article/${article.slug}`;
-
-  const primaryImage = rawCover || ogApiUrl;
 
   return {
     title,
     description,
     metadataBase: new URL(SITE_URL),
     openGraph: {
-      title: article.seoTitle || article.title,
-      description: article.seoDescription || article.dek,
+      title,
+      description,
       url: articleUrl,
       siteName: "GoHackerz",
       type: "article",
       publishedTime: new Date(article.publishedAt).toISOString(),
       images: [
         {
-          url: primaryImage,
-          secureUrl: primaryImage,
+          url: ogApiUrl,
+          secureUrl: ogApiUrl,
           width: 1200,
           height: 630,
+          type: "image/png",
           alt: article.title,
         },
         ...(rawCover
           ? [
               {
-                url: ogApiUrl,
-                secureUrl: ogApiUrl,
-                width: 1200,
-                height: 630,
-                type: "image/png",
+                url: rawCover,
+                secureUrl: rawCover,
                 alt: article.title,
               },
             ]
@@ -85,9 +93,9 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: article.seoTitle || article.title,
-      description: article.seoDescription || article.dek,
-      images: [primaryImage],
+      title,
+      description,
+      images: [ogApiUrl],
     },
   };
 }
