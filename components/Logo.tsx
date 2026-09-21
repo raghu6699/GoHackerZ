@@ -20,29 +20,29 @@ export function Logo({
   const isFooter = light || variant === "footer";
   const isMark = variant === "mark";
 
-  // Height sizing for generous, readable branding
+  // Height sizing for exact display
   const heights = {
-    sm: isMark ? "h-8 w-8" : isFooter ? "h-12" : "h-9",
-    md: isMark ? "h-10 w-10" : isFooter ? "h-16 sm:h-20" : "h-11 sm:h-13",
-    lg: isMark ? "h-12 w-12" : isFooter ? "h-20 sm:h-24" : "h-13 sm:h-16",
+    sm: isMark ? "h-8 w-8" : isFooter ? "h-12" : "h-8 sm:h-9",
+    md: isMark ? "h-10 w-10" : isFooter ? "h-16 sm:h-20" : "h-10 sm:h-12",
+    lg: isMark ? "h-12 w-12" : isFooter ? "h-20 sm:h-24" : "h-12 sm:h-14",
   };
 
   const currentHeight = heights[size] || heights.md;
 
   const logoSrc = isFooter
-    ? "/logo/footer-logo.png" // GoHackerz Dark Theme Brand Lockup
+    ? "/logo/footer-logo.png" // GoHackerz footer logo lockup
     : isMark
     ? "/logo/mark-logo.png" // GoHackerz neon terminal icon
-    : "/logo/header-logo.png"; // GoHackerz neon terminal logo
+    : "/logo/header-logo.png"; // GoHackerz website header logo
 
   const logoContent = (
     <div
-      className={`inline-flex items-center transition-transform duration-200 hover:scale-[1.03] active:scale-95 select-none group ${className}`}
+      className={`inline-flex items-center transition-transform duration-200 hover:scale-[1.02] active:scale-95 select-none group ${className}`}
     >
       <img
         src={logoSrc}
         alt="GoHackerz"
-        className={`${currentHeight} w-auto object-contain drop-shadow-md`}
+        className={`${currentHeight} w-auto object-contain rounded-lg`}
       />
     </div>
   );
