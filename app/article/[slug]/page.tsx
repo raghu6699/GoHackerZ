@@ -37,13 +37,12 @@ export async function generateMetadata({
   const article = await getArticle(slug);
   if (!article) return { title: "Not found — GoHackerz" };
 
-  let ogImage = article.coverImage || null;
-  if (ogImage && !ogImage.startsWith("http://") && !ogImage.startsWith("https://")) {
-    ogImage = `${SITE_URL}${ogImage.startsWith("/") ? "" : "/"}${ogImage}`;
+  let rawCover = article.coverImage || null;
+  if (rawCover && !rawCover.startsWith("http://") && !rawCover.startsWith("https://")) {
+    rawCover = `${SITE_URL}${rawCover.startsWith("/") ? "" : "/"}${rawCover}`;
   }
-  if (!ogImage) {
-    ogImage = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}`;
-  }
+
+  const ogApiUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}${rawCover ? `&cover=${encodeURIComponent(rawCover)}` : ""}`;
 
   const title = `${article.seoTitle || article.title} — GoHackerz`;
   const description = article.seoDescription || article.dek;
@@ -52,6 +51,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    metadataBase: new URL(SITE_URL),
     openGraph: {
       title: article.seoTitle || article.title,
       description: article.seoDescription || article.dek,
@@ -61,18 +61,29 @@ export async function generateMetadata({
       publishedTime: new Date(article.publishedAt).toISOString(),
       images: [
         {
-          url: ogImage,
+          url: ogApiUrl,
+          secureUrl: ogApiUrl,
           width: 1200,
           height: 630,
+          type: "image/png",
           alt: article.title,
         },
+        ...(rawCover
+          ? [
+              {
+                url: rawCover,
+                secureUrl: rawCover,
+                alt: article.title,
+              },
+            ]
+          : []),
       ],
     },
     twitter: {
       card: "summary_large_image",
       title: article.seoTitle || article.title,
       description: article.seoDescription || article.dek,
-      images: [ogImage],
+      images: [ogApiUrl],
     },
   };
 }
