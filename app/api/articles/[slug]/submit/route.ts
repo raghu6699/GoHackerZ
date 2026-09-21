@@ -38,8 +38,7 @@ export async function POST(
     return NextResponse.json({ error: "Already published." }, { status: 400 });
   }
 
-  const autoPublish =
-    user.role === "EDITOR" || user.role === "ADMIN" || user.trustLevel >= 2;
+  const autoPublish = true;
 
   const isScheduledInFuture = article.scheduledAt && article.scheduledAt > new Date();
   const targetPublishedAt = isScheduledInFuture

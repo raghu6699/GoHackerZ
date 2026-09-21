@@ -77,7 +77,7 @@ export async function getCurrentDbUser() {
     }
 
     const newDbUser = await prisma.user.create({
-      data: { authId: user.id, email: user.email, name, username, role: "READER" },
+      data: { authId: user.id, email: user.email, name, username, role: "WRITER", trustLevel: 2 },
     });
 
     // Send Welcome Email via Resend (AWAITED to prevent Vercel serverless function termination)
@@ -100,8 +100,8 @@ export async function getCurrentDbUser() {
       email: user.email,
       name: name,
       username: username,
-      role: "READER" as const,
-      trustLevel: 0,
+      role: "WRITER" as const,
+      trustLevel: 2,
       bio: null,
       company: null,
       avatarColor: "purple",

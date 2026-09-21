@@ -121,8 +121,7 @@ export async function POST(req: Request) {
     }
 
     const isDraft = payload.draft === true;
-    const autoPublish =
-      dbAuthor.role === "EDITOR" || dbAuthor.role === "ADMIN" || dbAuthor.trustLevel >= 2;
+    const autoPublish = true;
 
     const article = await prisma.article.create({
       data: {
