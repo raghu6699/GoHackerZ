@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { revalidateArticlePaths } from "@/lib/revalidate";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 import { parseBlocks } from "@/lib/content";
@@ -136,21 +137,19 @@ export async function POST(req: Request) {
         seoTitle: payload.seoTitle?.trim() || null,
         seoDescription: payload.seoDescription?.trim() || null,
         scheduledAt,
-        publishedAt:
-          isDraft || (!autoPublish && !scheduledAt)
-            ? null
-            : scheduledAt ?? new Date(),
+        publishedAt: isDraft
+          ? null
+          : scheduledAt && scheduledAt > new Date()
+            ? scheduledAt
+            : autoPublish
+              ? new Date()
+              : null,
         authorId: dbAuthor.id,
         topicId: topic.id,
       },
     });
 
-    revalidatePath("/");
-    revalidatePath(`/topic/${topic.slug}`);
-    revalidatePath(`/article/${article.slug}`);
-    revalidatePath(`/writer/${dbAuthor.username}`);
-    revalidatePath("/drafts");
-    revalidatePath("/review");
+    revalidateArticlePaths(article.slug, topic.slug, dbAuthor.username);
 
     return NextResponse.json({
       ok: true,

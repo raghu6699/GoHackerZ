@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
+import { revalidateArticlePaths } from "@/lib/revalidate";
 
 /**
  * PATCH /api/articles/[slug] — update your own article
@@ -16,8 +17,13 @@ export async function PATCH(
   }
 
   const existing = await prisma.article.findUnique({
-    where: { slug: (await params).slug },
-    select: { id: true, authorId: true },
+    where: { slug },
+    select: {
+      id: true,
+      authorId: true,
+      topic: { select: { slug: true } },
+      author: { select: { username: true } },
+    },
   });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -57,12 +63,15 @@ export async function PATCH(
     }
     data.scheduledAt = sched;
     if (sched) {
-      data.publishedAt = sched;
+      data.publishedAt = sched <= new Date() ? new Date() : sched;
+    } else {
+      data.publishedAt = new Date();
     }
   }
   if (typeof body.readingTime === "number") data.readingTime = body.readingTime;
 
   await prisma.article.update({ where: { id: existing.id }, data });
+  revalidateArticlePaths(slug, existing.topic?.slug, existing.author?.username);
   return NextResponse.json({ ok: true });
 }
 

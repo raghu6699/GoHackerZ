@@ -91,7 +91,6 @@ export default async function HomePage({
     );
   }
 
-  const isPlaceholderArticle = (value: string) => /TESTING|lorem ipsum|placeholder/i.test(value);
   const featuredAuthor = (await getAuthor(featured.authorUsername)) ?? {
     name: featured.authorUsername,
     initials: featured.authorUsername.slice(0, 2).toUpperCase(),
@@ -105,12 +104,10 @@ export default async function HomePage({
     slug: featured.topicSlug,
   };
 
-  const allArticles = (await getLatest()).filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`));
+  const allArticles = await getLatest();
   const feedArticles = allArticles.filter((a) => a.slug !== featured?.slug);
   const latest = feedArticles.slice(0, 3);
-  const trending = (await getTrending(6))
-    .filter((a) => !isPlaceholderArticle(`${a.title} ${a.dek}`))
-    .slice(0, 4);
+  const trending = (await getTrending(6)).slice(0, 4);
 
   const PAGE_SIZE = 12;
   const pageNum = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);

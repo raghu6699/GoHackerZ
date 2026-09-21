@@ -3,6 +3,9 @@ import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
 import { getLatest, preloadCardData } from "@/lib/queries";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Read",
   description: "Browse the latest practical essays from GoHackerz.",

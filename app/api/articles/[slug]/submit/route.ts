@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
+import { revalidateArticlePaths } from "@/lib/revalidate";
 
 /**
  * POST /api/articles/[slug]/submit — move a draft through the pipeline.
@@ -18,8 +18,15 @@ export async function POST(
   }
 
   const article = await prisma.article.findUnique({
-    where: { slug: (await params).slug },
-    select: { id: true, authorId: true, status: true, scheduledAt: true },
+    where: { slug },
+    select: {
+      id: true,
+      authorId: true,
+      status: true,
+      scheduledAt: true,
+      topic: { select: { slug: true } },
+      author: { select: { username: true } },
+    },
   });
   if (!article) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -34,7 +41,12 @@ export async function POST(
   const autoPublish =
     user.role === "EDITOR" || user.role === "ADMIN" || user.trustLevel >= 2;
 
-  const targetPublishedAt = article.scheduledAt ?? (autoPublish ? new Date() : null);
+  const isScheduledInFuture = article.scheduledAt && article.scheduledAt > new Date();
+  const targetPublishedAt = isScheduledInFuture
+    ? article.scheduledAt
+    : autoPublish
+      ? new Date()
+      : null;
 
   const updated = await prisma.article.update({
     where: { id: article.id },
@@ -45,10 +57,7 @@ export async function POST(
     },
   });
 
-  revalidatePath("/");
-  revalidatePath(`/article/${slug}`);
-  revalidatePath("/drafts");
-  revalidatePath("/review");
+  revalidateArticlePaths(slug, article.topic?.slug, article.author?.username);
 
   return NextResponse.json({
     ok: true,

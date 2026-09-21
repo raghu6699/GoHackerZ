@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { ArticleCard } from "@/components/ArticleCard";
 import { getLatest, preloadCardData } from "@/lib/queries";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Deep Dives",
   description: "Long-form essays on systems, architecture, distributed work, and engineering craft.",
