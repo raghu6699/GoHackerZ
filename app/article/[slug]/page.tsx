@@ -37,7 +37,7 @@ function formatMetaTitle(rawTitle: string): string {
   if (clean.length <= 60) {
     return clean;
   }
-  return `${clean.slice(0, 57).replace(/\s+\S*$/, "")}…`;
+  return `${clean.slice(0, 56).replace(/\s+\S*$/, "")}…`;
 }
 
 export async function generateMetadata({
@@ -54,10 +54,10 @@ export async function generateMetadata({
     rawCover = `${SITE_URL}${rawCover.startsWith("/") ? "" : "/"}${rawCover}`;
   }
 
-  const ogApiUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}${rawCover ? `&cover=${encodeURIComponent(rawCover)}` : ""}`;
+  const ogApiUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}`;
 
   const title = formatMetaTitle(article.seoTitle || article.title);
-  const description = article.seoDescription || article.dek;
+  const description = (article.seoDescription || article.dek || "").slice(0, 155);
   const articleUrl = `${SITE_URL}/article/${article.slug}`;
 
   return {
