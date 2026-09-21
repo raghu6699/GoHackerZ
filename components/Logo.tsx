@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 
 interface LogoProps {
-  variant?: "full" | "mark";
+  variant?: "full" | "mark" | "cyber";
   size?: "sm" | "md" | "lg";
   light?: boolean;
   className?: string;
@@ -20,51 +19,44 @@ export function Logo({
 }: LogoProps) {
   // Height sizing for exact proportional rendering
   const heights = {
-    sm: variant === "full" ? "h-6 sm:h-7" : "h-7 w-7",
-    md: variant === "full" ? "h-8 sm:h-9" : "h-9 w-9",
-    lg: variant === "full" ? "h-10 sm:h-12" : "h-12 w-12",
+    sm: variant === "mark" ? "h-7 w-7" : "h-7 sm:h-8",
+    md: variant === "mark" ? "h-9 w-9" : "h-9 sm:h-10",
+    lg: variant === "mark" ? "h-12 w-12" : "h-11 sm:h-14",
   };
 
   const currentHeight = heights[size] || heights.md;
 
   const logoContent = (
     <div
-      className={`inline-flex items-center transition-transform duration-200 hover:scale-[1.02] select-none group ${className}`}
+      className={`inline-flex items-center transition-transform duration-200 hover:scale-[1.03] active:scale-95 select-none group ${className}`}
     >
-      {variant === "full" ? (
-        <>
-          {/* Light background logo (dark artwork) */}
-          <img
-            src="/logo/logo-full-dark.png"
-            alt="GoHackerz"
-            className={`${currentHeight} w-auto object-contain ${
-              light ? "hidden" : "dark:hidden block"
-            }`}
-          />
-          {/* Dark background logo (white artwork) */}
-          <img
-            src="/logo/logo-full-white.png"
-            alt="GoHackerz"
-            className={`${currentHeight} w-auto object-contain ${
-              light ? "block" : "hidden dark:block"
-            }`}
-          />
-        </>
+      {variant === "mark" ? (
+        <img
+          src="/logo/logo-mark-neon.png"
+          alt="GoHackerz Icon"
+          className={`${currentHeight} object-contain drop-shadow-md`}
+        />
+      ) : variant === "cyber" ? (
+        <img
+          src="/logo/logo-full-cyber.png"
+          alt="GoHackerz Cyber"
+          className={`${currentHeight} w-auto object-contain drop-shadow-md`}
+        />
       ) : (
         <>
-          {/* Light background icon mark */}
+          {/* Light background logo (flat clean version) */}
           <img
-            src="/logo/logo-mark-dark.png"
-            alt="GoHackerz Mark"
-            className={`${currentHeight} object-contain ${
+            src="/logo/logo-full-flat.png"
+            alt="GoHackerz"
+            className={`${currentHeight} w-auto object-contain ${
               light ? "hidden" : "dark:hidden block"
             }`}
           />
-          {/* Dark background icon mark */}
+          {/* Dark background logo (cyber colored lockup) */}
           <img
-            src="/logo/logo-mark-white.png"
-            alt="GoHackerz Mark"
-            className={`${currentHeight} object-contain ${
+            src="/logo/logo-full-cyber.png"
+            alt="GoHackerz"
+            className={`${currentHeight} w-auto object-contain ${
               light ? "block" : "hidden dark:block"
             }`}
           />

@@ -84,7 +84,7 @@ export async function GET(request: Request) {
             >
               {/* GoHackerz Exact Icon Mark */}
               <img
-                src={`${new URL(request.url).origin}/logo/logo-mark-white.png`}
+                src={`${new URL(request.url).origin}/logo/logo-mark-neon.png`}
                 width="24"
                 height="24"
                 style={{ objectFit: "contain" }}
