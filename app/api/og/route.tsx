@@ -1,6 +1,20 @@
 import { ImageResponse } from "next/og";
+import fs from "fs";
+import path from "path";
 
 export const runtime = "nodejs";
+
+// Load logo buffer from filesystem once at module level for zero latency
+let logoBase64 = "";
+try {
+  const logoPath = path.join(process.cwd(), "public/logo/neon-terminal-logo-sm.png");
+  if (fs.existsSync(logoPath)) {
+    const logoBuf = fs.readFileSync(logoPath);
+    logoBase64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
+  }
+} catch (e) {
+  console.error("Failed to load inline logo for OG route:", e);
+}
 
 export async function GET(request: Request) {
   try {
@@ -67,22 +81,27 @@ export async function GET(request: Request) {
               zIndex: 10,
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "4px 8px",
-              }}
-            >
-              {/* GoHackerz Neon Terminal Logo */}
+            {logoBase64 ? (
               <img
-                src={`${new URL(request.url).origin}/logo/neon-terminal-logo.png`}
-                width="160"
-                height="50"
+                src={logoBase64}
+                width="180"
+                height="56"
                 style={{ objectFit: "contain" }}
               />
-            </div>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: "#7C5CFF",
+                  color: "#FFFFFF",
+                  fontSize: "16px",
+                  fontWeight: 800,
+                  padding: "8px 18px",
+                  borderRadius: "12px",
+                }}
+              >
+                GoHackerz
+              </div>
+            )}
             <div
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.12)",
@@ -152,7 +171,8 @@ export async function GET(request: Request) {
         height: 630,
       }
     );
-  } catch {
+  } catch (err) {
+    console.error("GET /api/og error:", err);
     return new Response("Failed to generate OpenGraph image", { status: 500 });
   }
 }
