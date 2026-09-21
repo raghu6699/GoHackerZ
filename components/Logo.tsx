@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 interface LogoProps {
-  variant?: "full" | "mark" | "cyber";
+  variant?: "full" | "mark" | "dark" | "light" | "cyber";
   size?: "sm" | "md" | "lg";
   light?: boolean;
   className?: string;
@@ -34,27 +34,39 @@ export function Logo({
         <img
           src="/logo/logo-mark-neon.png"
           alt="GoHackerz Icon"
-          className={`${currentHeight} object-contain drop-shadow-md`}
+          className={`${currentHeight} object-contain`}
+        />
+      ) : variant === "dark" ? (
+        <img
+          src="/logo/logo-dark-lockup.png"
+          alt="GoHackerz"
+          className={`${currentHeight} w-auto object-contain`}
+        />
+      ) : variant === "light" ? (
+        <img
+          src="/logo/logo-light-lockup.png"
+          alt="GoHackerz"
+          className={`${currentHeight} w-auto object-contain`}
         />
       ) : variant === "cyber" ? (
         <img
-          src="/logo/logo-full-cyber.png"
-          alt="GoHackerz Cyber"
-          className={`${currentHeight} w-auto object-contain drop-shadow-md`}
+          src="/logo/logo-cyber-lockup.png"
+          alt="GoHackerz"
+          className={`${currentHeight} w-auto object-contain`}
         />
       ) : (
         <>
-          {/* Light background logo (flat clean version) */}
+          {/* Light Theme Logo (Clean flat vector with dark text) */}
           <img
-            src="/logo/logo-full-flat.png"
+            src="/logo/logo-light-lockup.png"
             alt="GoHackerz"
             className={`${currentHeight} w-auto object-contain ${
               light ? "hidden" : "dark:hidden block"
             }`}
           />
-          {/* Dark background logo (cyber colored lockup) */}
+          {/* Dark Theme Logo (GoHackerz Dark Theme Brand Lockup with white/neon text) */}
           <img
-            src="/logo/logo-full-cyber.png"
+            src="/logo/logo-dark-lockup.png"
             alt="GoHackerz"
             className={`${currentHeight} w-auto object-contain ${
               light ? "block" : "hidden dark:block"
