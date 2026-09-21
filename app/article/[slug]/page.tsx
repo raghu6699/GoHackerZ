@@ -57,6 +57,7 @@ export async function generateMetadata({
   if (!article) return { title: "Not found — GoHackerz" };
 
   const ogApiUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}`;
+  const ogImageUrl = article.coverImage || ogApiUrl;
 
   const title = formatMetaTitle(article.seoTitle || article.title);
   const description = formatMetaDescription(article.seoDescription || article.dek);
@@ -77,11 +78,10 @@ export async function generateMetadata({
       publishedTime: new Date(article.publishedAt).toISOString(),
       images: [
         {
-          url: ogApiUrl,
-          secureUrl: ogApiUrl,
+          url: ogImageUrl,
+          secureUrl: ogImageUrl,
           width: 1200,
           height: 630,
-          type: "image/png",
           alt: article.title,
         },
       ],
@@ -90,7 +90,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [ogApiUrl],
+      images: [ogImageUrl],
     },
   };
 }
