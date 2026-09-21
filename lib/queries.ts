@@ -155,8 +155,10 @@ export async function getTrending(limit = 4): Promise<Article[]> {
       FROM "Article"
       WHERE "status" = 'PUBLISHED'
         AND ("publishedAt" IS NULL OR "publishedAt" <= now())
-      ORDER BY ("reactionCount" * 3 + "commentCount" * 2 + "viewCount") DESC,
-               "publishedAt" DESC NULLS LAST
+      ORDER BY (
+        ("reactionCount" * 3.0 + "commentCount" * 2.0 + "viewCount" * 0.2 + 1.0) /
+        POWER((EXTRACT(EPOCH FROM (now() - COALESCE("publishedAt", "createdAt"))) / 3600.0) + 2.0, 1.5)
+      ) DESC
       LIMIT ${limit}
     `;
     if (!rows.length) return [];
