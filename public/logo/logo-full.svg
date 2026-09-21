@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 100" fill="none" width="100%" height="100%">
+  <!-- Squircle Icon Mark -->
+  <g transform="translate(0, 0)">
+    <rect x="4" y="4" width="92" height="92" rx="24" fill="currentColor" />
+    <path 
+      d="M 68 32 C 60 25, 46 24, 35 32 C 22 41.5, 22 58.5, 35 68 C 46 76, 62 75, 68 67 C 72 61.5, 72 52, 72 50 L 48 50" 
+      fill="none" 
+      stroke="#0C081A" 
+      stroke-width="10" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+    <path 
+      d="M 40 38 L 47 44 L 40 50" 
+      fill="none" 
+      stroke="#C6FF3D" 
+      stroke-width="4" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+    <line 
+      x1="52" y1="37" x2="52" y2="51" 
+      stroke="#C6FF3D" 
+      stroke-width="4" 
+      stroke-linecap="round"
+    />
+  </g>
+
+  <!-- Wordmark Text "GoHackerz" -->
+  <text 
+    x="116" 
+    y="68" 
+    fill="currentColor" 
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+    font-weight="900" 
+    font-size="46" 
+    letter-spacing="-1px"
+  >
+    GoHackerz
+  </text>
+</svg>
