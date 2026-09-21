@@ -35,14 +35,34 @@ export default function AboutPage() {
         <div className="mt-10">
           <h2 className="text-2xl font-bold">The team</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border-2 border-ink bg-[#f3f0ff] p-5 text-[#1A1440]">
-              <div className="font-bold">Maya Krishnan</div>
-              <div className="mt-1 font-mono text-xs uppercase text-subtle">Editor in chief</div>
-            </div>
-            <div className="rounded-2xl border-2 border-ink bg-[#f3f0ff] p-5 text-[#1A1440]">
-              <div className="font-bold">Jordan Tao</div>
-              <div className="mt-1 font-mono text-xs uppercase text-subtle">Database editor</div>
-            </div>
+            <a
+              href="https://scholar.google.com/citations?user=c0d9gv0AAAAJ&hl=en"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl border-2 border-ink bg-[#f3f0ff] dark:bg-[#1a1533] p-5 text-[#1A1440] dark:text-white hover:border-purple transition-all shadow-pop-sm group"
+            >
+              <div className="font-bold text-lg group-hover:text-purple transition-colors flex items-center justify-between">
+                <span>Raghunath Reddy Koilakonda</span>
+                <span className="text-xs font-mono text-purple">↗</span>
+              </div>
+              <div className="mt-1 font-mono text-xs uppercase tracking-wider text-subtle font-semibold">
+                Editor in chief
+              </div>
+            </a>
+            <a
+              href="https://www.linkedin.com/in/saipriyap20"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl border-2 border-ink bg-[#f3f0ff] dark:bg-[#1a1533] p-5 text-[#1A1440] dark:text-white hover:border-purple transition-all shadow-pop-sm group"
+            >
+              <div className="font-bold text-lg group-hover:text-purple transition-colors flex items-center justify-between">
+                <span>Sai Priya P</span>
+                <span className="text-xs font-mono text-purple">↗</span>
+              </div>
+              <div className="mt-1 font-mono text-xs uppercase tracking-wider text-subtle font-semibold">
+                Database editor
+              </div>
+            </a>
           </div>
         </div>
 
