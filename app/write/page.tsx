@@ -70,7 +70,7 @@ export default async function WritePage({
   let initial = undefined;
   if (sp.edit) {
     const existing = await getEditableArticle(sp.edit, user.id);
-    if (existing && existing.status !== "PUBLISHED") {
+    if (existing) {
       initial = {
         slug: existing.slug,
         title: existing.title,
@@ -81,6 +81,7 @@ export default async function WritePage({
         seoTitle: existing.seoTitle ?? null,
         seoDescription: existing.seoDescription ?? null,
         scheduledAt: existing.scheduledAt ?? null,
+        status: existing.status,
       };
     }
   }

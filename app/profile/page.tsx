@@ -12,6 +12,7 @@ import {
 } from "@/lib/queries";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ArticleCard } from "@/components/ArticleCard";
+import { DeleteArticleButton } from "@/components/DeleteArticleButton";
 import { Avatar } from "@/components/Avatar";
 import type { AvatarColor } from "@/lib/data";
 
@@ -163,11 +164,12 @@ export default async function ProfilePage({
                       </p>
                     )}
                   </div>
-                  {(a.status === "DRAFT" || a.status === "REJECTED") && (
-                    <Link href={`/write?edit=${a.slug}`} className="btn btn-sm shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link href={`/write?edit=${a.slug}`} className="btn btn-sm">
                       Edit →
                     </Link>
-                  )}
+                    <DeleteArticleButton slug={a.slug} title={a.title} />
+                  </div>
                 </div>
               </div>
             ))

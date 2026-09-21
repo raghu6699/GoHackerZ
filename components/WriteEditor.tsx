@@ -38,6 +38,7 @@ export interface EditorInitial {
   seoTitle: string | null;
   seoDescription: string | null;
   scheduledAt: Date | string | null;
+  status?: string;
 }
 
 const CODE_LANGS = [
@@ -490,12 +491,24 @@ export function WriteEditor({
     setError(null);
     try {
       if (editing && initial?.slug) {
-        // update, then run it through the pipeline
-        await fetch(`/api/articles/${initial.slug}`, {
+        // update, then run it through the pipeline if not already published
+        const patchRes = await fetch(`/api/articles/${initial.slug}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...payload(false), readingTime }),
         });
+        if (!patchRes.ok) {
+          const patchData = await patchRes.json();
+          throw new Error(patchData.error || "Failed to update article");
+        }
+
+        if (initial.status === "PUBLISHED") {
+          clearSnapshot(draftKey);
+          router.push(`/article/${initial.slug}`);
+          router.refresh();
+          return;
+        }
+
         const res = await fetch(`/api/articles/${initial.slug}/submit`, { method: "POST" });
         const data = await res.json();
         if (res.status === 401) {
@@ -544,10 +557,10 @@ export function WriteEditor({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
         <div>
           <span className="chip bg-lime mb-1 text-[11px]">
-            {editing ? "✎ editing draft" : "✎ Draft"}
+            {editing ? (initial?.status === "PUBLISHED" ? "✎ editing published post" : "✎ editing draft") : "✎ Draft"}
           </span>
           <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight">
-            {editing ? "Edit your post" : "Write a post"}
+            {editing ? (initial?.status === "PUBLISHED" ? "Edit published post" : "Edit your draft") : "Write a post"}
           </h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -558,7 +571,7 @@ export function WriteEditor({
             {busy === "save" ? "Saving…" : "Save draft"}
           </button>
           <button type="button" onClick={publishOrSubmit} disabled={!title.trim() || busy !== ""} className="btn btn-purple btn-sm sm:btn-md disabled:opacity-40 flex-1 sm:flex-initial">
-            {busy === "publish" ? "Working…" : editing ? "Submit →" : "Publish ✦"}
+            {busy === "publish" ? "Saving…" : initial?.status === "PUBLISHED" ? "Save Changes ✦" : editing ? "Submit →" : "Publish ✦"}
           </button>
         </div>
       </div>

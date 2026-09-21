@@ -26,6 +26,8 @@ import {
   formatDate,
   topicChipClass,
 } from "@/lib/data";
+import { getCurrentDbUser } from "@/lib/profile";
+import { DeleteArticleButton } from "@/components/DeleteArticleButton";
 import { SITE_URL } from "@/lib/site";
 
 function formatMetaTitle(rawTitle: string): string {
@@ -103,8 +105,15 @@ export default async function ArticlePage({
   const article = await getArticle(slug);
   if (!article) notFound();
 
+  const currentUser = await getCurrentDbUser();
   const author = (await getAuthor(article.authorUsername))!;
   const topic = (await getTopic(article.topicSlug))!;
+  const isOwner = Boolean(
+    currentUser &&
+      (currentUser.username === author.username ||
+        currentUser.role === "ADMIN" ||
+        currentUser.role === "EDITOR")
+  );
   const related = (await getArticlesByTopic(topic.slug))
     .filter((a) => a.slug !== article.slug)
     .slice(0, 3);
@@ -217,13 +226,23 @@ export default async function ArticlePage({
                 </div>
               </div>
             </Link>
-            <ArticleActions
-              slug={article.slug}
-              initialReactions={article.reactions}
-              comments={article.comments}
-              title={article.title}
-              dek={article.dek}
-            />
+            <div className="flex items-center gap-3 flex-wrap">
+              {isOwner && (
+                <div className="flex items-center gap-2">
+                  <Link href={`/write?edit=${article.slug}`} className="btn btn-sm">
+                    Edit Essay ✎
+                  </Link>
+                  <DeleteArticleButton slug={article.slug} title={article.title} />
+                </div>
+              )}
+              <ArticleActions
+                slug={article.slug}
+                initialReactions={article.reactions}
+                comments={article.comments}
+                title={article.title}
+                dek={article.dek}
+              />
+            </div>
           </div>
 
           {/* mobile table of contents */}
