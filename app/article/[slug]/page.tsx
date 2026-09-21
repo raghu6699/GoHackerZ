@@ -56,8 +56,7 @@ export async function generateMetadata({
   const article = await getArticle(slug);
   if (!article) return { title: "Not found — GoHackerz" };
 
-  const ogApiUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}`;
-  const ogImageUrl = article.coverImage || ogApiUrl;
+  const ogImageUrl = `${SITE_URL}/api/og/cover?slug=${encodeURIComponent(article.slug)}`;
 
   const title = formatMetaTitle(article.seoTitle || article.title);
   const description = formatMetaDescription(article.seoDescription || article.dek);

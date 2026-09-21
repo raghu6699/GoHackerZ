@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 import { getCurrentDbUser } from "@/lib/profile";
 
-const MAX_BYTES = 4 * 1024 * 1024; // 4MB for covers
+const MAX_BYTES = 10 * 1024 * 1024; // Allow up to 10MB raw upload since we pre-compress with sharp
 const ALLOWED: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Only JPEG, PNG or WebP images are allowed." }, { status: 400 });
     }
     if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: "Image must be smaller than 4MB." }, { status: 400 });
+      return NextResponse.json({ error: "Image must be smaller than 10MB." }, { status: 400 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -42,14 +43,24 @@ export async function POST(req: Request) {
     }
 
     const authId = user.authId ?? user.id;
-    const path = `covers/${authId}/${Date.now()}.${ext}`;
-    const bytes = Buffer.from(await file.arrayBuffer());
+    const path = `covers/${authId}/${Date.now()}.jpg`;
+    const inputBytes = Buffer.from(await file.arrayBuffer());
+
+    let bytes: Buffer;
+    try {
+      bytes = await sharp(inputBytes)
+        .resize(1600, null, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 85, progressive: true, mozjpeg: true })
+        .toBuffer();
+    } catch {
+      bytes = inputBytes;
+    }
 
     let up = await fetch(`${supabaseUrl}/storage/v1/object/avatars/${path}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${serviceKey}`,
-        "Content-Type": file.type,
+        "Content-Type": "image/jpeg",
         "x-upsert": "true",
       },
       body: new Uint8Array(bytes),
