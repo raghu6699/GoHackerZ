@@ -33,16 +33,10 @@ export const metadata: Metadata = {
     siteName: "GoHackerz",
     images: [
       {
-        url: `${SITE_URL}/api/og`,
-        width: 1200,
-        height: 630,
-        alt: "GoHackerz — Where builders actually write",
-      },
-      {
         url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "GoHackerz Logo",
+        alt: "GoHackerz — Where builders actually write",
       },
     ],
     type: "website",
@@ -52,7 +46,7 @@ export const metadata: Metadata = {
     title: "GoHackerz — Where builders actually write",
     description:
       "Honest engineering essays, teardowns and post-mortems from the engineers who actually ship.",
-    images: [`${SITE_URL}/api/og`, `${SITE_URL}/og-image.png`],
+    images: [`${SITE_URL}/og-image.png`],
   },
 };
 
@@ -81,12 +75,12 @@ export default function RootLayout({
         <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
-        {/* OpenGraph & Twitter Card Fallback Metas */}
-        <meta property="og:image" content={`${SITE_URL}/api/og`} />
+        {/* OpenGraph & Twitter Card Metas using /og-image.png */}
+        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/png" />
-        <meta name="twitter:image" content={`${SITE_URL}/api/og`} />
+        <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
         <meta name="twitter:card" content="summary_large_image" />
 
         {/* Google Fonts */}
