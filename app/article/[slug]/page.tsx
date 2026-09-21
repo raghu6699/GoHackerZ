@@ -40,6 +40,13 @@ function formatMetaTitle(rawTitle: string): string {
   return `${clean.slice(0, 56).replace(/\s+\S*$/, "")}…`;
 }
 
+function formatMetaDescription(rawDek: string): string {
+  const clean = (rawDek || "").trim().replace(/\s+/g, " ");
+  if (!clean) return "Honest engineering essays and post-mortems on GoHackerz.";
+  if (clean.length <= 120) return clean;
+  return `${clean.slice(0, 117).replace(/\s+\S*$/, "")}…`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -49,19 +56,16 @@ export async function generateMetadata({
   const article = await getArticle(slug);
   if (!article) return { title: "Not found — GoHackerz" };
 
-  let rawCover = article.coverImage || null;
-  if (rawCover && !rawCover.startsWith("http://") && !rawCover.startsWith("https://")) {
-    rawCover = `${SITE_URL}${rawCover.startsWith("/") ? "" : "/"}${rawCover}`;
-  }
-
   const ogApiUrl = `${SITE_URL}/api/og?title=${encodeURIComponent(article.title)}&author=${encodeURIComponent(article.authorUsername)}&topic=${encodeURIComponent(article.topicSlug)}&time=${article.readingTime}`;
 
   const title = formatMetaTitle(article.seoTitle || article.title);
-  const description = (article.seoDescription || article.dek || "").slice(0, 155);
+  const description = formatMetaDescription(article.seoDescription || article.dek);
   const articleUrl = `${SITE_URL}/article/${article.slug}`;
 
   return {
-    title,
+    title: {
+      absolute: title,
+    },
     description,
     metadataBase: new URL(SITE_URL),
     openGraph: {
@@ -80,15 +84,6 @@ export async function generateMetadata({
           type: "image/png",
           alt: article.title,
         },
-        ...(rawCover
-          ? [
-              {
-                url: rawCover,
-                secureUrl: rawCover,
-                alt: article.title,
-              },
-            ]
-          : []),
       ],
     },
     twitter: {
