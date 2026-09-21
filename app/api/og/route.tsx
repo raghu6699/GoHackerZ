@@ -77,7 +77,7 @@ export async function GET(request: Request) {
             >
               {/* GoHackerz Neon Terminal Logo */}
               <img
-                src={`${new URL(request.url).origin}/logo/header-logo.png`}
+                src={`${new URL(request.url).origin}/logo/neon-terminal-logo.png`}
                 width="160"
                 height="50"
                 style={{ objectFit: "contain" }}
