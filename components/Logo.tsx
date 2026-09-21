@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 interface LogoProps {
-  variant?: "full" | "mark" | "dark" | "light" | "cyber";
+  variant?: "full" | "header" | "footer" | "mark";
   size?: "sm" | "md" | "lg";
   light?: boolean;
   className?: string;
@@ -17,7 +17,7 @@ export function Logo({
   className = "",
   href = "/",
 }: LogoProps) {
-  // Height sizing for exact proportional rendering
+  // Height sizing
   const heights = {
     sm: variant === "mark" ? "h-7 w-7" : "h-7 sm:h-8",
     md: variant === "mark" ? "h-9 w-9" : "h-9 sm:h-10",
@@ -26,54 +26,25 @@ export function Logo({
 
   const currentHeight = heights[size] || heights.md;
 
+  // Determine which exact raw logo file to display
+  const isFooter = light || variant === "footer";
+  const isMark = variant === "mark";
+
+  const logoSrc = isFooter
+    ? "/logo/footer-logo.png" // GoHackerz Dark Theme Brand Lockup
+    : isMark
+    ? "/logo/mark-logo.png" // GoHackerz neon terminal icon
+    : "/logo/header-logo.png"; // Clean flat GoHackerz vector logo
+
   const logoContent = (
     <div
-      className={`inline-flex items-center transition-transform duration-200 hover:scale-[1.03] active:scale-95 select-none group ${className}`}
+      className={`inline-flex items-center transition-transform duration-200 hover:scale-[1.02] active:scale-95 select-none group ${className}`}
     >
-      {variant === "mark" ? (
-        <img
-          src="/logo/logo-mark-neon.png"
-          alt="GoHackerz Icon"
-          className={`${currentHeight} object-contain`}
-        />
-      ) : variant === "dark" ? (
-        <img
-          src="/logo/logo-dark-lockup.png"
-          alt="GoHackerz"
-          className={`${currentHeight} w-auto object-contain`}
-        />
-      ) : variant === "light" ? (
-        <img
-          src="/logo/logo-light-lockup.png"
-          alt="GoHackerz"
-          className={`${currentHeight} w-auto object-contain`}
-        />
-      ) : variant === "cyber" ? (
-        <img
-          src="/logo/logo-cyber-lockup.png"
-          alt="GoHackerz"
-          className={`${currentHeight} w-auto object-contain`}
-        />
-      ) : (
-        <>
-          {/* Light Theme Logo (Clean flat vector with dark text) */}
-          <img
-            src="/logo/logo-light-lockup.png"
-            alt="GoHackerz"
-            className={`${currentHeight} w-auto object-contain ${
-              light ? "hidden" : "dark:hidden block"
-            }`}
-          />
-          {/* Dark Theme Logo (GoHackerz Dark Theme Brand Lockup with white/neon text) */}
-          <img
-            src="/logo/logo-dark-lockup.png"
-            alt="GoHackerz"
-            className={`${currentHeight} w-auto object-contain ${
-              light ? "block" : "hidden dark:block"
-            }`}
-          />
-        </>
-      )}
+      <img
+        src={logoSrc}
+        alt="GoHackerz"
+        className={`${currentHeight} w-auto object-contain rounded-lg`}
+      />
     </div>
   );
 
