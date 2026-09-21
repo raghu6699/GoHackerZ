@@ -5,7 +5,31 @@ import Link from "next/link";
 import { Avatar } from "./Avatar";
 import type { AvatarColor } from "@/lib/data";
 
-const COLORS: AvatarColor[] = ["purple", "pink", "sky", "peach", "lime", "ink"];
+const COLORS: AvatarColor[] = [
+  "purple",
+  "pink",
+  "sky",
+  "peach",
+  "lime",
+  "emerald",
+  "rose",
+  "amber",
+  "indigo",
+  "ink",
+];
+
+const COLOR_HEX: Record<AvatarColor, { hex: string; label: string }> = {
+  purple: { hex: "#7C5CFF", label: "Royal Violet" },
+  pink: { hex: "#FF7AC6", label: "Hot Pink" },
+  sky: { hex: "#6FD3FF", label: "Sky Blue" },
+  peach: { hex: "#FFB86B", label: "Warm Peach" },
+  lime: { hex: "#C6FF3D", label: "Electric Lime" },
+  emerald: { hex: "#34D399", label: "Emerald Green" },
+  rose: { hex: "#FB7185", label: "Rose Red" },
+  amber: { hex: "#FBBF24", label: "Golden Amber" },
+  indigo: { hex: "#6366F1", label: "Deep Indigo" },
+  ink: { hex: "#130E29", label: "Obsidian Ink" },
+};
 
 export interface ProfileData {
   username: string;
@@ -184,19 +208,30 @@ export function ProfileEditor({ initial }: { initial: ProfileData }) {
             <span className="font-mono text-[11px] text-subtle font-bold">
               AVATAR COLOR <span className="font-normal">(fallback when no photo)</span>
             </span>
-            <div className="flex gap-2 mt-2">
-              {COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setAvatarColor(c)}
-                  className={`w-9 h-9 rounded-lg border-2 border-ink transition-transform ${
-                    avatarColor === c ? "scale-110 shadow-pop-sm" : "opacity-70"
-                  }`}
-                  style={{ backgroundColor: `var(--${c}, #7C5CFF)` }}
-                  aria-label={`Pick ${c}`}
-                />
-              ))}
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {COLORS.map((c) => {
+                const isSelected = avatarColor === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setAvatarColor(c)}
+                    className={`w-9 h-9 rounded-xl border-2 border-ink flex items-center justify-center text-xs font-bold transition-all ${
+                      isSelected
+                        ? "scale-110 shadow-pop-sm ring-2 ring-purple ring-offset-2"
+                        : "opacity-80 hover:opacity-100"
+                    }`}
+                    style={{
+                      backgroundColor: COLOR_HEX[c].hex,
+                      color: c === "purple" || c === "indigo" || c === "ink" ? "#FFFFFF" : "#1A1440",
+                    }}
+                    title={COLOR_HEX[c].label}
+                    aria-label={`Pick ${COLOR_HEX[c].label}`}
+                  >
+                    {isSelected ? "✓" : ""}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

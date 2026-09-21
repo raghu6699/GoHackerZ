@@ -4,12 +4,16 @@ import { useState } from "react";
 import type { AvatarColor } from "@/lib/data";
 
 const colorMap: Record<AvatarColor, string> = {
-  purple: "bg-purple text-white",
-  pink: "bg-pink text-[#1A1440]",
-  sky: "bg-sky text-[#1A1440]",
-  peach: "bg-peach text-[#1A1440]",
-  lime: "bg-lime text-[#1A1440]",
-  ink: "bg-brand-dark text-white",
+  purple: "bg-[#7C5CFF] text-white",
+  pink: "bg-[#FF7AC6] text-[#1A1440]",
+  sky: "bg-[#6FD3FF] text-[#1A1440]",
+  peach: "bg-[#FFB86B] text-[#1A1440]",
+  lime: "bg-[#C6FF3D] text-[#1A1440]",
+  emerald: "bg-[#34D399] text-[#052E16]",
+  rose: "bg-[#FB7185] text-[#4C0519]",
+  amber: "bg-[#FBBF24] text-[#451A03]",
+  indigo: "bg-[#6366F1] text-white",
+  ink: "bg-[#130E29] text-white",
 };
 
 const sizeMap = {

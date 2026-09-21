@@ -2,7 +2,18 @@ import { NextResponse } from "next/server";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 
-const AVATAR_COLORS = ["purple", "pink", "sky", "peach", "lime", "ink"];
+const AVATAR_COLORS = [
+  "purple",
+  "pink",
+  "sky",
+  "peach",
+  "lime",
+  "emerald",
+  "rose",
+  "amber",
+  "indigo",
+  "ink",
+];
 
 /** GET — the signed-in user's profile (for the editor). */
 export async function GET() {

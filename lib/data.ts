@@ -2,7 +2,17 @@
 // GOHACKERZ · Data Types & Core Topic Metadata
 // ─────────────────────────────────────────────────────────────
 
-export type AvatarColor = "purple" | "pink" | "sky" | "peach" | "lime" | "ink";
+export type AvatarColor =
+  | "purple"
+  | "pink"
+  | "sky"
+  | "peach"
+  | "lime"
+  | "emerald"
+  | "rose"
+  | "amber"
+  | "indigo"
+  | "ink";
 
 export interface Author {
   username: string;
