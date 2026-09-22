@@ -58,15 +58,34 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       return;
     }
 
-    const supabase = createClient();
-    if (!supabase) {
-      setError("Auth is not configured in this environment.");
-      return;
-    }
-
     setResending(true);
     setResendMsg(null);
     setError(null);
+
+    // Try auto-confirming via backend + sending welcome email via Resend
+    try {
+      const autoRes = await fetch("/api/auth/auto-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: typedEmail }),
+      });
+      const autoData = await autoRes.json().catch(() => ({}));
+
+      if (autoData.confirmed) {
+        setResending(false);
+        setResendMsg(`Account activated! A welcome email was sent to ${typedEmail}. You can now sign in.`);
+        return;
+      }
+    } catch {
+      // fallback to Supabase standard resend
+    }
+
+    const supabase = createClient();
+    if (!supabase) {
+      setError("Auth is not configured in this environment.");
+      setResending(false);
+      return;
+    }
 
     const { error: resendErr } = await supabase.auth.resend({
       type: "signup",
@@ -117,6 +136,29 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         return;
       }
       if (!data.session) {
+        // Attempt immediate auto-confirm server-side to bypass Supabase SMTP limits
+        try {
+          const autoRes = await fetch("/api/auth/auto-confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, userId: data.user?.id }),
+          });
+          const autoData = await autoRes.json().catch(() => ({}));
+          if (autoData.confirmed) {
+            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            if (!signInErr && signInData.session) {
+              await syncProfile(signInData.session);
+              router.push("/");
+              router.refresh();
+              return;
+            }
+          }
+        } catch {
+          // Fallback to check email state
+        }
         setDone(true);
         setLoading(false);
         return;
@@ -125,10 +167,33 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       router.push("/");
       router.refresh();
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      let { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+
+      if (error && error.message.toLowerCase().includes("not confirmed")) {
+        // Auto-confirm unconfirmed account on sign in attempt
+        try {
+          const autoRes = await fetch("/api/auth/auto-confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          const autoData = await autoRes.json().catch(() => ({}));
+          if (autoData.confirmed) {
+            const retry = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            data = retry.data;
+            error = retry.error;
+          }
+        } catch {
+          // preserve original error if fallback fails
+        }
+      }
+
       if (error) {
         setError(
           error.message === "Invalid login credentials"
@@ -185,10 +250,30 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
           <div className="text-center py-6">
             <div className="text-[56px] mb-3">📬</div>
             <h1 className="text-[26px] font-bold mb-2">Check your email</h1>
-            <p className="text-muted text-[15px]">
-              We sent a confirmation link to your email. Click it to activate
+            <p className="text-muted text-[15px] mb-4">
+              We sent a confirmation link to your email ({typedEmail}). Click it to activate
               your account, then sign in.
             </p>
+            <div className="space-y-3 pt-2">
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={resending}
+                className="btn btn-lime text-[#1A1440] font-bold text-xs w-full justify-center"
+              >
+                {resending ? "Activating account…" : "⚡ Didn't receive email? Activate Account & Sign In"}
+              </button>
+              {resendMsg && (
+                <p className="font-mono text-[12px] font-bold bg-lime border-2 border-ink rounded-xl px-4 py-2.5 text-[#1A1440]">
+                  ✓ {resendMsg}
+                </p>
+              )}
+              {error && (
+                <p className="font-mono text-[12px] font-bold bg-peach border-2 border-ink rounded-xl px-4 py-2.5 text-[#8a2b00]">
+                  ⚠ {error}
+                </p>
+              )}
+            </div>
           </div>
         ) : (
           <>
