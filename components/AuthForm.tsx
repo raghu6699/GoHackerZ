@@ -11,6 +11,10 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const [typedEmail, setTypedEmail] = useState("");
+
   // Which OAuth providers are enabled on the Supabase project (from /auth/v1/settings)
   const [enabledProviders, setEnabledProviders] = useState<{
     github: boolean;
@@ -48,15 +52,51 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
     }
   }
 
+  async function handleResendConfirmation() {
+    if (!typedEmail) {
+      setError("Please enter your email address to resend confirmation.");
+      return;
+    }
+
+    const supabase = createClient();
+    if (!supabase) {
+      setError("Auth is not configured in this environment.");
+      return;
+    }
+
+    setResending(true);
+    setResendMsg(null);
+    setError(null);
+
+    const { error: resendErr } = await supabase.auth.resend({
+      type: "signup",
+      email: typedEmail,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    setResending(false);
+
+    if (resendErr) {
+      setError(resendErr.message);
+    } else {
+      setResendMsg(`Confirmation email re-sent to ${typedEmail}! Please check your inbox and spam folder.`);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setResendMsg(null);
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const email = String(form.get("email") ?? "");
+    const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
     const name = String(form.get("name") ?? "");
+
+    setTypedEmail(email);
 
     const supabase = createClient();
     if (!supabase) {
@@ -77,7 +117,6 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         return;
       }
       if (!data.session) {
-        // Email confirmation is enabled — user must click the link first
         setDone(true);
         setLoading(false);
         return;
@@ -122,17 +161,20 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       setError("Auth isn't configured in this environment.");
       return;
     }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
+
     if (error) setError(error.message);
   }
 
   return (
     <div className="wrap max-w-[480px] py-16">
       <div className="relative card shadow-pop-lg p-5 sm:p-9">
-        {/* corner sticker */}
         <span className="absolute -top-4 -right-3 chip bg-lime rotate-6 shadow-pop-sm">
           {isSignup ? "free forever ✦" : "welcome back 👋"}
         </span>
@@ -159,7 +201,6 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
                 : "Sign in to keep reading and writing."}
             </p>
 
-            {/* social */}
             <div className="space-y-3 mb-6">
               <button
                 type="button"
@@ -181,8 +222,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
                     : ""
                 }`}
               >
-                <span className="font-bold text-purple">G</span> Continue with
-                Google
+                <span className="font-bold text-purple">G</span> Continue with Google
               </button>
             </div>
 
@@ -196,18 +236,44 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
               {isSignup && (
                 <Field label="NAME" type="text" placeholder="Ada Lovelace" name="name" />
               )}
-              <Field label="EMAIL" type="email" placeholder="you@company.dev" name="email" />
+              <Field
+                label="EMAIL"
+                type="email"
+                placeholder="you@company.dev"
+                name="email"
+                onChange={(e) => setTypedEmail(e.target.value)}
+              />
               <Field
                 label="PASSWORD"
                 type="password"
                 placeholder={isSignup ? "at least 6 characters" : "••••••••"}
                 name="password"
               />
+
               {error && (
-                <p className="font-mono text-[12px] font-bold bg-peach border-2 border-ink rounded-xl px-4 py-2.5 text-[#8a2b00]">
-                  ⚠ {error}
+                <div className="space-y-2">
+                  <p className="font-mono text-[12px] font-bold bg-peach border-2 border-ink rounded-xl px-4 py-2.5 text-[#8a2b00]">
+                    ⚠ {error}
+                  </p>
+                  {error.toLowerCase().includes("not confirmed") && (
+                    <button
+                      type="button"
+                      onClick={handleResendConfirmation}
+                      disabled={resending}
+                      className="btn btn-lime text-[#1A1440] font-bold text-xs w-full justify-center"
+                    >
+                      {resending ? "Sending link…" : "📩 Resend Confirmation Email"}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {resendMsg && (
+                <p className="font-mono text-[12px] font-bold bg-lime border-2 border-ink rounded-xl px-4 py-2.5 text-[#1A1440]">
+                  ✓ {resendMsg}
                 </p>
               )}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -242,23 +308,26 @@ function Field({
   type,
   placeholder,
   name,
+  onChange,
 }: {
   label: string;
   type: string;
   placeholder: string;
   name: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-[11px] text-subtle font-bold">
+      <span className="block font-mono text-[11px] font-bold text-subtle mb-1">
         {label}
       </span>
       <input
         type={type}
-        required
         name={name}
+        required
         placeholder={placeholder}
-        className="w-full mt-1 border-2 border-ink rounded-xl px-4 py-3 text-[15px] outline-none shadow-pop-sm focus:shadow-pop transition-shadow bg-card text-ink"
+        onChange={onChange}
+        className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink bg-bg text-ink placeholder:text-muted/60 text-[15px] font-medium outline-none focus:border-purple focus:shadow-pop-sm transition-all"
       />
     </label>
   );
