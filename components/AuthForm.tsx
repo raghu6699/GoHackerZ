@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { Logo } from "./Logo";
 
@@ -387,6 +388,10 @@ function Field({
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isSignup?: boolean;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordField = name === "password" || type === "password";
+  const inputType = isPasswordField ? (showPassword ? "text" : "password") : type;
+
   return (
     <label className="block">
       <div className="flex justify-between items-center mb-1">
@@ -402,14 +407,33 @@ function Field({
           </Link>
         )}
       </div>
-      <input
-        type={type}
-        name={name}
-        required
-        placeholder={placeholder}
-        onChange={onChange}
-        className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink bg-bg text-ink placeholder:text-muted/60 text-[15px] font-medium outline-none focus:border-purple focus:shadow-pop-sm transition-all"
-      />
+      <div className="relative">
+        <input
+          type={inputType}
+          name={name}
+          required
+          placeholder={placeholder}
+          onChange={onChange}
+          className={`w-full px-3.5 py-2.5 rounded-xl border-2 border-ink bg-bg text-ink placeholder:text-muted/60 text-[15px] font-medium outline-none focus:border-purple focus:shadow-pop-sm transition-all ${
+            isPasswordField ? "pr-10" : ""
+          }`}
+        />
+        {isPasswordField && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-ink transition-colors p-1"
+            title={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <EyeOff className="w-4.5 h-4.5 text-muted hover:text-purple" />
+            ) : (
+              <Eye className="w-4.5 h-4.5 text-muted hover:text-purple" />
+            )}
+          </button>
+        )}
+      </div>
     </label>
   );
 }
