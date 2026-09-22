@@ -21,7 +21,11 @@ export async function POST(req: Request) {
         options: { redirectTo },
       });
 
-      if (!error && data?.properties?.action_link) {
+      if (!error && data?.properties?.hashed_token) {
+        const confirmUrl = `${site}/auth/callback?token_hash=${data.properties.hashed_token}&type=magiclink&next=/`;
+        const mailRes = await sendEmail(accountConfirmationEmail(email, confirmUrl));
+        return NextResponse.json({ ok: true, delivered: mailRes.delivered, provider: mailRes.provider });
+      } else if (!error && data?.properties?.action_link) {
         const mailRes = await sendEmail(accountConfirmationEmail(email, data.properties.action_link));
         return NextResponse.json({ ok: true, delivered: mailRes.delivered, provider: mailRes.provider });
       }

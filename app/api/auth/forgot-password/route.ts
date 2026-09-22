@@ -31,7 +31,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
 
-      if (data?.properties?.action_link) {
+      if (data?.properties?.hashed_token) {
+        const resetUrl = `${site}/auth/callback?token_hash=${data.properties.hashed_token}&type=recovery&next=/reset-password`;
+        await sendEmail(passwordResetEmail(email, resetUrl));
+        return NextResponse.json({ ok: true });
+      } else if (data?.properties?.action_link) {
         await sendEmail(passwordResetEmail(email, data.properties.action_link));
         return NextResponse.json({ ok: true });
       }
