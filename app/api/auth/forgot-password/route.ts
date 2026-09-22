@@ -21,7 +21,17 @@ export async function POST(req: Request) {
         options: { redirectTo },
       });
 
-      if (!error && data?.properties?.action_link) {
+      if (error) {
+        if (error.message.toLowerCase().includes("not found")) {
+          return NextResponse.json(
+            { error: "No account found with this email address. Please check for typos or create a new account." },
+            { status: 404 }
+          );
+        }
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      if (data?.properties?.action_link) {
         await sendEmail(passwordResetEmail(email, data.properties.action_link));
         return NextResponse.json({ ok: true });
       }
