@@ -11,7 +11,20 @@ export const metadata: Metadata = {
 };
 
 export default async function DeepDivesPage() {
-  const posts = (await getLatest(30)).filter((article) => article.readingTime >= 8 || article.tags.includes("ai") || article.tags.includes("architecture"));
+  const allLatest = await getLatest(30);
+  const filtered = allLatest.filter(
+    (article) =>
+      article.readingTime >= 5 ||
+      article.topicSlug === "deep-dives" ||
+      article.topicSlug === "ai" ||
+      article.topicSlug === "ai-engineering" ||
+      article.topicSlug === "systems" ||
+      article.topicSlug === "databases" ||
+      article.tags.includes("ai") ||
+      article.tags.includes("architecture") ||
+      article.tags.includes("deep-dive")
+  );
+  const posts = filtered.length > 0 ? filtered : allLatest;
   const cardData = await preloadCardData(posts);
 
   return (
