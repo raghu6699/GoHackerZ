@@ -1,34 +1,61 @@
-import Link from "next/link";
-import { Logo } from "./Logo";
+"use client";
 
-const cols = [
-  {
-    heading: "READ",
-    links: [
-      { label: "Latest", href: "/read" },
-      { label: "Deep Dives", href: "/deep-dives" },
-      { label: "Topics", href: "/topics" },
-    ],
-  },
-  {
-    heading: "WRITE",
-    links: [
-      { label: "Editor", href: "/write" },
-      { label: "Guidelines", href: "/guidelines" },
-      { label: "Sign up", href: "/signup" },
-    ],
-  },
-  {
-    heading: "ABOUT",
-    links: [
-      { label: "Manifesto", href: "/manifesto" },
-      { label: "RSS", href: "/rss.xml" },
-      { label: "Contact", href: "/contact" },
-    ],
-  },
-];
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase-browser";
+import { Logo } from "./Logo";
+import type { User } from "@supabase/supabase-js";
 
 export function Footer() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const cols = [
+    {
+      heading: "READ",
+      links: [
+        { label: "Latest", href: "/read" },
+        { label: "Deep Dives", href: "/deep-dives" },
+        { label: "Topics", href: "/topics" },
+      ],
+    },
+    {
+      heading: "WRITE",
+      links: [
+        { label: "Editor", href: "/write" },
+        { label: "Guidelines", href: "/guidelines" },
+        {
+          label: user ? "My Profile" : "Sign up",
+          href: user ? "/profile" : "/signup",
+        },
+      ],
+    },
+    {
+      heading: "ABOUT",
+      links: [
+        { label: "Manifesto", href: "/manifesto" },
+        { label: "RSS", href: "/rss.xml" },
+        { label: "Contact", href: "/contact" },
+      ],
+    },
+  ];
+
   return (
     <footer className="mt-8 sm:mt-16 pb-6 sm:pb-8">
       <div className="wrap">
