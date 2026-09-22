@@ -135,37 +135,21 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         setLoading(false);
         return;
       }
-      if (!data.session) {
-        // Attempt immediate auto-confirm server-side to bypass Supabase SMTP limits
-        try {
-          const autoRes = await fetch("/api/auth/auto-confirm", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, userId: data.user?.id }),
-          });
-          const autoData = await autoRes.json().catch(() => ({}));
-          if (autoData.confirmed) {
-            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            });
-            if (!signInErr && signInData.session) {
-              await syncProfile(signInData.session);
-              router.push("/");
-              router.refresh();
-              return;
-            }
-          }
-        } catch {
-          // Fallback to check email state
-        }
-        setDone(true);
-        setLoading(false);
-        return;
+      
+      // Directly activate their mail account server-side & send welcome email
+      try {
+        await fetch("/api/auth/auto-confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, userId: data.user?.id }),
+        });
+      } catch {
+        // non-fatal
       }
-      await syncProfile(data.session);
-      router.push("/");
-      router.refresh();
+
+      setDone(true);
+      setLoading(false);
+      return;
     } else {
       let { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -248,32 +232,25 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
 
         {done ? (
           <div className="text-center py-6">
-            <div className="text-[56px] mb-3">📬</div>
-            <h1 className="text-[26px] font-bold mb-2">Check your email</h1>
-            <p className="text-muted text-[15px] mb-4">
-              We sent a confirmation link to your email ({typedEmail}). Click it to activate
-              your account, then sign in.
+            <div className="text-[56px] mb-3">⚡</div>
+            <h1 className="text-[26px] font-bold mb-2">You&apos;re into GoHackerz! 🎉</h1>
+            <p className="text-muted text-[15px] mb-6">
+              Your account details have been saved and activated. A welcome email is on its way to{" "}
+              <strong className="text-ink">{typedEmail}</strong>.
             </p>
-            <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={handleResendConfirmation}
-                disabled={resending}
-                className="btn btn-lime text-[#1A1440] font-bold text-xs w-full justify-center"
-              >
-                {resending ? "Activating account…" : "⚡ Didn't receive email? Activate Account & Sign In"}
-              </button>
-              {resendMsg && (
-                <p className="font-mono text-[12px] font-bold bg-lime border-2 border-ink rounded-xl px-4 py-2.5 text-[#1A1440]">
-                  ✓ {resendMsg}
-                </p>
-              )}
-              {error && (
-                <p className="font-mono text-[12px] font-bold bg-peach border-2 border-ink rounded-xl px-4 py-2.5 text-[#8a2b00]">
-                  ⚠ {error}
-                </p>
-              )}
+            <div className="p-4 bg-purple/10 border-2 border-purple rounded-xl mb-6 text-left">
+              <p className="font-mono text-xs font-bold text-purple mb-1">NEXT STEP:</p>
+              <p className="text-[14px] text-ink font-medium">
+                Please sign in with the email and password you just provided to log into your workspace.
+              </p>
             </div>
+            <Link
+              href="/signin"
+              onClick={() => setDone(false)}
+              className="btn btn-purple w-full justify-center text-[15px]"
+            >
+              Sign in with your details →
+            </Link>
           </div>
         ) : (
           <>
@@ -333,6 +310,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
                 type="password"
                 placeholder={isSignup ? "at least 6 characters" : "••••••••"}
                 name="password"
+                isSignup={isSignup}
               />
 
               {error && (
@@ -394,18 +372,30 @@ function Field({
   placeholder,
   name,
   onChange,
+  isSignup,
 }: {
   label: string;
   type: string;
   placeholder: string;
   name: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isSignup?: boolean;
 }) {
   return (
     <label className="block">
-      <span className="block font-mono text-[11px] font-bold text-subtle mb-1">
-        {label}
-      </span>
+      <div className="flex justify-between items-center mb-1">
+        <span className="block font-mono text-[11px] font-bold text-subtle">
+          {label}
+        </span>
+        {name === "password" && !isSignup && (
+          <Link
+            href="/forgot-password"
+            className="font-mono text-[11px] font-bold text-purple hover:underline"
+          >
+            Forgot password?
+          </Link>
+        )}
+      </div>
       <input
         type={type}
         name={name}

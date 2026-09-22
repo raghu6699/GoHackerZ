@@ -14,13 +14,29 @@ export default function ForgotPasswordPage() {
     setBusy(true);
     setError(null);
     try {
-      const { createClient } = await import("@/lib/supabase-browser");
-      const supabase = createClient();
-      if (!supabase) throw new Error("Auth isn't configured in this environment.");
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
-      if (error) throw new Error(error.message);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send reset link");
+      }
+
+      // Also trigger Supabase client reset as backup
+      try {
+        const { createClient } = await import("@/lib/supabase-browser");
+        const supabase = createClient();
+        if (supabase) {
+          await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+          });
+        }
+      } catch {
+        // ignore client error if API succeeded
+      }
+
       setSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

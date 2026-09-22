@@ -152,3 +152,18 @@ export function articleRejectedEmail(to: string, title: string, feedback: string
     ),
   };
 }
+
+export function passwordResetEmail(to: string, resetUrl: string): EmailMessage {
+  return {
+    to,
+    subject: "Reset your GoHackerz password",
+    html: shell(
+      "Reset your password",
+      `<p>We received a request to reset your GoHackerz password. Click the button below to set a new password:</p>
+       <p><a href="${resetUrl}" style="display:inline-block;background:#7c5cff;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:700">Reset Password</a></p>
+       <p style="font-size:12px;color:#8b84ad;margin-top:16px">Or paste this link into your browser: ${resetUrl}</p>
+       <p style="font-size:12px;color:#8b84ad">If you didn't request a password reset, you can safely ignore this email.</p>`
+    ),
+  };
+}
+
