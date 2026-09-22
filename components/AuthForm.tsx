@@ -33,12 +33,18 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       .catch(() => setEnabledProviders({ github: false, google: false }));
   }, []);
 
-  async function syncProfile() {
-    // Best effort: create/refresh the matching public.User row via Prisma
+  async function syncProfile(session?: { access_token?: string; refresh_token?: string } | null) {
     try {
-      await fetch("/api/auth/sync", { method: "POST" });
+      await fetch("/api/auth/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_token: session?.access_token,
+          refresh_token: session?.refresh_token,
+        }),
+      });
     } catch {
-      // non-fatal — session is already valid
+      // non-fatal
     }
   }
 
@@ -76,11 +82,11 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         setLoading(false);
         return;
       }
-      await syncProfile();
+      await syncProfile(data.session);
       router.push("/");
       router.refresh();
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -93,7 +99,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         setLoading(false);
         return;
       }
-      await syncProfile();
+      await syncProfile(data.session);
       router.push("/");
       router.refresh();
     }

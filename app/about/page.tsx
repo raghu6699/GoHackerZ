@@ -10,7 +10,9 @@ export default function AboutPage() {
     <div className="wrap max-w-4xl py-10 sm:py-14">
       <article className="rounded-3xl border-2 border-ink bg-card p-6 shadow-pop-lg sm:p-10">
         <div className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-purple">About</div>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">GoHackerz publishes the essays that engineering teams actually need.</h1>
+        <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">
+          GoHackerz publishes the essays that engineering teams actually need.
+        </h1>
 
         <p className="mt-6 text-lg leading-relaxed text-muted">
           We are a publication for engineers who are tired of hype cycles and polished-but-useless product writing. We favor durable lessons: architecture trade-offs, incident reports, tuning work, AI systems, and the daily realities of building software at scale.
@@ -32,41 +34,14 @@ export default function AboutPage() {
           </section>
         </div>
 
-        <div className="mt-10">
-          <h2 className="text-2xl font-bold">The team</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <a
-              href="https://scholar.google.com/citations?user=c0d9gv0AAAAJ&hl=en"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-2xl border-2 border-ink bg-[#f3f0ff] dark:bg-[#1a1533] p-5 text-[#1A1440] dark:text-white hover:border-purple transition-all shadow-pop-sm group"
-            >
-              <div className="font-bold text-lg group-hover:text-purple transition-colors flex items-center justify-between">
-                <span>Raghunath Reddy Koilakonda</span>
-                <span className="text-xs font-mono text-purple">↗</span>
-              </div>
-              <div className="mt-1 font-mono text-xs uppercase tracking-wider text-subtle font-semibold">
-                Editor in chief
-              </div>
-            </a>
-            <a
-              href="https://www.linkedin.com/in/saipriyap20"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-2xl border-2 border-ink bg-[#f3f0ff] dark:bg-[#1a1533] p-5 text-[#1A1440] dark:text-white hover:border-purple transition-all shadow-pop-sm group"
-            >
-              <div className="font-bold text-lg group-hover:text-purple transition-colors flex items-center justify-between">
-                <span>Sai Priya P</span>
-                <span className="text-xs font-mono text-purple">↗</span>
-              </div>
-              <div className="mt-1 font-mono text-xs uppercase tracking-wider text-subtle font-semibold">
-                Database editor
-              </div>
-            </a>
-          </div>
+        <div className="mt-10 rounded-2xl border-2 border-ink bg-[#f3f0ff] dark:bg-[#1a1533] p-6 text-[#1A1440] dark:text-white shadow-pop-sm">
+          <h2 className="text-2xl font-bold">The Team</h2>
+          <p className="mt-3 text-base sm:text-lg leading-relaxed text-body dark:text-[#E3DEFB]">
+            GoHackerz is driven by a passionate team of techies obsessed with craft, software architecture, and engineering excellence. We are dedicated to bringing you the best content possible—deep-dives, post-mortems, and technical breakdowns—to make everyone fall in love with tech.
+          </p>
         </div>
 
-        <div className="mt-10 rounded-2xl border-2 border-ink bg-card p-5">
+        <div className="mt-8 rounded-2xl border-2 border-ink bg-card p-5">
           <h2 className="text-2xl font-bold">Contact</h2>
           <p className="mt-3 text-muted">hello@gohackerz.com</p>
           <p className="mt-2 text-muted">For pitches, partnerships, and corrections.</p>
