@@ -62,18 +62,17 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
     setResendMsg(null);
     setError(null);
 
-    // Try auto-confirming via backend + sending welcome email via Resend
     try {
-      const autoRes = await fetch("/api/auth/auto-confirm", {
+      const res = await fetch("/api/auth/send-confirmation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: typedEmail }),
       });
-      const autoData = await autoRes.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
 
-      if (autoData.confirmed) {
+      if (res.ok && data.ok) {
         setResending(false);
-        setResendMsg(`Account activated! A welcome email was sent to ${typedEmail}. You can now sign in.`);
+        setResendMsg(`Confirmation email dispatched to ${typedEmail}! Please check your inbox and Junk/Spam folder.`);
         return;
       }
     } catch {
@@ -100,7 +99,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
     if (resendErr) {
       setError(resendErr.message);
     } else {
-      setResendMsg(`Confirmation email re-sent to ${typedEmail}! Please check your inbox and spam folder.`);
+      setResendMsg(`Confirmation email re-sent to ${typedEmail}! Please check your inbox and Junk/Spam folder.`);
     }
   }
 
@@ -136,13 +135,20 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         return;
       }
       
-      // Directly activate their mail account server-side & send welcome email
+      // Directly activate their account server-side & send confirmation email via Resend
       try {
-        await fetch("/api/auth/auto-confirm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, userId: data.user?.id }),
-        });
+        await Promise.all([
+          fetch("/api/auth/send-confirmation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          }),
+          fetch("/api/auth/auto-confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, userId: data.user?.id }),
+          }),
+        ]);
       } catch {
         // non-fatal
       }

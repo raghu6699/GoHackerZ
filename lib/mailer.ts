@@ -167,3 +167,17 @@ export function passwordResetEmail(to: string, resetUrl: string): EmailMessage {
   };
 }
 
+export function accountConfirmationEmail(to: string, confirmUrl: string): EmailMessage {
+  return {
+    to,
+    subject: "Confirm your GoHackerz account",
+    html: shell(
+      "Confirm your account ⚡",
+      `<p>Welcome to GoHackerz! Click the button below to confirm your email and activate your account:</p>
+       <p><a href="${confirmUrl}" style="display:inline-block;background:#7c5cff;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:700">Confirm & Activate Account →</a></p>
+       <p style="font-size:12px;color:#8b84ad;margin-top:16px">Or copy and paste this link into your browser:<br/>${confirmUrl}</p>`
+    ),
+  };
+}
+
+
