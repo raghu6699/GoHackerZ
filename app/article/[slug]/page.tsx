@@ -72,6 +72,9 @@ export async function generateMetadata({
     },
     description,
     metadataBase: new URL(SITE_URL),
+    alternates: {
+      canonical: articleUrl,
+    },
     openGraph: {
       title,
       description,

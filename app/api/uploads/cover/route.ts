@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { getCurrentDbUser } from "@/lib/profile";
 
-const MAX_BYTES = 10 * 1024 * 1024; // Allow up to 10MB raw upload since we pre-compress with sharp
+const MAX_BYTES = 4 * 1024 * 1024; // 4MB maximum cover size
 const ALLOWED: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",

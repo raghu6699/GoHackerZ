@@ -17,9 +17,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [
       { url: SITE_URL, changeFrequency: "hourly", priority: 1 },
       { url: `${SITE_URL}/read`, changeFrequency: "daily", priority: 0.9 },
-      { url: `${SITE_URL}/topics`, changeFrequency: "weekly", priority: 0.7 },
-      { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.5 },
-      { url: `${SITE_URL}/manifesto`, changeFrequency: "monthly", priority: 0.5 },
+      { url: `${SITE_URL}/topics`, changeFrequency: "weekly", priority: 0.8 },
+      { url: `${SITE_URL}/deep-dives`, changeFrequency: "weekly", priority: 0.8 },
+      { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.6 },
+      { url: `${SITE_URL}/manifesto`, changeFrequency: "monthly", priority: 0.6 },
+      { url: `${SITE_URL}/guidelines`, changeFrequency: "monthly", priority: 0.5 },
+      { url: `${SITE_URL}/guestbook`, changeFrequency: "weekly", priority: 0.5 },
+      { url: `${SITE_URL}/feed`, changeFrequency: "daily", priority: 0.7 },
       { url: `${SITE_URL}/contact`, changeFrequency: "monthly", priority: 0.4 },
       { url: `${SITE_URL}/search`, changeFrequency: "weekly", priority: 0.3 },
       ...topics.map((t) => ({

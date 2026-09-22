@@ -10,6 +10,7 @@ import {
   preloadCardData,
 } from "@/lib/queries";
 import { formatCount } from "@/lib/data";
+import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,7 +23,29 @@ export async function generateMetadata({
   const { username } = await params;
   const author = await getAuthor(username);
   if (!author) return { title: "Not found — GoHackerz" };
-  return { title: `${author.name} — GoHackerz`, description: author.bio };
+
+  const writerUrl = `${SITE_URL}/writer/${author.username}`;
+  const title = `${author.name} (${author.role} @ ${author.company}) — GoHackerz`;
+  const description = author.bio;
+
+  return {
+    title: { absolute: title },
+    description,
+    metadataBase: new URL(SITE_URL),
+    alternates: { canonical: writerUrl },
+    openGraph: {
+      title,
+      description,
+      url: writerUrl,
+      siteName: "GoHackerz",
+      type: "profile",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
 }
 
 export default async function WriterPage({
@@ -39,8 +62,34 @@ export default async function WriterPage({
   const totalReactions = posts.reduce((s, a) => s + a.reactions, 0);
   const cardData = await preloadCardData(posts);
 
+  const writerUrl = `${SITE_URL}/writer/${author.username}`;
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      name: author.name,
+      url: writerUrl,
+      mainEntity: {
+        "@type": "Person",
+        name: author.name,
+        alternateName: author.username,
+        jobTitle: author.role,
+        worksFor: {
+          "@type": "Organization",
+          name: author.company,
+        },
+        description: author.bio,
+        url: writerUrl,
+      },
+    },
+  ];
+
   return (
     <div className="wrap pt-8 pb-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* profile header with interactive follow toast */}
       <WriterProfileHeader author={author} totalReactions={totalReactions} />
 

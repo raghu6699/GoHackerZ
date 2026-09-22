@@ -9,6 +9,7 @@ import {
   preloadCardData,
 } from "@/lib/queries";
 import { formatCount } from "@/lib/data";
+import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({
   params,
@@ -18,7 +19,28 @@ export async function generateMetadata({
   const { slug } = await params;
   const topic = await getTopic(slug);
   if (!topic) return { title: "Not found — GoHackerz" };
-  return { title: `${topic.name} — GoHackerz`, description: topic.description };
+  const topicUrl = `${SITE_URL}/topic/${topic.slug}`;
+  const title = `${topic.name} Essays & Engineering Teardowns — GoHackerz`;
+  const description = topic.description;
+
+  return {
+    title: { absolute: title },
+    description,
+    metadataBase: new URL(SITE_URL),
+    alternates: { canonical: topicUrl },
+    openGraph: {
+      title,
+      description,
+      url: topicUrl,
+      siteName: "GoHackerz",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
 }
 
 export const dynamic = "force-dynamic";
@@ -38,8 +60,37 @@ export default async function TopicPage({
   const totalReactions = posts.reduce((s, a) => s + a.reactions, 0);
   const cardData = await preloadCardData(posts);
 
+  const topicUrl = `${SITE_URL}/topic/${topic.slug}`;
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: `${topic.name} Essays`,
+      description: topic.description,
+      url: topicUrl,
+      publisher: {
+        "@type": "Organization",
+        name: "GoHackerz",
+        url: SITE_URL,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Topics", item: `${SITE_URL}/topics` },
+        { "@type": "ListItem", position: 3, name: topic.name, item: topicUrl },
+      ],
+    },
+  ];
+
   return (
     <div className="wrap pt-8 pb-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* topic header */}
       <header className="relative overflow-hidden bg-card border-2 border-ink rounded-3xl shadow-pop-lg p-5 sm:p-10 mb-10 dotgrid">
         <div className="relative flex items-start gap-5">

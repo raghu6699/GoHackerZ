@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, articleApprovedEmail, articleRejectedEmail } from "@/lib/mailer";
+import { revalidateArticlePaths } from "@/lib/revalidate";
 
 /**
  * POST /api/review/[slug] — editor decision on a submitted article.
@@ -55,10 +55,7 @@ export async function POST(
       sendEmail(articleApprovedEmail(article.author.email, article.title, slug)).catch(() => {});
     }
 
-    revalidatePath("/");
-    revalidatePath(`/article/${slug}`);
-    revalidatePath("/drafts");
-    revalidatePath("/review");
+    revalidateArticlePaths(slug);
 
     return NextResponse.json({ ok: true, status: "PUBLISHED" });
   }
