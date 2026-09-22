@@ -158,7 +158,7 @@ export default async function HomePage({
             <span className="absolute -top-10 -right-10 w-[180px] h-[180px] bg-lime border-2 border-ink rounded-full opacity-90" />
             <div className="relative">
               <span className="inline-block bg-lime text-[#1A1440] border-2 border-ink rounded-full font-mono text-[12px] font-bold px-3 py-[5px] mb-4">
-                DEEP DIVE · {featured.readingTime} MIN
+                {featured.readingTime >= 5 ? "DEEP DIVE" : "FEATURED"} · {featured.readingTime} MIN
               </span>
               <Link href={`/article/${featured.slug}`}>
                 <h3 className="text-[clamp(30px,4vw,46px)] leading-[1.02] mb-4 hover:underline decoration-lime decoration-4 underline-offset-4">
