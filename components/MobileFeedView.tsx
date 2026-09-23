@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Avatar } from "./Avatar";
 import { QuickReactButton } from "./QuickReactButton";
+import { QuickSaveButton } from "./QuickSaveButton";
 import type { Article, Author, Topic } from "@/lib/data";
 import { formatCount, formatDateRelative } from "@/lib/data";
 
@@ -160,7 +161,10 @@ export function MobileFeedView({
 
                   <div className="flex items-center justify-between font-mono text-[11px] text-subtle pt-2 border-t border-ink/10">
                     <span>{formatDateRelative(article.publishedAt)}</span>
-                    <QuickReactButton slug={article.slug} initialCount={article.reactions} />
+                    <div className="flex items-center gap-2">
+                      <QuickReactButton slug={article.slug} initialCount={article.reactions} />
+                      <QuickSaveButton slug={article.slug} />
+                    </div>
                   </div>
                 </article>
               </div>
@@ -192,8 +196,9 @@ export function MobileFeedView({
                       {article.title}
                     </h3>
                   </Link>
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-center justify-between">
                     <QuickReactButton slug={article.slug} initialCount={article.reactions} />
+                    <QuickSaveButton slug={article.slug} />
                   </div>
                 </div>
               </div>
