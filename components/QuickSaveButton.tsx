@@ -54,11 +54,16 @@ export function QuickSaveButton({ slug }: { slug: string }) {
     e.preventDefault();
     e.stopPropagation();
     if (busy) return;
+
+    // Instant optimistic update on tap/click (<1ms feedback)
+    const nextSaved = !saved;
+    setSaved(nextSaved);
     setBusy(true);
 
     try {
       const res = await fetch(`/api/articles/${slug}/bookmark`, { method: "POST" });
       if (res.status === 401) {
+        setSaved(!nextSaved);
         try {
           localStorage.setItem(
             "gohackerz_pending_action",
@@ -71,15 +76,18 @@ export function QuickSaveButton({ slug }: { slug: string }) {
         const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
         setTimeout(() => {
           router.push(`/signin?redirect=${currentPath}`);
-        }, 600);
+        }, 500);
         return;
       }
       const data = await res.json();
       if (res.ok) {
         setSaved(data.saved);
         showToast(data.saved ? "Saved to your profile ★" : "Removed from saved posts");
+      } else {
+        setSaved(!nextSaved);
       }
     } catch {
+      setSaved(!nextSaved);
       showToast("Couldn't save post — try again.");
     } finally {
       setBusy(false);

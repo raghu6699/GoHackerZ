@@ -66,11 +66,19 @@ export function QuickReactButton({
     e.preventDefault();
     e.stopPropagation();
     if (busy) return;
+
+    // Instant optimistic update on tap/click (<1ms feedback)
+    const nextReacted = !reacted;
+    const nextCount = Math.max(0, count + (nextReacted ? 1 : -1));
+    setReacted(nextReacted);
+    setCount(nextCount);
     setBusy(true);
 
     try {
       const res = await fetch(`/api/articles/${slug}/react`, { method: "POST" });
       if (res.status === 401) {
+        setReacted(!nextReacted);
+        setCount(count);
         try {
           localStorage.setItem(
             "gohackerz_pending_action",
@@ -83,7 +91,7 @@ export function QuickReactButton({
         const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
         setTimeout(() => {
           router.push(`/signin?redirect=${currentPath}`);
-        }, 600);
+        }, 500);
         return;
       }
       const data = await res.json();
@@ -91,8 +99,13 @@ export function QuickReactButton({
         setReacted(data.reacted);
         setCount(data.count);
         showToast(data.reacted ? "Reacted to post ▲" : "Removed reaction");
+      } else {
+        setReacted(!nextReacted);
+        setCount(count);
       }
     } catch {
+      setReacted(!nextReacted);
+      setCount(count);
       showToast("Couldn't save your reaction — try again.");
     } finally {
       setBusy(false);

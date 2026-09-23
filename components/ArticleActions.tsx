@@ -128,11 +128,16 @@ export function ArticleActions({
 
   async function toggleSave() {
     if (busy) return;
+
+    // Instant optimistic update on tap/click (<1ms feedback)
+    const nextSaved = !saved;
+    setSaved(nextSaved);
     setBusy(true);
 
     try {
       const res = await fetch(`/api/articles/${slug}/bookmark`, { method: "POST" });
       if (res.status === 401) {
+        setSaved(!nextSaved);
         try {
           localStorage.setItem(
             "gohackerz_pending_action",
@@ -145,15 +150,18 @@ export function ArticleActions({
         const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
         setTimeout(() => {
           router.push(`/signin?redirect=${currentPath}`);
-        }, 600);
+        }, 500);
         return;
       }
       const data = await res.json();
       if (res.ok) {
         setSaved(data.saved);
         showToast(data.saved ? "Saved to your profile ★" : "Removed from saved posts");
+      } else {
+        setSaved(!nextSaved);
       }
     } catch {
+      setSaved(!nextSaved);
       showToast("Couldn't save — try again.");
     } finally {
       setBusy(false);
@@ -162,11 +170,19 @@ export function ArticleActions({
 
   async function toggleReaction() {
     if (busy) return;
+
+    // Instant optimistic update on tap/click (<1ms feedback)
+    const nextReacted = !reacted;
+    const nextCount = Math.max(0, reactions + (nextReacted ? 1 : -1));
+    setReacted(nextReacted);
+    setReactions(nextCount);
     setBusy(true);
 
     try {
       const res = await fetch(`/api/articles/${slug}/react`, { method: "POST" });
       if (res.status === 401) {
+        setReacted(!nextReacted);
+        setReactions(reactions);
         try {
           localStorage.setItem(
             "gohackerz_pending_action",
@@ -179,15 +195,20 @@ export function ArticleActions({
         const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
         setTimeout(() => {
           router.push(`/signin?redirect=${currentPath}`);
-        }, 600);
+        }, 500);
         return;
       }
       const data = await res.json();
       if (res.ok) {
         setReacted(data.reacted);
         setReactions(data.count);
+      } else {
+        setReacted(!nextReacted);
+        setReactions(reactions);
       }
     } catch {
+      setReacted(!nextReacted);
+      setReactions(reactions);
       showToast("Couldn't save your reaction — try again.");
     } finally {
       setBusy(false);
