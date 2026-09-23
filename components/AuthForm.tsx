@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
@@ -9,6 +9,8 @@ import { Logo } from "./Logo";
 
 export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   const isSignup = mode === "signup";
+  const searchParams = useSearchParams();
+  const redirectTarget = searchParams?.get("redirect") || "/";
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -195,7 +197,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         return;
       }
       await syncProfile(data.session);
-      router.push("/");
+      router.push(redirectTarget);
       router.refresh();
     }
   }
@@ -218,10 +220,11 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       return;
     }
 
+    const callbackNext = redirectTarget !== "/" ? `?next=${encodeURIComponent(redirectTarget)}` : "";
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback${callbackNext}`,
       },
     });
 

@@ -1,15 +1,44 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/context/ToastContext";
 
 export function QuickSaveButton({ slug }: { slug: string }) {
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
+
+    // Check for pending bookmark action stored before sign in
+    try {
+      const rawPending = localStorage.getItem("gohackerz_pending_action");
+      if (rawPending) {
+        const pending = JSON.parse(rawPending);
+        if (
+          pending?.type === "bookmark" &&
+          pending?.slug === slug &&
+          Date.now() - (pending.timestamp || 0) < 15 * 60 * 1000
+        ) {
+          localStorage.removeItem("gohackerz_pending_action");
+          fetch(`/api/articles/${slug}/bookmark`, { method: "POST" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+              if (!cancelled && data) {
+                setSaved(data.saved);
+                showToast("Welcome back! Saved to your profile ★");
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    } catch {
+      // ignore storage error
+    }
+
     fetch(`/api/articles/${slug}/bookmark`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -19,20 +48,30 @@ export function QuickSaveButton({ slug }: { slug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, showToast]);
 
   async function toggleSave(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (busy) return;
     setBusy(true);
-    const next = !saved;
-    setSaved(next);
+
     try {
       const res = await fetch(`/api/articles/${slug}/bookmark`, { method: "POST" });
       if (res.status === 401) {
-        setSaved(!next);
-        showToast("Sign in to save posts ✦");
+        try {
+          localStorage.setItem(
+            "gohackerz_pending_action",
+            JSON.stringify({ type: "bookmark", slug, timestamp: Date.now() })
+          );
+        } catch {
+          // ignore storage error
+        }
+        showToast("Sign in to save posts — redirecting... ✦");
+        const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+        setTimeout(() => {
+          router.push(`/signin?redirect=${currentPath}`);
+        }, 600);
         return;
       }
       const data = await res.json();
@@ -41,7 +80,7 @@ export function QuickSaveButton({ slug }: { slug: string }) {
         showToast(data.saved ? "Saved to your profile ★" : "Removed from saved posts");
       }
     } catch {
-      setSaved(!next);
+      showToast("Couldn't save post — try again.");
     } finally {
       setBusy(false);
     }

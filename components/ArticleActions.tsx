@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Link as LinkIcon, X } from "lucide-react";
 import { formatCount } from "@/lib/data";
 import { useToast } from "@/context/ToastContext";
@@ -65,9 +66,46 @@ export function ArticleActions({
   const [busy, setBusy] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const { showToast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
+
+    // Auto-apply pending reactions or bookmarks stored before sign-in
+    try {
+      const rawPending = localStorage.getItem("gohackerz_pending_action");
+      if (rawPending) {
+        const pending = JSON.parse(rawPending);
+        if (pending?.slug === slug && Date.now() - (pending.timestamp || 0) < 15 * 60 * 1000) {
+          localStorage.removeItem("gohackerz_pending_action");
+          if (pending.type === "react") {
+            fetch(`/api/articles/${slug}/react`, { method: "POST" })
+              .then((r) => (r.ok ? r.json() : null))
+              .then((data) => {
+                if (!cancelled && data) {
+                  setReactions(data.count);
+                  setReacted(data.reacted);
+                  showToast("Welcome back! Your reaction has been recorded ▲");
+                }
+              })
+              .catch(() => {});
+          } else if (pending.type === "bookmark") {
+            fetch(`/api/articles/${slug}/bookmark`, { method: "POST" })
+              .then((r) => (r.ok ? r.json() : null))
+              .then((data) => {
+                if (!cancelled && data) {
+                  setSaved(data.saved);
+                  showToast("Welcome back! Saved to your profile ★");
+                }
+              })
+              .catch(() => {});
+          }
+        }
+      }
+    } catch {
+      // ignore JSON errors
+    }
+
     fetch(`/api/articles/${slug}/react`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -86,18 +124,28 @@ export function ArticleActions({
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, showToast]);
 
   async function toggleSave() {
     if (busy) return;
     setBusy(true);
-    const next = !saved;
-    setSaved(next);
+
     try {
       const res = await fetch(`/api/articles/${slug}/bookmark`, { method: "POST" });
       if (res.status === 401) {
-        setSaved(!next);
-        showToast("Sign in to save posts ✦");
+        try {
+          localStorage.setItem(
+            "gohackerz_pending_action",
+            JSON.stringify({ type: "bookmark", slug, timestamp: Date.now() })
+          );
+        } catch {
+          // ignore storage error
+        }
+        showToast("Sign in to save posts — redirecting... ✦");
+        const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+        setTimeout(() => {
+          router.push(`/signin?redirect=${currentPath}`);
+        }, 600);
         return;
       }
       const data = await res.json();
@@ -106,7 +154,6 @@ export function ArticleActions({
         showToast(data.saved ? "Saved to your profile ★" : "Removed from saved posts");
       }
     } catch {
-      setSaved(!next);
       showToast("Couldn't save — try again.");
     } finally {
       setBusy(false);
@@ -116,17 +163,23 @@ export function ArticleActions({
   async function toggleReaction() {
     if (busy) return;
     setBusy(true);
-    const nextReacted = !reacted;
-    const nextCount = Math.max(0, reactions + (nextReacted ? 1 : -1));
-    setReacted(nextReacted);
-    setReactions(nextCount);
 
     try {
       const res = await fetch(`/api/articles/${slug}/react`, { method: "POST" });
       if (res.status === 401) {
-        setReacted(!nextReacted);
-        setReactions(reactions);
-        showToast("Sign in to react to posts ✦");
+        try {
+          localStorage.setItem(
+            "gohackerz_pending_action",
+            JSON.stringify({ type: "react", slug, timestamp: Date.now() })
+          );
+        } catch {
+          // ignore storage error
+        }
+        showToast("Sign in to react — redirecting... ✦");
+        const currentPath = encodeURIComponent(window.location.pathname + window.location.search);
+        setTimeout(() => {
+          router.push(`/signin?redirect=${currentPath}`);
+        }, 600);
         return;
       }
       const data = await res.json();
@@ -135,8 +188,6 @@ export function ArticleActions({
         setReactions(data.count);
       }
     } catch {
-      setReacted(!nextReacted);
-      setReactions(reactions);
       showToast("Couldn't save your reaction — try again.");
     } finally {
       setBusy(false);

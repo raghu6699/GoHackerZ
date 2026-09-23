@@ -127,14 +127,6 @@ export default function RootLayout({
         <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
-        {/* OpenGraph & Twitter Card Metas using /og-image.png */}
-        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:type" content="image/png" />
-        <meta name="twitter:image" content={`${SITE_URL}/og-image.png`} />
-        <meta name="twitter:card" content="summary_large_image" />
-
         {/* Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

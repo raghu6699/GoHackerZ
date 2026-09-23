@@ -2,12 +2,34 @@ import type { Metadata } from "next";
 import { ArticleCard } from "@/components/ArticleCard";
 import { getLatest, preloadCardData } from "@/lib/queries";
 
+import { SITE_URL } from "@/lib/site";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Deep Dives",
   description: "Long-form essays on systems, architecture, distributed work, and engineering craft.",
+  openGraph: {
+    title: "Deep Dives — Long-Form Essays on GoHackerz",
+    description: "Long-form essays on systems, architecture, distributed work, and engineering craft.",
+    url: `${SITE_URL}/deep-dives`,
+    siteName: "GoHackerz",
+    images: [
+      {
+        url: `${SITE_URL}/api/og?title=Deep%20Dives%20%E2%80%94%20Long-Form%20Essays&topic=Essays&author=GoHackerz`,
+        width: 1200,
+        height: 630,
+        alt: "Deep Dives — Long-Form Essays on GoHackerz",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Deep Dives — Long-Form Essays on GoHackerz",
+    description: "Long-form essays on systems, architecture, distributed work, and engineering craft.",
+    images: [`${SITE_URL}/api/og?title=Deep%20Dives%20%E2%80%94%20Long-Form%20Essays&topic=Essays&author=GoHackerz`],
+  },
 };
 
 export default async function DeepDivesPage() {
