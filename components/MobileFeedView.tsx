@@ -191,8 +191,8 @@ export function MobileFeedView({
                   <h3 className="text-[16px] font-bold leading-snug text-ink mb-1">
                     {article.title}
                   </h3>
-                  <div className="font-mono text-[11px] font-bold text-purple">
-                    ▲ {formatCount(article.reactions)} reactions
+                  <div className="mt-1 z-10" onClick={(e) => e.stopPropagation()}>
+                    <QuickReactButton slug={article.slug} initialCount={article.reactions} />
                   </div>
                 </div>
               </Link>

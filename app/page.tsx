@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { ArticleCard } from "@/components/ArticleCard";
+import { QuickReactButton } from "@/components/QuickReactButton";
 import { SponsoredCard } from "@/components/SponsoredCard";
 import { PartnerBanner } from "@/components/PartnerBanner";
 import { SectionHead } from "@/components/SectionHead";
@@ -283,9 +284,9 @@ export default async function HomePage({
                         {a.title}
                       </h4>
                     </div>
-                    <span className="hidden sm:inline-block font-mono text-[12px] font-bold bg-sky text-[#1A1440] border border-ink/30 rounded-full px-2.5 py-1 whitespace-nowrap">
-                      ▲ {formatCount(a.reactions)}
-                    </span>
+                    <div className="shrink-0 z-10" onClick={(e) => e.stopPropagation()}>
+                      <QuickReactButton slug={a.slug} initialCount={a.reactions} />
+                    </div>
                   </Link>
                 );
               })}
