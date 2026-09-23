@@ -66,13 +66,6 @@ export async function getCurrentDbUser() {
         where: { id: byEmail.id },
         data: { authId: user.id, name: byEmail.name || name },
       });
-      // Send Welcome Email via Resend (AWAITED to prevent Vercel serverless function termination)
-      try {
-        const { sendEmail, welcomeEmail } = await import("@/lib/mailer");
-        await sendEmail(welcomeEmail(user.email));
-      } catch (err) {
-        console.error("Error triggering welcome email on re-link:", err);
-      }
       return updated;
     }
 

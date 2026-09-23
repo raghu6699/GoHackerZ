@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { sendEmail, welcomeEmail } from "@/lib/mailer";
 
 export async function POST(req: Request) {
   try {
@@ -36,13 +35,6 @@ export async function POST(req: Request) {
     if (updateErr) {
       console.error("Auto-confirm updateUserById error:", updateErr);
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
-    }
-
-    // Send transactional welcome email via Resend
-    try {
-      await sendEmail(welcomeEmail(email));
-    } catch (e) {
-      console.error("Welcome email failed during auto-confirm:", e);
     }
 
     return NextResponse.json({ ok: true, confirmed: true });
