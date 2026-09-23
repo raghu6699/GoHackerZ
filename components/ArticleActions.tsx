@@ -71,7 +71,10 @@ export function ArticleActions({
     fetch(`/api/articles/${slug}/react`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (!cancelled && data) setReactions(data.count);
+        if (!cancelled && data) {
+          setReactions(data.count);
+          setReacted(data.reacted);
+        }
       })
       .catch(() => {});
     fetch(`/api/articles/${slug}/bookmark`)

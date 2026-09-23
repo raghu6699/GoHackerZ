@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Avatar } from "./Avatar";
+import { QuickReactButton } from "./QuickReactButton";
 import type { Article, Author, Topic } from "@/lib/data";
 import { formatCount, formatDateRelative } from "@/lib/data";
 
@@ -159,9 +160,7 @@ export function MobileFeedView({
 
                   <div className="flex items-center justify-between font-mono text-[11px] text-subtle pt-2 border-t border-ink/10">
                     <span>{formatDateRelative(article.publishedAt)}</span>
-                    <span className="font-bold text-ink bg-bg px-2 py-0.5 rounded border border-ink/10">
-                      ▲ {formatCount(article.reactions)}
-                    </span>
+                    <QuickReactButton slug={article.slug} initialCount={article.reactions} />
                   </div>
                 </article>
               </div>

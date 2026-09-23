@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "./Avatar";
 import { QuickSaveButton } from "./QuickSaveButton";
+import { QuickReactButton } from "./QuickReactButton";
 import { getAuthor, getTopic } from "@/lib/queries";
 import {
   type Article,
@@ -49,9 +50,7 @@ export async function ArticleCard({
           </div>
         </Link>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="hidden sm:inline-block font-mono text-[11px] font-semibold bg-bg border border-ink/15 rounded-md px-2 py-0.5 text-muted whitespace-nowrap">
-            ▲ {formatCount(article.reactions)}
-          </span>
+          <QuickReactButton slug={article.slug} initialCount={article.reactions} />
           <QuickSaveButton slug={article.slug} />
         </div>
       </div>
@@ -94,9 +93,9 @@ export async function ArticleCard({
         >
           {author.name}
         </Link>
-        <span className="ml-auto font-mono text-[11px] font-semibold bg-bg text-ink border border-ink/15 rounded-md px-2 py-0.5 shrink-0">
-          ▲ {formatCount(article.reactions)}
-        </span>
+        <div className="ml-auto">
+          <QuickReactButton slug={article.slug} initialCount={article.reactions} />
+        </div>
       </div>
     </article>
   );
