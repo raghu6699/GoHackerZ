@@ -11,7 +11,7 @@ export function SponsoredCard({
   headline = "Your servers, with the cloud's API",
   body = "Rack-scale hardware you can rent by the month. No hypervisor tax, no surprise egress bills.",
   ctaLabel = "See how it works",
-  ctaHref = "#",
+  ctaHref = "https://oxide.computer",
 }: {
   sponsor?: string;
   headline?: string;
@@ -19,6 +19,8 @@ export function SponsoredCard({
   ctaLabel?: string;
   ctaHref?: string;
 }) {
+  const isExternal = ctaHref.startsWith("http://") || ctaHref.startsWith("https://");
+
   return (
     <aside className="ad-card">
       <div className="px-5 pt-3 pb-2 border-b-2 border-dashed border-ink/20 flex items-center justify-between">
@@ -30,7 +32,12 @@ export function SponsoredCard({
       <div className="p-5">
         <h4 className="text-[19px] font-bold leading-tight mb-2">{headline}</h4>
         <p className="text-[14px] leading-relaxed text-muted mb-4">{body}</p>
-        <Link href={ctaHref} className="btn btn-sm btn-purple w-full">
+        <Link
+          href={ctaHref}
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
+          className="btn btn-sm btn-purple w-full justify-center"
+        >
           {ctaLabel} →
         </Link>
       </div>
