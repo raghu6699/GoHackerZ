@@ -267,15 +267,14 @@ export default async function HomePage({
                 const topic = cardData.topics.get(a.topicSlug);
                 if (!author || !topic) return null;
                 return (
-                  <Link
+                  <div
                     key={a.slug}
-                    href={`/article/${a.slug}`}
                     className="grid grid-cols-[34px_1fr_auto] sm:grid-cols-[54px_1fr_auto] gap-3 sm:gap-4 items-center px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-ink last:border-b-0 hover:bg-bg transition-colors group"
                   >
                     <span className="text-[28px] font-bold text-purple text-center">
                       {i + 1}
                     </span>
-                    <div>
+                    <Link href={`/article/${a.slug}`} className="min-w-0">
                       <div className="font-mono text-[11px] text-subtle font-bold mb-1.5 break-words">
                         {author.name.toUpperCase()} · {topic.name.toUpperCase()} ·{" "}
                         {a.readingTime} MIN
@@ -283,11 +282,11 @@ export default async function HomePage({
                       <h4 className="text-[19px] font-semibold leading-tight group-hover:text-purple transition-colors">
                         {a.title}
                       </h4>
-                    </div>
-                    <div className="shrink-0 z-10" onClick={(e) => e.stopPropagation()}>
+                    </Link>
+                    <div className="shrink-0">
                       <QuickReactButton slug={a.slug} initialCount={a.reactions} />
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </section>

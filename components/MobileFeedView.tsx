@@ -176,26 +176,27 @@ export function MobileFeedView({
             const author = authors.get(article.authorUsername);
             const topic = topicsMap.get(article.topicSlug);
             return (
-              <Link
+              <div
                 key={article.slug}
-                href={`/article/${article.slug}`}
                 className="flex items-start gap-3 bg-card border border-ink/15 rounded-2xl p-4 shadow-sm hover:border-purple transition-all"
               >
                 <span className="text-[24px] font-extrabold text-purple leading-none shrink-0 w-6 text-center mt-0.5">
                   {idx + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-mono text-[11px] text-subtle mb-1">
-                    {author?.name} · {topic?.name} · {article.readingTime} min read
-                  </div>
-                  <h3 className="text-[16px] font-bold leading-snug text-ink mb-1">
-                    {article.title}
-                  </h3>
-                  <div className="mt-1 z-10" onClick={(e) => e.stopPropagation()}>
+                  <Link href={`/article/${article.slug}`}>
+                    <div className="font-mono text-[11px] text-subtle mb-1">
+                      {author?.name} · {topic?.name} · {article.readingTime} min read
+                    </div>
+                    <h3 className="text-[16px] font-bold leading-snug text-ink mb-1 hover:text-purple transition-colors">
+                      {article.title}
+                    </h3>
+                  </Link>
+                  <div className="mt-2">
                     <QuickReactButton slug={article.slug} initialCount={article.reactions} />
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
