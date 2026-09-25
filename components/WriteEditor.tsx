@@ -229,8 +229,23 @@ export function WriteEditor({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [dek, setDek] = useState(initial?.dek ?? "");
   const [topic, setTopic] = useState(initial?.topicSlug ?? topicList[0].slug);
+
+  // body holds only the rich-text portion (no [^id]: footnote defs).
+  // Footnote definitions live separately in footnoteDefsRef so they survive
+  // Tiptap round-trips (Tiptap doesn't know about them).
+  const initialFnBlock = initial?.content?.find((b) => b.type === "footnotes") as
+    | { type: "footnotes"; items: { id: string; text: string }[] }
+    | undefined;
+  const footnoteDefsRef = useRef<string>(
+    initialFnBlock
+      ? initialFnBlock.items.map((f) => `[^${f.id}]: ${f.text}`).join("\n\n")
+      : ""
+  );
+
   const [body, setBody] = useState(
-    initial?.content ? blocksToText(initial.content) : ""
+    initial?.content
+      ? blocksToText(initial.content.filter((b) => b.type !== "footnotes"))
+      : ""
   );
   const [coverUrl, setCoverUrl] = useState(initial?.coverImage ?? "");
   const [seoTitle, setSeoTitle] = useState(initial?.seoTitle ?? "");
@@ -239,13 +254,19 @@ export function WriteEditor({
     initial?.scheduledAt ? toDatetimeLocal(initial.scheduledAt) : ""
   );
 
-  const [busy, setBusy] = useState<"" | "save" | "publish">("");
+  const [busy, setBusy] = useState<"" | "save" | "publish">("" );
   const [uploadingCover, setUploadingCover] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const words = body.trim() ? body.trim().split(/\s+/).length : 0;
   const readingTime = Math.max(1, Math.round(words / 200));
   const activeTopic = topicList.find((t) => t.slug === topic) ?? topicList[0];
+
+  /** Full body text sent to the API — rich content + footnote definitions. */
+  function bodyWithFootnotes(): string {
+    const defs = footnoteDefsRef.current.trim();
+    return defs ? `${body}\n\n${defs}` : body;
+  }
 
   const editor = useEditor({
     extensions: [
@@ -400,13 +421,27 @@ export function WriteEditor({
     setTitle(snap.title);
     setDek(snap.dek);
     setTopic(snap.topicSlug || topicList[0].slug);
-    setBody(snap.body);
     setCoverUrl(snap.coverImage ?? "");
     setSeoTitle(snap.seoTitle ?? "");
     setSeoDescription(snap.seoDescription ?? "");
     setSchedule(snap.scheduledAt ? toDatetimeLocal(snap.scheduledAt) : "");
-    if (editor && snap.body) {
-      editor.commands.setContent(blocksToHtml(parseBlocks(snap.body)));
+    if (snap.body) {
+      // Re-extract footnote defs that were stored together with the body
+      const snapBlocks = parseBlocks(snap.body);
+      const fnBlock = snapBlocks.find((b) => b.type === "footnotes") as
+        | { type: "footnotes"; items: { id: string; text: string }[] }
+        | undefined;
+      footnoteDefsRef.current = fnBlock
+        ? fnBlock.items.map((f) => `[^${f.id}]: ${f.text}`).join("\n\n")
+        : "";
+      const richBlocks = snapBlocks.filter((b) => b.type !== "footnotes");
+      const richText = blocksToText(richBlocks);
+      setBody(richText);
+      if (editor) {
+        editor.commands.setContent(blocksToHtml(richBlocks));
+      }
+    } else {
+      setBody("");
     }
     setRecovered(null);
   }
@@ -422,7 +457,7 @@ export function WriteEditor({
       title,
       dek,
       topicSlug: topic,
-      body,
+      body: bodyWithFootnotes(),
       draft,
       coverImage: coverUrl || null,
       seoTitle: seoTitle || null,
@@ -451,7 +486,6 @@ export function WriteEditor({
   }
 
   async function saveDraft() {
-    if (!title.trim()) return;
     setBusy("save");
     setError(null);
     try {
@@ -567,7 +601,7 @@ export function WriteEditor({
           <span className="font-mono text-[11px] sm:text-[12px] text-subtle shrink-0">
             {words} words · {readingTime} min
           </span>
-          <button type="button" onClick={saveDraft} disabled={!title.trim() || busy !== ""} className="btn btn-sm disabled:opacity-40 flex-1 sm:flex-initial">
+          <button type="button" onClick={saveDraft} disabled={busy !== ""} className="btn btn-sm disabled:opacity-40 flex-1 sm:flex-initial">
             {busy === "save" ? "Saving…" : "Save draft"}
           </button>
           <button type="button" onClick={publishOrSubmit} disabled={!title.trim() || busy !== ""} className="btn btn-purple btn-sm sm:btn-md disabled:opacity-40 flex-1 sm:flex-initial">
@@ -720,7 +754,7 @@ export function WriteEditor({
                           }
                           onKeyDown={(e) => e.key === "Enter" && applyImage()}
                           placeholder={popover.busy ? "Uploading…" : "Caption (optional)"}
-                          disabled={popover.busy || !popover.src.trim()}
+                          disabled={popover.busy}
                           className="w-full border border-ink/15 rounded-lg px-3 py-1.5 outline-none bg-card text-ink focus:border-purple disabled:opacity-50"
                         />
                         <div className="flex gap-2 justify-end items-center">

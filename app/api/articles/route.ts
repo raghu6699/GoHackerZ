@@ -39,9 +39,17 @@ export async function POST(req: Request) {
     const topicSlug = (payload.topicSlug ?? "").trim();
     const bodyText = (payload.body ?? "").trim();
 
-    if (!title || !topicSlug || !bodyText) {
+    const isDraft = payload.draft === true;
+
+    if (!isDraft && (!title || !topicSlug || !bodyText)) {
       return NextResponse.json(
         { error: "Title, topic and body are required." },
+        { status: 400 }
+      );
+    }
+    if (isDraft && !topicSlug) {
+      return NextResponse.json(
+        { error: "Please select a topic." },
         { status: 400 }
       );
     }
@@ -86,7 +94,7 @@ export async function POST(req: Request) {
       slug = `${base}-${n + 1}`;
     }
 
-    const words = bodyText.split(/\s+/).length;
+    const words = bodyText ? bodyText.split(/\s+/).length : 0;
     const readingTime = Math.max(1, Math.round(words / 200));
 
     // Draft? No public visibility. Scheduled? Published with a future date —
@@ -120,7 +128,6 @@ export async function POST(req: Request) {
       });
     }
 
-    const isDraft = payload.draft === true;
     const autoPublish =
       dbAuthor.role === "EDITOR" ||
       dbAuthor.role === "ADMIN" ||

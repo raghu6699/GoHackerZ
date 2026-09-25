@@ -19,7 +19,7 @@ export type InlineToken =
   | { t: "footref"; id: string };
 
 const INLINE_RE =
-  /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(\*[^*\n]+\*)|(\[\^[A-Za-z0-9_-]+\])|(\[[^\]\n]+\]\([^)\s]+\))/g;
+  /(\[\^[A-Za-z0-9_-]+\])|(\[[^\]\n]+\]\([^)\s]+\))|(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(\*[^*\n]+\*)/g;
 
 export function parseInline(s: string): InlineToken[] {
   const tokens: InlineToken[] = [];
@@ -28,18 +28,18 @@ export function parseInline(s: string): InlineToken[] {
     const idx = m.index ?? 0;
     if (idx > last) tokens.push({ t: "text", v: s.slice(last, idx) });
     const tok = m[0];
-    if (tok.startsWith("`")) {
-      tokens.push({ t: "code", v: tok.slice(1, -1) });
-    } else if (tok.startsWith("**")) {
-      tokens.push({ t: "strong", v: tok.slice(2, -2) });
-    } else if (tok.startsWith("[^")) {
+    if (tok.startsWith("[^")) {
       tokens.push({ t: "footref", id: tok.slice(2, -1) });
-    } else if (tok.startsWith("*")) {
-      tokens.push({ t: "em", v: tok.slice(1, -1) });
-    } else {
+    } else if (tok.startsWith("[")) {
       const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(tok);
       if (link) tokens.push({ t: "link", v: link[1], href: link[2] });
       else tokens.push({ t: "text", v: tok });
+    } else if (tok.startsWith("`")) {
+      tokens.push({ t: "code", v: tok.slice(1, -1) });
+    } else if (tok.startsWith("**")) {
+      tokens.push({ t: "strong", v: tok.slice(2, -2) });
+    } else if (tok.startsWith("*")) {
+      tokens.push({ t: "em", v: tok.slice(1, -1) });
     }
     last = idx + tok.length;
   }
@@ -278,6 +278,13 @@ function wrapMark(out: string, open: string, close: string): string {
 
 function renderMarks(text: string, marks?: TiptapNode["marks"]): string {
   let out = text;
+  // Link must be applied FIRST so that bold/italic wrap the label inside the
+  // brackets: [**bold text**](url) — not **[bold text](url)** which breaks
+  // parseInline's link regex.
+  for (const m of marks ?? []) {
+    if (m.type === "link")
+      out = `[${out.trim()}](${(m.attrs?.href as string) ?? ""})`;
+  }
   for (const m of marks ?? []) {
     if (m.type === "bold") out = wrapMark(out, "**", "**");
   }
@@ -286,10 +293,6 @@ function renderMarks(text: string, marks?: TiptapNode["marks"]): string {
   }
   for (const m of marks ?? []) {
     if (m.type === "code") out = wrapMark(out, "`", "`");
-  }
-  for (const m of marks ?? []) {
-    if (m.type === "link")
-      out = `[${wrapMark(out, "", "").trim()}](${(m.attrs?.href as string) ?? ""})`;
   }
   return out;
 }
