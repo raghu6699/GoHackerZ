@@ -19,10 +19,12 @@ import {
   X,
   Menu,
   MessageSquare,
+  Trophy,
 } from "lucide-react";
 
 const links = [
   { href: "/read", label: "Feed", icon: BookOpen },
+  { href: "/hackathons", label: "Hackathons", icon: Trophy, badge: "LIVE" },
   { href: "/deep-dives", label: "Deep Dives", icon: Sparkles },
   { href: "/topics", label: "Topics", icon: Tag },
   { href: "/guestbook", label: "Guestbook Wall", icon: MessageSquare },
@@ -158,14 +160,21 @@ export function MobileMenu() {
                     key={l.label}
                     href={l.href}
                     onClick={() => setOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-bold transition-all ${
+                    className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-[15px] font-bold transition-all ${
                       isActive
                         ? "bg-purple text-white shadow-pop-sm"
                         : "bg-bg text-ink border border-ink/15 hover:border-purple"
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-purple"}`} />
-                    {l.label}
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-purple"}`} />
+                      <span>{l.label}</span>
+                    </div>
+                    {("badge" in l) && (
+                      <span className="px-2 py-0.5 text-[10px] bg-lime text-ink font-mono font-extrabold rounded-md shadow-sm animate-pulse">
+                        {String(l.badge)}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

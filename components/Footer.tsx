@@ -47,6 +47,13 @@ export function Footer() {
       ],
     },
     {
+      heading: "EVENTS",
+      links: [
+        { label: "Hackathons", href: "/hackathons", badge: "LIVE" },
+        { label: "Guestbook Wall", href: "/guestbook" },
+      ],
+    },
+    {
       heading: "ABOUT",
       links: [
         { label: "Manifesto", href: "/manifesto" },
@@ -60,8 +67,8 @@ export function Footer() {
     <footer className="mt-8 sm:mt-16 pb-6 sm:pb-8">
       <div className="wrap">
         <div className="bg-brand-dark text-white border-2 border-ink shadow-pop-lg rounded-2xl sm:rounded-3xl p-5 sm:p-10">
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr] gap-6 sm:gap-8 mb-6 sm:mb-9">
-            <div className="col-span-2 sm:col-span-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-[1.6fr_1fr_1fr_1.1fr_1fr] gap-6 sm:gap-8 mb-6 sm:mb-9">
+            <div className="col-span-2 sm:col-span-3 md:col-span-1">
               <Logo light className="mb-2" />
               <p className="text-[#D4CEF5] text-[13px] sm:text-[15px] leading-relaxed max-w-[260px]">
                 Engineering essays and teardowns from the builders who ship.
@@ -76,9 +83,14 @@ export function Footer() {
                   <Link
                     key={l.label}
                     href={l.href}
-                    className="block text-[#E5E0FF] text-[13px] sm:text-[15px] py-1 hover:text-white hover:underline transition-colors"
+                    className="inline-flex items-center text-[#E5E0FF] text-[13px] sm:text-[15px] py-1 hover:text-white hover:underline transition-colors group"
                   >
-                    {l.label}
+                    <span>{l.label}</span>
+                    {l.badge && (
+                      <span className="ml-1.5 px-1.5 py-0.2 text-[9px] bg-lime text-ink font-mono font-extrabold rounded-md shadow-sm animate-pulse group-hover:scale-105 transition-transform">
+                        {l.badge}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>

@@ -823,4 +823,16 @@ img {
       animation: none !important;
     }
   }
-}
+
+  /* 3D Holographic Passport & Card utilities */
+  .perspective-1200 {
+    perspective: 1200px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}

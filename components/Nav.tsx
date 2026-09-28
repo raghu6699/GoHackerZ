@@ -9,6 +9,7 @@ import { MobileMenu } from "./MobileMenu";
 
 const links = [
   { href: "/read", label: "Feed" },
+  { href: "/hackathons", label: "Hackathons", badge: "LIVE" },
   { href: "/deep-dives", label: "Deep Dives" },
   { href: "/topics", label: "Topics" },
   { href: "/guestbook", label: "Guestbook" },
@@ -34,13 +35,18 @@ export function Nav() {
               <Link
                 key={l.label}
                 href={l.href}
-                className={`text-[14.5px] font-semibold px-3 py-1.5 rounded-xl border-2 transition-all ${
+                className={`relative inline-flex items-center gap-1.5 text-[14.5px] font-semibold px-3 py-1.5 rounded-xl border-2 transition-all ${
                   isActive
                     ? "bg-card border-ink text-purple shadow-pop-sm"
                     : "border-transparent text-ink hover:bg-card hover:border-ink hover:shadow-pop-sm"
                 }`}
               >
-                {l.label}
+                <span>{l.label}</span>
+                {l.badge && (
+                  <span className="px-1.5 py-0.2 text-[9px] bg-lime text-ink font-mono font-extrabold rounded-md shadow-sm animate-pulse">
+                    {l.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

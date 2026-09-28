@@ -230,3 +230,104 @@ model ArticleDailyStat {
 
   @@unique([articleId, date])
 }
+
+// ── Hackathons Platform ─────────────────────────────────────────
+enum HackathonStatus {
+  UPCOMING
+  ACTIVE
+  JUDGING
+  COMPLETED
+}
+
+model Hackathon {
+  id                 String          @id @default(cuid())
+  slug               String          @unique
+  title              String
+  tagline            String
+  description        String
+  coverImage         String?
+  status             HackathonStatus @default(ACTIVE)
+  startDate          DateTime
+  endDate            DateTime
+  submissionDeadline DateTime
+  prizePool          String
+  tracks             Json
+  rules              Json
+  faqs               Json?
+  sponsors           Json?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  teams        HackathonTeam[]
+  participants HackathonParticipant[]
+  submissions  HackathonSubmission[]
+
+  @@index([status])
+}
+
+model HackathonTeam {
+  id          String   @id @default(cuid())
+  hackathonId String
+  name        String
+  tagline     String?
+  inviteCode  String   @unique
+  createdAt   DateTime @default(now())
+
+  hackathon    Hackathon              @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  participants HackathonParticipant[]
+  submission   HackathonSubmission?
+
+  @@index([hackathonId])
+}
+
+model HackathonParticipant {
+  id            String   @id @default(cuid())
+  hackathonId   String
+  teamId        String?
+  userId        String?
+  name          String
+  email         String
+  roleTitle     String
+  bio           String?
+  discordHandle String?
+  twitterHandle String?
+  avatarUrl     String?
+  ticketNumber  String   @unique
+  themeStyle    String   @default("lime")
+  isCaptain     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  hackathon   Hackathon             @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  team        HackathonTeam?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  submissions HackathonSubmission[]
+
+  @@unique([hackathonId, email])
+  @@index([hackathonId])
+  @@index([ticketNumber])
+}
+
+model HackathonSubmission {
+  id            String   @id @default(cuid())
+  hackathonId   String
+  teamId        String?  @unique
+  participantId String
+  trackId       String?
+  title         String
+  tagline       String
+  description   String
+  repoUrl       String
+  demoUrl       String?
+  pitchDeckUrl  String?
+  videoUrl      String?
+  gammaUrl      String?
+  techStack     String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hackathon   Hackathon            @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  team        HackathonTeam?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  participant HackathonParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([hackathonId])
+}
+
