@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
+import { saveMyPassport, getMyPassport } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
-import { Sparkles, Users, User, ArrowRight, ShieldCheck, Check, AlertCircle } from "lucide-react";
+import { Sparkles, Users, User, ArrowRight, ShieldCheck, Check, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function HackathonRegisterPage() {
   const params = useParams();
@@ -30,6 +31,14 @@ export default function HackathonRegisterPage() {
   const [registeredParticipant, setRegisteredParticipant] = useState<HackathonParticipant | null>(
     null
   );
+
+  // Check if this visitor already minted a passport in this browser
+  useEffect(() => {
+    const existing = getMyPassport("gh-shipathon-2026");
+    if (existing) {
+      setRegisteredParticipant(existing);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +83,12 @@ export default function HackathonRegisterPage() {
         throw new Error(data.error || "Failed to register for the hackathon.");
       }
 
+      // Persist permanently in localStorage and cookie
+      saveMyPassport(data.participant);
       setRegisteredParticipant(data.participant);
+
+      // Smoothly navigate directly to their new passport
+      router.push(`/hackathons/${slug}/pass/${data.participant.ticketNumber}`);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
     } finally {
@@ -119,13 +133,20 @@ export default function HackathonRegisterPage() {
               isOwner={true}
             />
 
-            <div className="text-center pt-4">
+            <div className="flex items-center justify-center gap-4 pt-4">
               <Link
                 href={`/hackathons/${slug}/pass/${registeredParticipant.ticketNumber}`}
                 className="font-mono text-xs font-bold text-purple underline hover:text-ink"
               >
                 Go to Dedicated Ticket Page →
               </Link>
+              <button
+                type="button"
+                onClick={() => setRegisteredParticipant(null)}
+                className="font-mono text-xs text-muted hover:text-ink underline"
+              >
+                Register Another Hacker ↻
+              </button>
             </div>
           </div>
         ) : (

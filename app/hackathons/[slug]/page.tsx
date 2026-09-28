@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
+import { MyPassportBanner } from "@/components/MyPassportBanner";
 import {
   Trophy,
   Calendar,
@@ -46,7 +47,10 @@ export default async function HackathonDetailPage({
 
   return (
     <div className="min-h-screen py-8 sm:py-12">
-      <div className="wrap max-w-5xl mx-auto space-y-12">
+      <div className="wrap max-w-5xl mx-auto space-y-10">
+        {/* Active Passport Banner if visitor has already registered */}
+        <MyPassportBanner slug={hackathon.slug} />
+
         {/* Breadcrumb & Status */}
         <div className="flex items-center justify-between">
           <Link
@@ -55,8 +59,8 @@ export default async function HackathonDetailPage({
           >
             ← BACK TO HACKATHONS
           </Link>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-lime text-brand-dark font-mono text-xs font-black rounded-md shadow-sm animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-brand-dark" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E11D48] text-white font-mono text-xs font-black rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
             LIVE SPRINT ACTIVE
           </span>
         </div>

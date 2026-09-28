@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { getActiveTicketNumber } from "@/lib/passport-storage";
 import { Code, ExternalLink, Sparkles, Check, AlertCircle, ArrowRight, Video, Presentation } from "lucide-react";
 
 export default function HackathonSubmitPage() {
@@ -27,6 +28,13 @@ export default function HackathonSubmitPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!ticketNumber) {
+      const active = getActiveTicketNumber();
+      if (active) setTicketNumber(active);
+    }
+  }, [ticketNumber]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,9 +169,9 @@ export default function HackathonSubmitPage() {
                 onChange={(e) => setTrackId(e.target.value)}
                 className="w-full px-4 py-3 bg-bg border-2 border-ink/20 focus:border-purple rounded-xl font-sans text-sm text-ink outline-none transition-all"
               >
-                <option value="ai-agents">Autonomous AI Agents & Workflows ($6,000)</option>
-                <option value="edge-systems">Edge Architecture & High-Performance Web ($5,000)</option>
-                <option value="devex-tools">Developer Tools & Open Source Infrastructure ($4,000)</option>
+                <option value="ai-agents">Autonomous AI Agents & Workflows (Cash Grants & Credits)</option>
+                <option value="edge-systems">Edge Architecture & High-Performance Web (Cash Grants & Credits)</option>
+                <option value="devex-tools">Developer Tools & Open Source Infrastructure (Cash Grants & Credits)</option>
               </select>
             </div>
 

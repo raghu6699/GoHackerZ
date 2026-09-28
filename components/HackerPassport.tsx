@@ -279,8 +279,8 @@ export function HackerPassport({
         ctx.font = "14px 'JetBrains Mono', monospace";
         ctx.fillText("PRIZE POOL:", 800, 385);
         ctx.fillStyle = theme.accent;
-        ctx.font = "bold 22px 'JetBrains Mono', monospace";
-        ctx.fillText("$15,000 USD", 800, 415);
+        ctx.font = "bold 20px 'JetBrains Mono', monospace";
+        ctx.fillText("CASH GRANTS + PERKS", 800, 415);
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
         ctx.font = "12px 'JetBrains Mono', monospace";
@@ -491,6 +491,14 @@ export function HackerPassport({
                 <span className="font-mono text-[9px] text-white/70 font-bold tracking-widest mt-2">
                   SCAN TO VERIFY
                 </span>
+                <a
+                  href={ticketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[9px] text-white/50 hover:text-white underline mt-0.5"
+                >
+                  OPEN PASS ↗
+                </a>
               </div>
             </div>
 

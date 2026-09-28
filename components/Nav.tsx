@@ -43,7 +43,8 @@ export function Nav() {
               >
                 <span>{l.label}</span>
                 {l.badge && (
-                  <span className="px-1.5 py-0.2 text-[9px] bg-lime text-ink font-mono font-extrabold rounded-md shadow-sm animate-pulse">
+                  <span className="px-2 py-0.5 text-[9.5px] bg-[#E11D48] text-white font-mono font-black rounded-full shadow-sm inline-flex items-center gap-1 tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                     {l.badge}
                   </span>
                 )}

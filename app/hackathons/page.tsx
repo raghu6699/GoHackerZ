@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getAllHackathons } from "@/lib/hackathons";
+import { MyPassportBanner } from "@/components/MyPassportBanner";
 import { Trophy, Users, Sparkles, ArrowRight, Zap, Flame, Shield, Code, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -15,7 +16,10 @@ export default async function HackathonsPage() {
 
   return (
     <div className="min-h-screen py-8 sm:py-14">
-      <div className="wrap max-w-6xl mx-auto space-y-12 sm:space-y-16">
+      <div className="wrap max-w-6xl mx-auto space-y-10 sm:space-y-14">
+        {/* Active Passport Banner if visitor has already registered */}
+        <MyPassportBanner slug={activeHackathon.slug} />
+
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-brand-dark text-white rounded-3xl p-7 sm:p-14 border-2 border-ink shadow-pop-xl">
           {/* Cyber matrix background accents */}
