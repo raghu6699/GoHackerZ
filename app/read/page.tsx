@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArticleCard } from "@/components/ArticleCard";
-import { getLatest, preloadCardData } from "@/lib/queries";
+import { getLatest, getAllTopics, preloadCardData } from "@/lib/queries";
+import { ArticlesExplorer } from "@/components/ArticlesExplorer";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,7 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ReadPage() {
-  const posts = await getLatest(30);
+  const [posts, allTopics] = await Promise.all([
+    getLatest(50),
+    getAllTopics(),
+  ]);
   const cardData = await preloadCardData(posts);
 
   return (
@@ -25,20 +28,20 @@ export default async function ReadPage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        {posts.map((article) => (
-          <ArticleCard
-            key={article.slug}
-            article={article}
-            author={cardData.authors.get(article.authorUsername)}
-            topic={cardData.topics.get(article.topicSlug)}
-          />
-        ))}
-      </section>
+      <ArticlesExplorer
+        articles={posts}
+        authors={Object.fromEntries(cardData.authors)}
+        topics={Object.fromEntries(cardData.topics)}
+        showTopicFilter={true}
+        allTopicsList={allTopics}
+        searchPlaceholder="Search feed essays by keyword, topic, or author…"
+        emptyMessage="No essays found matching your filter in the feed."
+      />
 
-      <div className="mt-8 text-center">
+      <div className="mt-12 text-center">
         <Link href="/" className="btn btn-purple">Back to home</Link>
       </div>
     </div>
   );
 }
+

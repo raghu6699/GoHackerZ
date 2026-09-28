@@ -167,7 +167,7 @@ export async function getTrending(limit = 4): Promise<Article[]> {
     });
     const order = new Map(rows.map((r: { id: string }, i: number) => [r.id, i]));
     return byId
-      .sort((a: { id: string }, b: { id: string }) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+      .sort((a: { id: string }, b: { id: string }) => Number(order.get(a.id) ?? 0) - Number(order.get(b.id) ?? 0))
       .map(mapArticle);
   } catch {
     return [];
@@ -287,31 +287,85 @@ export async function getAllAuthors(): Promise<Author[]> {
 }
 
 // ── Search ────────────────────────────────────────────────────
+export type TopicWithCount = Topic & { count: number };
+
+export async function searchTopics(q: string, limit = 12): Promise<TopicWithCount[]> {
+  const query = q.trim().toLowerCase();
+  if (!query) return [];
+
+  let matchedTopics: Topic[] = [];
+
+  if (isDbAvailable()) {
+    try {
+      const rows = await prisma.topic.findMany({
+        where: {
+          OR: [
+            { name: { contains: query, mode: "insensitive" } },
+            { slug: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+          ],
+        },
+        take: limit,
+        orderBy: { name: "asc" },
+      });
+      if (rows.length > 0) {
+        matchedTopics = rows.map(mapTopic);
+      }
+    } catch {
+      matchedTopics = [];
+    }
+  }
+
+  // Fallback / supplement from mockData.topics
+  if (matchedTopics.length === 0) {
+    matchedTopics = mockData.topics
+      .filter((t) =>
+        t.name.toLowerCase().includes(query) ||
+        t.slug.toLowerCase().includes(query) ||
+        (t.description && t.description.toLowerCase().includes(query))
+      )
+      .slice(0, limit);
+  }
+
+  const topicsWithCounts = await Promise.all(
+    matchedTopics.map(async (topic) => ({
+      ...topic,
+      count: await countTopicArticles(topic.slug),
+    }))
+  );
+
+  return topicsWithCounts;
+}
+
 export async function searchArticles(q: string, limit = 20): Promise<Article[]> {
   const query = q.trim();
   if (!query || !isDbAvailable()) return [];
 
   try {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
-      SELECT "id"
-      FROM "Article"
-      WHERE "status" = 'PUBLISHED'
-        AND ("publishedAt" IS NULL OR "publishedAt" <= now())
+      SELECT a."id"
+      FROM "Article" a
+      LEFT JOIN "Topic" t ON a."topicId" = t."id"
+      WHERE a."status" = 'PUBLISHED'
+        AND (a."publishedAt" IS NULL OR a."publishedAt" <= now())
         AND (
-          to_tsvector('english'::regconfig, "title" || ' ' || coalesce("dek", ''))
+          to_tsvector('english'::regconfig, a."title" || ' ' || coalesce(a."dek", ''))
             @@ websearch_to_tsquery('english'::regconfig, ${query})
-          OR "title" ILIKE ${"%" + query + "%"}
+          OR a."title" ILIKE ${"%" + query + "%"}
+          OR coalesce(a."dek", '') ILIKE ${"%" + query + "%"}
+          OR t."name" ILIKE ${"%" + query + "%"}
+          OR t."slug" ILIKE ${"%" + query + "%"}
           OR EXISTS (
-            SELECT 1 FROM unnest("tags") AS tag
+            SELECT 1 FROM unnest(a."tags") AS tag
             WHERE tag ILIKE ${"%" + query.toLowerCase() + "%"}
           )
         )
       ORDER BY
         ts_rank(
-          to_tsvector('english'::regconfig, "title" || ' ' || coalesce("dek", '')),
+          to_tsvector('english'::regconfig, a."title" || ' ' || coalesce(a."dek", '')),
           websearch_to_tsquery('english'::regconfig, ${query})
         ) DESC,
-        "publishedAt" DESC NULLS LAST
+        a."publishedAt" DESC NULLS LAST
       LIMIT ${limit}
     `;
 
@@ -323,7 +377,7 @@ export async function searchArticles(q: string, limit = 20): Promise<Article[]> 
     });
     const order = new Map(rows.map((r: { id: string }, i: number) => [r.id, i]));
     return byId
-      .sort((a: { id: string }, b: { id: string }) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+      .sort((a: { id: string }, b: { id: string }) => Number(order.get(a.id) ?? 0) - Number(order.get(b.id) ?? 0))
       .map(mapArticle);
   } catch {
     return [];

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { ArticleCard } from "@/components/ArticleCard";
-import { getLatest, preloadCardData } from "@/lib/queries";
-
+import { ArticlesExplorer } from "@/components/ArticlesExplorer";
+import { getLatest, getAllTopics, preloadCardData } from "@/lib/queries";
 import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +32,10 @@ export const metadata: Metadata = {
 };
 
 export default async function DeepDivesPage() {
-  const allLatest = await getLatest(50);
+  const [allLatest, allTopics] = await Promise.all([
+    getLatest(50),
+    getAllTopics(),
+  ]);
   const posts = allLatest.filter((article) => article.readingTime >= 5);
   const cardData = posts.length > 0 ? await preloadCardData(posts) : { authors: new Map(), topics: new Map() };
 
@@ -46,16 +48,16 @@ export default async function DeepDivesPage() {
       </header>
 
       {posts.length > 0 ? (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {posts.map((article) => (
-            <ArticleCard
-              key={article.slug}
-              article={article}
-              author={cardData.authors.get(article.authorUsername)}
-              topic={cardData.topics.get(article.topicSlug)}
-            />
-          ))}
-        </section>
+        <ArticlesExplorer
+          articles={posts}
+          authors={Object.fromEntries(cardData.authors)}
+          topics={Object.fromEntries(cardData.topics)}
+          showTopicFilter={true}
+          allTopicsList={allTopics}
+          defaultSort="readingTime"
+          searchPlaceholder="Search deep dives by title, topic, or keyword…"
+          emptyMessage="No deep dives found matching your filter."
+        />
       ) : (
         <div className="rounded-3xl border-2 border-ink bg-card p-8 sm:p-12 text-center shadow-pop-lg max-w-2xl mx-auto my-8">
           <div className="text-[56px] mb-4">📖</div>

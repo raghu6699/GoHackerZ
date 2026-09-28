@@ -1,10 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArticleCard } from "@/components/ArticleCard";
-import { Avatar } from "@/components/Avatar";
-import { searchArticles, searchAuthors, preloadCardData } from "@/lib/queries";
+import { searchArticles, searchAuthors, searchTopics, preloadCardData } from "@/lib/queries";
+import { SearchResultsView } from "@/components/SearchResultsView";
+import type { Author, Topic } from "@/lib/data";
 
-export const metadata: Metadata = { title: "Search — GoHackerz" };
+export const metadata: Metadata = {
+  title: "Search — GoHackerz",
+  description: "Search essays, technical topics, and engineering writers across GoHackerz.",
+};
+
+const SUGGESTED_SEARCHES = [
+  { label: "Machine Learning", query: "machine" },
+  { label: "AI", query: "ai" },
+  { label: "Systems", query: "systems" },
+  { label: "Databases", query: "databases" },
+  { label: "Rust", query: "rust" },
+  { label: "DevOps", query: "devops" },
+  { label: "Architecture", query: "architecture" },
+];
 
 export default async function SearchPage({
   searchParams,
@@ -13,70 +26,83 @@ export default async function SearchPage({
 }) {
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
-  const [articles, authors] = q
-    ? await Promise.all([searchArticles(q), searchAuthors(q)])
-    : [[], []];
+  const [articles, authors, topics] = q
+    ? await Promise.all([searchArticles(q), searchAuthors(q), searchTopics(q)])
+    : [[], [], []];
+
   const cardData = await preloadCardData(q ? articles : []);
+  const cardAuthors: Record<string, Author> = Object.fromEntries(cardData.authors);
+  const cardTopics: Record<string, Topic> = Object.fromEntries(cardData.topics);
 
   return (
-    <div className="wrap max-w-[900px] py-12">
-      <h1 className="text-[34px] font-bold mb-6">Search</h1>
-      <form action="/search" className="flex gap-2.5 mb-10">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search essays, topics, writers…"
-          className="flex-1 border-2 border-ink rounded-xl px-4 py-3 text-[15px] shadow-pop-sm outline-none bg-card text-ink"
-        />
-        <button type="submit" className="btn btn-purple">
+    <div className="wrap max-w-[960px] py-10 sm:py-14">
+      <header className="mb-8">
+        <h1 className="text-[34px] sm:text-[40px] font-bold mb-3">Search</h1>
+        <p className="text-muted text-base">
+          Find topics, in-depth essays, and engineering writers across GoHackerz.
+        </p>
+      </header>
+
+      {/* ── Search Form ── */}
+      <form action="/search" className="flex gap-2.5 mb-4">
+        <div className="relative flex-1">
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Search essays, topics, writers… (e.g. machine, rust, postgres)"
+            className="w-full border-2 border-ink rounded-xl px-4 py-3 text-[15px] shadow-pop-sm outline-none bg-card text-ink focus:border-purple transition-all"
+            autoFocus
+          />
+        </div>
+        <button type="submit" className="btn btn-purple shrink-0">
           Search →
         </button>
       </form>
 
-      {q && (
-        <>
-          <p className="font-mono text-[12px] text-subtle mb-6">
-            {articles.length + authors.length} results for &ldquo;{q}&rdquo;
+      {/* ── Suggested Searches ── */}
+      <div className="flex items-center gap-2 mb-10 flex-wrap">
+        <span className="font-mono text-xs text-subtle font-bold uppercase tracking-wider">
+          Popular:
+        </span>
+        {SUGGESTED_SEARCHES.map((item) => (
+          <Link
+            key={item.label}
+            href={`/search?q=${encodeURIComponent(item.query)}`}
+            className={`chip text-xs hover:border-purple transition-all ${
+              q.toLowerCase() === item.query.toLowerCase()
+                ? "bg-purple text-white shadow-pop-sm"
+                : "bg-card text-ink"
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Search Results or Initial State ── */}
+      {q ? (
+        <SearchResultsView
+          query={q}
+          articles={articles}
+          authors={authors}
+          topics={topics}
+          cardAuthors={cardAuthors}
+          cardTopics={cardTopics}
+        />
+      ) : (
+        <div className="rounded-3xl border-2 border-ink bg-card p-8 sm:p-12 text-center shadow-pop max-w-xl mx-auto my-6">
+          <div className="text-4xl mb-3">💡</div>
+          <h2 className="text-xl font-bold mb-2">Search across GoHackerz</h2>
+          <p className="text-muted text-sm mb-6">
+            Type a keyword above to find engineering topics like AI, databases, systems architecture, or individual writers and essays.
           </p>
-
-          {authors.length > 0 && (
-            <div className="flex gap-2.5 flex-wrap mb-8">
-              {authors.map((a) => (
-                <Link
-                  key={a.username}
-                  href={`/writer/${a.username}`}
-                  className="card card-hover p-4 flex items-center gap-3"
-                >
-                  <Avatar initials={a.initials} color={a.avatarColor} size="sm" src={a.avatarUrl} />
-                  <div>
-                    <b className="text-[14px]">{a.name}</b>
-                    <div className="font-mono text-[11px] text-subtle">
-                      @{a.username} · {a.articleCount} essays
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {articles.length > 0 ? (
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {articles.map((a) => (
-                <ArticleCard
-                  key={a.slug}
-                  article={a}
-                  author={cardData.authors.get(a.authorUsername)}
-                  topic={cardData.topics.get(a.topicSlug)}
-                />
-              ))}
-            </section>
-          ) : authors.length === 0 ? (
-            <div className="card p-10 text-center font-semibold">
-              Nothing found. Try different keywords ✦
-            </div>
-          ) : null}
-        </>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/topics" className="btn btn-purple">
+              Browse Topics Directory
+            </Link>
+          </div>
+        </div>
       )}
     </div>
   );
-}
+}

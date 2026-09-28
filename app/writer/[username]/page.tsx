@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArticleCard } from "@/components/ArticleCard";
+import { ArticlesExplorer } from "@/components/ArticlesExplorer";
 import { WriterProfileHeader } from "@/components/WriterProfileHeader";
 import {
   getAllAuthors,
@@ -112,16 +112,14 @@ export default async function WriterPage({
         Essays by {author.name.split(" ")[0]}
       </h2>
       {posts.length > 0 ? (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {posts.map((a) => (
-            <ArticleCard
-              key={a.slug}
-              article={a}
-              author={cardData.authors.get(a.authorUsername)}
-              topic={cardData.topics.get(a.topicSlug)}
-            />
-          ))}
-        </section>
+        <ArticlesExplorer
+          articles={posts}
+          authors={Object.fromEntries(cardData.authors)}
+          topics={Object.fromEntries(cardData.topics)}
+          showTopicFilter={true}
+          searchPlaceholder={`Search essays by ${author.name.split(" ")[0]}…`}
+          emptyMessage={`No essays by ${author.name.split(" ")[0]} match your filter.`}
+        />
       ) : (
         <div className="card p-10 text-center text-[18px] font-semibold">
           No published essays yet.

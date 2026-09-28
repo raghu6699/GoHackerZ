@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArticleCard } from "@/components/ArticleCard";
+import { ArticlesExplorer } from "@/components/ArticlesExplorer";
 import {
   getAllTopics,
   getTopic,
@@ -132,16 +132,13 @@ export default async function TopicPage({
 
       {/* posts */}
       {posts.length > 0 ? (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {posts.map((a) => (
-            <ArticleCard
-              key={a.slug}
-              article={a}
-              author={cardData.authors.get(a.authorUsername)}
-              topic={cardData.topics.get(a.topicSlug)}
-            />
-          ))}
-        </section>
+        <ArticlesExplorer
+          articles={posts}
+          authors={Object.fromEntries(cardData.authors)}
+          topics={Object.fromEntries(cardData.topics)}
+          searchPlaceholder={`Search essays in ${topic.name}… (by title, tag, or author)`}
+          emptyMessage={`No essays found matching your filter in ${topic.name}.`}
+        />
       ) : (
         <div className="card p-10 text-center">
           <p className="text-[20px] font-semibold">
