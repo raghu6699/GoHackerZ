@@ -298,6 +298,10 @@ import {
   getPersistedParticipantByTicket,
   persistTeam,
   loadPersistedTeams,
+  getPersistedTeamByCode,
+  addMemberToTeam,
+  createNewTeam,
+  leaveCurrentTeam,
 } from "./participant-store";
 
 // Persistent Global store (singleton across all Next.js serverless/SSR invocations and hot-reloads)
@@ -441,51 +445,8 @@ export async function registerHacker(params: {
   }
 
   const ticketNumber = generateTicketNumber();
-  let teamCode: string | undefined = undefined;
-  let teamName: string | undefined = undefined;
-  let isCaptain = false;
-  let teamId: string | undefined = undefined;
-  let teammates: { name: string; roleTitle: string; avatarUrl?: string }[] = [];
 
-  if (params.teamOption === "create" && params.teamName?.trim()) {
-    teamName = params.teamName.trim();
-    teamCode = generateTeamCode(teamName);
-    teamId = `team-${Date.now()}`;
-    isCaptain = true;
-    teammates = [{ name: params.name, roleTitle: params.roleTitle, avatarUrl: params.avatarUrl }];
-
-    const newTeam: HackathonTeam = {
-      id: teamId,
-      hackathonId: params.hackathonId,
-      name: teamName,
-      inviteCode: teamCode,
-      captainId: ticketNumber,
-      members: [],
-      createdAt: new Date().toISOString(),
-    };
-    memoryStore.teams.set(teamCode, newTeam);
-    persistTeam(newTeam);
-  } else if (params.teamOption === "join" && params.teamInviteCode?.trim()) {
-    const code = params.teamInviteCode.trim().toUpperCase();
-    const foundTeam = memoryStore.teams.get(code);
-    if (foundTeam) {
-      teamId = foundTeam.id;
-      teamName = foundTeam.name;
-      teamCode = foundTeam.inviteCode;
-      teammates = [
-        ...foundTeam.members.map((m) => ({ name: m.name, roleTitle: m.roleTitle, avatarUrl: m.avatarUrl })),
-        { name: params.name, roleTitle: params.roleTitle, avatarUrl: params.avatarUrl },
-      ];
-    } else {
-      // Create ad-hoc linked team with that code
-      teamName = `Team ${code}`;
-      teamCode = code;
-      teamId = `team-${code}`;
-      teammates = [{ name: params.name, roleTitle: params.roleTitle, avatarUrl: params.avatarUrl }];
-    }
-  }
-
-  const participant: HackathonParticipant = {
+  let participant: HackathonParticipant = {
     id: `part-${Date.now()}`,
     hackathonId: params.hackathonId,
     ticketNumber,
@@ -497,21 +458,43 @@ export async function registerHacker(params: {
     twitterHandle: params.twitterHandle?.trim(),
     avatarUrl: params.avatarUrl,
     themeStyle: params.themeStyle || "lime",
-    isCaptain,
-    teamId,
-    teamName,
-    teamCode,
-    teammates: teammates.length > 0 ? teammates : undefined,
+    isCaptain: false,
     createdAt: new Date().toISOString(),
   };
 
-  memoryStore.participants.set(ticketNumber, participant);
+  // 1. Initial participant save
   persistParticipant(participant);
+  memoryStore.participants.set(ticketNumber, participant);
 
-  if (teamCode && memoryStore.teams.has(teamCode)) {
-    const t = memoryStore.teams.get(teamCode)!;
-    t.members.push(participant);
-    persistTeam(t);
+  // 2. Handle team formation
+  if (params.teamOption === "create" && params.teamName?.trim()) {
+    const teamRes = createNewTeam({
+      teamName: params.teamName.trim(),
+      creatorTicket: ticketNumber,
+      hackathonId: params.hackathonId,
+    });
+    if (teamRes.success && teamRes.team) {
+      memoryStore.teams.set(teamRes.team.inviteCode, teamRes.team);
+      const updated = getPersistedParticipantByTicket(ticketNumber);
+      if (updated) {
+        participant = updated;
+        memoryStore.participants.set(ticketNumber, updated);
+      }
+    }
+  } else if (params.teamOption === "join" && params.teamInviteCode?.trim()) {
+    const code = params.teamInviteCode.trim().toUpperCase();
+    const joinRes = addMemberToTeam({
+      teamCode: code,
+      participantTicket: ticketNumber,
+    });
+    if (joinRes.success && joinRes.team) {
+      memoryStore.teams.set(joinRes.team.inviteCode, joinRes.team);
+      const updated = getPersistedParticipantByTicket(ticketNumber);
+      if (updated) {
+        participant = updated;
+        memoryStore.participants.set(ticketNumber, updated);
+      }
+    }
   }
 
   return participant;

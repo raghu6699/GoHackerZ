@@ -163,6 +163,19 @@ export function HackerPassport({
     }
   };
 
+  const [copiedTeamInvite, setCopiedTeamInvite] = useState(false);
+  const handleCopyTeamInvite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!participant.teamCode) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://gohackerz.com";
+    const inviteUrl = `${origin}/hackathons/shipathon-2026/register?team=${participant.teamCode}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(inviteUrl);
+      setCopiedTeamInvite(true);
+      setTimeout(() => setCopiedTeamInvite(false), 2000);
+    }
+  };
+
   const handleShareX = () => {
     const text = encodeURIComponent(
       `I just secured my official Hacker Passport for the ${hackathonTitle} on @GoHackerz! ⚡\n\nTicket: #${participant.ticketNumber}\nTeam: ${participant.teamName || "Solo Builder"}\n\nClaim your pass or inspect mine here:`
@@ -374,14 +387,29 @@ export function HackerPassport({
                   </div>
 
                   {participant.teamCode && (
-                    <div className="flex items-center justify-between text-[11px] font-mono pt-1.5 border-t border-white/10">
+                    <div className="flex items-center justify-between text-[11px] font-mono pt-1.5 border-t border-white/10 gap-2">
                       <span className="text-white/60">INVITE CODE:</span>
-                      <span
-                        className="font-bold font-mono tracking-widest px-1.5 py-0.5 rounded bg-black/30"
-                        style={{ color: theme.accent }}
-                      >
-                        {participant.teamCode}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="font-bold font-mono tracking-widest px-1.5 py-0.5 rounded bg-black/30"
+                          style={{ color: theme.accent }}
+                        >
+                          {participant.teamCode}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyTeamInvite}
+                          className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] font-mono text-white transition-all inline-flex items-center gap-1"
+                          title="Copy direct invite link for teammates"
+                        >
+                          {copiedTeamInvite ? (
+                            <Check className="w-2.5 h-2.5 text-lime" />
+                          ) : (
+                            <Copy className="w-2.5 h-2.5" />
+                          )}
+                          <span>{copiedTeamInvite ? "COPIED" : "SHARE"}</span>
+                        </button>
+                      </div>
                     </div>
                   )}
 

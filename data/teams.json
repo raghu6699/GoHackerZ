@@ -1,0 +1,55 @@
+[
+  {
+    "id": "team-void",
+    "hackathonId": "gh-shipathon-2026",
+    "name": "Team Void Runners",
+    "inviteCode": "VOID-42",
+    "captainId": "GH-2026-X89B",
+    "captainName": "Alex Vance",
+    "members": [
+      {
+        "ticketNumber": "GH-2026-X89B",
+        "name": "Alex Vance",
+        "roleTitle": "Lead Systems Architect",
+        "isCaptain": true,
+        "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+      },
+      {
+        "ticketNumber": "GH-2026-S44A",
+        "name": "Sarah Chen",
+        "roleTitle": "AI & Vector Search",
+        "isCaptain": false
+      },
+      {
+        "ticketNumber": "GH-2026-D99P",
+        "name": "Dev Patel",
+        "roleTitle": "Fullstack / Next.js",
+        "isCaptain": false
+      }
+    ],
+    "createdAt": "2026-09-28T12:00:00Z"
+  },
+  {
+    "id": "team-forge",
+    "hackathonId": "gh-shipathon-2026",
+    "name": "Neural Forge",
+    "inviteCode": "FORGE-99",
+    "captainId": "GH-2026-N309",
+    "captainName": "Elena Rostova",
+    "members": [
+      {
+        "ticketNumber": "GH-2026-N309",
+        "name": "Elena Rostova",
+        "roleTitle": "Fullstack AI Engineer",
+        "isCaptain": true
+      },
+      {
+        "ticketNumber": "GH-2026-M11B",
+        "name": "Marcus Brody",
+        "roleTitle": "UI/UX Wizard",
+        "isCaptain": false
+      }
+    ],
+    "createdAt": "2026-09-28T14:30:00Z"
+  }
+]

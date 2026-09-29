@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
 import { saveMyPassport, getMyPassport } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
-import { Sparkles, Users, User, ArrowRight, ShieldCheck, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { Sparkles, Users, User, ArrowRight, ShieldCheck, Check, AlertCircle, RefreshCw, UserPlus } from "lucide-react";
 
 export default function HackathonRegisterPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const slug = (params?.slug as string) || "shipathon-2026";
 
   const [name, setName] = useState("");
@@ -26,12 +27,36 @@ export default function HackathonRegisterPage() {
   const [teamOption, setTeamOption] = useState<"solo" | "create" | "join">("solo");
   const [teamName, setTeamName] = useState("");
   const [teamInviteCode, setTeamInviteCode] = useState("");
+  const [invitedTeamInfo, setInvitedTeamInfo] = useState<{ name: string; count: number } | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [registeredParticipant, setRegisteredParticipant] = useState<HackathonParticipant | null>(
     null
   );
+
+  // Check if visitor arrived via 1-click team invite link
+  useEffect(() => {
+    const invite =
+      searchParams?.get("team") ||
+      searchParams?.get("join") ||
+      searchParams?.get("invite") ||
+      searchParams?.get("code");
+
+    if (invite) {
+      const clean = invite.trim().toUpperCase();
+      setTeamOption("join");
+      setTeamInviteCode(clean);
+      fetch(`/api/hackathons/${slug}/team?code=${clean}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.team) {
+            setInvitedTeamInfo({ name: data.team.name, count: data.team.membersCount });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [searchParams, slug]);
 
   // Check if this visitor already minted a passport in this browser
   useEffect(() => {
@@ -283,9 +308,30 @@ export default function HackathonRegisterPage() {
 
               {/* 2. Team Formation */}
               <div className="space-y-4 pt-4 border-t border-ink/10">
-                <h3 className="font-mono text-xs font-black text-lime bg-brand-dark px-3 py-1.5 rounded-lg inline-block uppercase tracking-wider">
-                  02 // SQUAD ALLIANCE
-                </h3>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="font-mono text-xs font-black text-lime bg-brand-dark px-3 py-1.5 rounded-lg inline-block uppercase tracking-wider">
+                    02 // SQUAD ALLIANCE
+                  </h3>
+                  {invitedTeamInfo && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lime/20 border border-lime text-lime font-mono text-xs font-bold">
+                      <Sparkles className="w-3.5 h-3.5" /> INVITATION ACTIVE
+                    </span>
+                  )}
+                </div>
+
+                {invitedTeamInfo && (
+                  <div className="p-3.5 bg-brand-dark border-2 border-lime rounded-2xl flex items-center gap-3 text-sm text-white font-bold anim-pop shadow-sm">
+                    <UserPlus className="w-5 h-5 shrink-0 text-lime" />
+                    <div>
+                      <div>
+                        Joining Squad: <strong className="text-lime">{invitedTeamInfo.name}</strong>
+                      </div>
+                      <div className="text-xs font-mono font-normal text-muted">
+                        Roster: {invitedTeamInfo.count}/4 builders · Your pass will link to this team automatically.
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
