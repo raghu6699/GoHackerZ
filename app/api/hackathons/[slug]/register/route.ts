@@ -62,10 +62,10 @@ export async function POST(
         hackathonSlug: hackathon.slug,
         hackathonTitle: hackathon.title,
       });
-      // Fire and log send result
-      sendEmail(emailMsg).catch((err) => {
-        console.error("Failed to send hacker passport email:", err);
-      });
+      const result = await sendEmail(emailMsg);
+      console.info(
+        `[Register] Passport email dispatched to ${participant.email}, delivered: ${result.delivered}, provider: ${result.provider}`
+      );
     } catch (mailErr) {
       console.warn("Could not dispatch passport email:", mailErr);
     }
