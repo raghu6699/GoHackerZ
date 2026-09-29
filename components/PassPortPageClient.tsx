@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
-import { getMyPassport, getActiveTicketNumber } from "@/lib/passport-storage";
-import type { HackathonParticipant } from "@/lib/hackathons";
+import { getMyPassport, getActiveTicketNumber, saveMyPassport } from "@/lib/passport-storage";
+import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
 import { Sparkles, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 
 interface PassPortPageClientProps {
@@ -34,8 +34,7 @@ export function PassPortPageClient({
       myPassport &&
       myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()
     ) {
-      // Merge localStorage data with server data — localStorage always wins for identity fields
-      setParticipant({
+      const merged: HackathonParticipant = {
         ...serverParticipant,
         name: myPassport.name || serverParticipant.name,
         email: myPassport.email || serverParticipant.email,
@@ -50,15 +49,42 @@ export function PassPortPageClient({
         teamCode: myPassport.teamCode || serverParticipant.teamCode,
         teammates: myPassport.teammates || serverParticipant.teammates,
         submission: myPassport.submission || serverParticipant.submission,
-      });
+      };
+      setParticipant(merged);
       setIsOwner(true);
+
+      // Auto-sync to server disk so other devices scanning QR code get full details!
+      fetch(`/api/hackathons/${slug}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participant: merged }),
+      }).catch(() => {});
     } else if (activeTicket && activeTicket.toUpperCase() === ticketId.toUpperCase()) {
       setIsOwner(true);
     } else {
       setIsOwner(false);
     }
     setResolved(true);
-  }, [ticketId, serverParticipant]);
+  }, [ticketId, serverParticipant, slug]);
+
+  const handleThemeChange = useCallback(
+    (t: HackathonTheme) => {
+      setParticipant((prev) => {
+        const updated = { ...prev, themeStyle: t };
+        const myPassport = getMyPassport("gh-shipathon-2026");
+        if (myPassport && myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()) {
+          saveMyPassport({ ...myPassport, themeStyle: t });
+          fetch(`/api/hackathons/${slug}/sync`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ participant: updated }),
+          }).catch(() => {});
+        }
+        return updated;
+      });
+    },
+    [ticketId, slug]
+  );
 
   const isLoading = !participant.name && !resolved;
 
@@ -93,6 +119,7 @@ export function PassPortPageClient({
         participant={participant}
         hackathonTitle={hackathonTitle}
         isOwner={isOwner}
+        onThemeChange={handleThemeChange}
       />
 
       {/* Project Submission Highlight */}

@@ -1,9 +1,9 @@
 /**
- * Pluggable transactional email. Uses Resend when RESEND_API_KEY is set;
- * otherwise logs to the server console so local dev "sends" are inspectable.
- *
- * To go live: set RESEND_API_KEY + MAIL_FROM in the environment. No code
- * changes needed anywhere — every caller goes through sendEmail().
+ * Pluggable transactional email.
+ * Providers supported:
+ * 1. Resend (when RESEND_API_KEY is set) with auto-fallback to onboarding@resend.dev
+ * 2. Nodemailer / SMTP (when SMTP_HOST or GMAIL_USER is set)
+ * 3. Local Console Inspector (when keys are unset)
  */
 
 export interface EmailMessage {
@@ -14,7 +14,7 @@ export interface EmailMessage {
 
 export interface SendResult {
   delivered: boolean;
-  provider: "resend" | "console";
+  provider: "resend" | "smtp" | "console";
   emailId?: string;
   error?: string;
   rawResponse?: unknown;
@@ -22,7 +22,7 @@ export interface SendResult {
 
 function getFormattedMailFrom(): string {
   const raw = (process.env.MAIL_FROM ?? "").trim();
-  if (!raw) return "GoHackerz <hello@gohackerz.com>";
+  if (!raw) return "GoHackerz <onboarding@resend.dev>";
   if (raw.includes("<") && !raw.endsWith(">")) {
     return `${raw}>`;
   }
@@ -38,51 +38,133 @@ function stripHtmlToText(html: string): string {
 }
 
 export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
-  const key = process.env.RESEND_API_KEY;
+  const resendKey = process.env.RESEND_API_KEY;
+  const smtpHost = process.env.SMTP_HOST;
+  const gmailUser = process.env.GMAIL_USER;
 
-  if (!key) {
-    console.info(
-      JSON.stringify({
-        ts: new Date().toISOString(),
-        level: "info",
-        event: "email.console_transport",
-        to: msg.to,
-        subject: msg.subject,
-      })
-    );
-    return { delivered: false, provider: "console" };
+  // ── 1. Resend Provider ──────────────────────────────────────────
+  if (resendKey) {
+    try {
+      let from = getFormattedMailFrom();
+      const text = stripHtmlToText(msg.html);
+
+      let res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from,
+          to: msg.to,
+          subject: msg.subject,
+          html: msg.html,
+          text,
+          reply_to: "hello@gohackerz.com",
+        }),
+      });
+
+      let data = await res.json().catch(() => null);
+
+      // If domain was not verified, automatically retry with onboarding@resend.dev
+      if (!res.ok && data?.message?.toLowerCase()?.includes("domain")) {
+        console.warn("[Mailer] Custom domain unverified. Retrying via onboarding@resend.dev...");
+        from = "GoHackerz <onboarding@resend.dev>";
+        res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from,
+            to: msg.to,
+            subject: msg.subject,
+            html: msg.html,
+            text,
+          }),
+        });
+        data = await res.json().catch(() => null);
+      }
+
+      if (!res.ok) {
+        console.error("[Mailer] Resend API error:", data);
+        return {
+          delivered: false,
+          provider: "resend",
+          error: JSON.stringify(data || {}),
+          rawResponse: data,
+        };
+      }
+
+      console.info(`[Mailer] Email sent successfully to ${msg.to} via Resend (ID: ${data?.id})`);
+      return { delivered: true, provider: "resend", emailId: data?.id, rawResponse: data };
+    } catch (e) {
+      console.error("[Mailer] Resend network error:", e);
+      return {
+        delivered: false,
+        provider: "resend",
+        error: e instanceof Error ? e.message : "unknown",
+      };
+    }
   }
 
-  try {
-    const from = getFormattedMailFrom();
-    const text = stripHtmlToText(msg.html);
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
+  // ── 2. SMTP / Nodemailer Provider ───────────────────────────────
+  if (smtpHost || gmailUser) {
+    try {
+      const nodemailer = await import("nodemailer");
+      const transporter = nodemailer.createTransport(
+        gmailUser
+          ? {
+              service: "gmail",
+              auth: {
+                user: gmailUser,
+                pass: process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS,
+              },
+            }
+          : {
+              host: smtpHost,
+              port: Number(process.env.SMTP_PORT || 587),
+              secure: process.env.SMTP_SECURE === "true",
+              auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+              },
+            }
+      );
+
+      const info = await transporter.sendMail({
+        from: getFormattedMailFrom(),
         to: msg.to,
         subject: msg.subject,
         html: msg.html,
-        text,
-        reply_to: "hello@gohackerz.com",
-      }),
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      return { delivered: false, provider: "resend", error: JSON.stringify(data || {}), rawResponse: data };
+        text: stripHtmlToText(msg.html),
+      });
+
+      console.info(`[Mailer] Email sent successfully to ${msg.to} via SMTP (ID: ${info.messageId})`);
+      return { delivered: true, provider: "smtp", emailId: info.messageId };
+    } catch (smtpErr) {
+      console.error("[Mailer] SMTP send error:", smtpErr);
+      return {
+        delivered: false,
+        provider: "smtp",
+        error: smtpErr instanceof Error ? smtpErr.message : "unknown",
+      };
     }
-    return { delivered: true, provider: "resend", emailId: data?.id, rawResponse: data };
-  } catch (e) {
-    return {
-      delivered: false,
-      provider: "resend",
-      error: e instanceof Error ? e.message : "unknown",
-    };
   }
+
+  // ── 3. Local Development Fallback (Console Transport) ───────────
+  console.info(
+    `\n═══════════════════════════════════════════════════════════════\n` +
+      `📨 [LOCAL DEV EMAIL DISPATCHED] (No RESEND_API_KEY configured)\n` +
+      `───────────────────────────────────────────────────────────────\n` +
+      `To:      ${msg.to}\n` +
+      `Subject: ${msg.subject}\n` +
+      `Note:    To receive real emails in your inbox, set RESEND_API_KEY\n` +
+      `         or SMTP_HOST/GMAIL_USER in .env.local\n` +
+      `═══════════════════════════════════════════════════════════════\n`
+  );
+  return { delivered: false, provider: "console" };
 }
 
 // ── Templates ─────────────────────────────────────────────────

@@ -16,6 +16,7 @@ export default function HackathonRegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [roleTitle, setRoleTitle] = useState("Fullstack & AI Engineer");
+  const [customRole, setCustomRole] = useState("");
   const [bio, setBio] = useState("");
   const [discordHandle, setDiscordHandle] = useState("");
   const [twitterHandle, setTwitterHandle] = useState("");
@@ -47,6 +48,11 @@ export default function HackathonRegisterPage() {
       return;
     }
 
+    if (roleTitle === "custom" && !customRole.trim()) {
+      setError("Please type your custom specialty/role.");
+      return;
+    }
+
     if (teamOption === "create" && !teamName.trim()) {
       setError("Please provide a name for your new team.");
       return;
@@ -60,6 +66,8 @@ export default function HackathonRegisterPage() {
     setError(null);
     setLoading(true);
 
+    const finalRole = roleTitle === "custom" ? customRole.trim() : roleTitle;
+
     try {
       const res = await fetch(`/api/hackathons/${slug}/register`, {
         method: "POST",
@@ -67,7 +75,7 @@ export default function HackathonRegisterPage() {
         body: JSON.stringify({
           name,
           email,
-          roleTitle,
+          roleTitle: finalRole,
           bio,
           discordHandle,
           twitterHandle,
@@ -215,7 +223,7 @@ export default function HackathonRegisterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <label className="font-mono text-xs font-bold text-ink block">
-                      SPECIALTY / ROLE
+                      SPECIALTY / ROLE <span className="text-pink">*</span>
                     </label>
                     <select
                       value={roleTitle}
@@ -228,7 +236,21 @@ export default function HackathonRegisterPage() {
                       <option value="Autonomous Agents Hacker">Autonomous Agents Hacker</option>
                       <option value="Edge / Rust Specialist">Edge / Rust Specialist</option>
                       <option value="Product & Solo Shipper">Product & Solo Shipper</option>
+                      <option value="custom">✏️ Other / Custom Role (Type your own)...</option>
                     </select>
+
+                    {roleTitle === "custom" && (
+                      <div className="pt-2 anim-pop">
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Smart Contract Security, Game Engine Dev, Vector DB Architect"
+                          value={customRole}
+                          onChange={(e) => setCustomRole(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-bg border-2 border-purple rounded-xl font-sans text-sm text-ink outline-none shadow-sm focus:ring-2 focus:ring-purple/20"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

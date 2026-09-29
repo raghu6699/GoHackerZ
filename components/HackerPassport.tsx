@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { QrCode } from "./QrCode";
 import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
@@ -104,6 +104,13 @@ export function HackerPassport({
   const [isFlipped, setIsFlipped] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Synchronize theme whenever participant theme changes
+  useEffect(() => {
+    if (participant.themeStyle) {
+      setCurrentTheme(participant.themeStyle);
+    }
+  }, [participant.themeStyle]);
 
   // 3D Tilt calculation & Card element refs
   const cardRef = useRef<HTMLDivElement>(null);
