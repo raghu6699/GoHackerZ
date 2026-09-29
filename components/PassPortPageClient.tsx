@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
 import { getMyPassport, getActiveTicketNumber, saveMyPassport } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
-import { Sparkles, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import { Sparkles, ArrowRight, ShieldCheck, Loader2, RefreshCw } from "lucide-react";
 
 interface PassPortPageClientProps {
   serverParticipant: HackathonParticipant;
@@ -24,48 +24,89 @@ export function PassPortPageClient({
   const [participant, setParticipant] = useState<HackathonParticipant>(serverParticipant);
   const [isOwner, setIsOwner] = useState(false);
   const [resolved, setResolved] = useState(false);
+  const [isRefreshingRoster, setIsRefreshingRoster] = useState(false);
 
   useEffect(() => {
-    // Priority 1: If this is MY ticket, use data from localStorage (has real name + all details)
     const myPassport = getMyPassport("gh-shipathon-2026");
     const activeTicket = getActiveTicketNumber();
 
-    if (
-      myPassport &&
-      myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()
-    ) {
-      const merged: HackathonParticipant = {
-        ...serverParticipant,
-        name: myPassport.name || serverParticipant.name,
-        email: myPassport.email || serverParticipant.email,
-        roleTitle: myPassport.roleTitle || serverParticipant.roleTitle,
-        bio: myPassport.bio || serverParticipant.bio,
-        discordHandle: myPassport.discordHandle || serverParticipant.discordHandle,
-        twitterHandle: myPassport.twitterHandle || serverParticipant.twitterHandle,
-        avatarUrl: myPassport.avatarUrl || serverParticipant.avatarUrl,
-        themeStyle: myPassport.themeStyle || serverParticipant.themeStyle,
-        isCaptain: myPassport.isCaptain ?? serverParticipant.isCaptain,
-        teamName: myPassport.teamName || serverParticipant.teamName,
-        teamCode: myPassport.teamCode || serverParticipant.teamCode,
-        teammates: myPassport.teammates || serverParticipant.teammates,
-        submission: myPassport.submission || serverParticipant.submission,
-      };
-      setParticipant(merged);
+    const isMatch =
+      (myPassport && myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()) ||
+      (activeTicket && activeTicket.toUpperCase() === ticketId.toUpperCase());
+
+    if (isMatch) {
       setIsOwner(true);
 
-      // Auto-sync to server disk so other devices scanning QR code get full details!
-      fetch(`/api/hackathons/${slug}/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participant: merged }),
-      }).catch(() => {});
-    } else if (activeTicket && activeTicket.toUpperCase() === ticketId.toUpperCase()) {
-      setIsOwner(true);
+      // Server is the canonical source of truth for dynamic team roster and database state
+      const merged: HackathonParticipant = {
+        ...serverParticipant,
+        name: serverParticipant.name || myPassport?.name || "",
+        email: serverParticipant.email || myPassport?.email || "",
+        roleTitle: serverParticipant.roleTitle || myPassport?.roleTitle || "Builder & Engineer",
+        bio: serverParticipant.bio || myPassport?.bio,
+        discordHandle: serverParticipant.discordHandle || myPassport?.discordHandle,
+        twitterHandle: serverParticipant.twitterHandle || myPassport?.twitterHandle,
+        avatarUrl: serverParticipant.avatarUrl || myPassport?.avatarUrl,
+        themeStyle: myPassport?.themeStyle || serverParticipant.themeStyle || "lime",
+        // ALWAYS trust server for team state (squad roster, captain status, team code)
+        teamName: serverParticipant.teamName || myPassport?.teamName,
+        teamCode: serverParticipant.teamCode || myPassport?.teamCode,
+        isCaptain: serverParticipant.isCaptain ?? myPassport?.isCaptain ?? false,
+        teammates:
+          serverParticipant.teammates && serverParticipant.teammates.length > 0
+            ? serverParticipant.teammates
+            : myPassport?.teammates,
+        submission: serverParticipant.submission || myPassport?.submission,
+      };
+
+      setParticipant(merged);
+      // Persist the freshest state back into localStorage so cache never retains stale team state
+      saveMyPassport(merged);
+
+      // If server participant didn't have name (e.g. offline registration), sync name to server
+      if (!serverParticipant.name && myPassport?.name) {
+        fetch(`/api/hackathons/${slug}/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ participant: merged }),
+        }).catch(() => {});
+      }
     } else {
       setIsOwner(false);
+      setParticipant(serverParticipant);
     }
     setResolved(true);
   }, [ticketId, serverParticipant, slug]);
+
+  // Refresh active team squad roster directly from server
+  const handleRefreshRoster = async () => {
+    if (!participant.teamCode) return;
+    setIsRefreshingRoster(true);
+    try {
+      const res = await fetch(`/api/hackathons/${slug}/team?code=${participant.teamCode}`);
+      const data = await res.json();
+      if (data?.team?.members) {
+        const squadRoster = data.team.members.map((m: any) => ({
+          name: m.name,
+          roleTitle: m.roleTitle,
+          avatarUrl: m.avatarUrl,
+        }));
+        setParticipant((prev) => {
+          const updated = {
+            ...prev,
+            teamName: data.team.name,
+            teammates: squadRoster,
+          };
+          saveMyPassport(updated);
+          return updated;
+        });
+      }
+    } catch (e) {
+      console.warn("Could not refresh roster:", e);
+    } finally {
+      setIsRefreshingRoster(false);
+    }
+  };
 
   const handleThemeChange = useCallback(
     (t: HackathonTheme) => {
@@ -303,9 +344,20 @@ export function PassPortPageClient({
 
               {/* Teammates List */}
               <div className="space-y-2">
-                <span className="font-mono text-xs font-bold text-muted block uppercase">
-                  ACTIVE BUILDERS IN THIS SQUAD:
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-muted block uppercase">
+                    ACTIVE BUILDERS IN THIS SQUAD:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRefreshRoster}
+                    disabled={isRefreshingRoster}
+                    className="font-mono text-[11px] text-purple hover:text-purple/80 flex items-center gap-1 font-bold transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isRefreshingRoster ? "animate-spin" : ""}`} />
+                    {isRefreshingRoster ? "Refreshing…" : "Refresh Roster"}
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(participant.teammates || [{ name: participant.name, roleTitle: participant.roleTitle }]).map(
                     (member, idx) => (

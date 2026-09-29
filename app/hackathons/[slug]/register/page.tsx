@@ -31,6 +31,24 @@ export default function HackathonRegisterPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existingTicketWarning, setExistingTicketWarning] = useState<{
+    ticketNumber: string;
+    passportUrl: string;
+    message: string;
+    participant?: HackathonParticipant;
+  } | null>(null);
+
+  // Email Lookup / Passport History Retrieval
+  const [showLookup, setShowLookup] = useState(false);
+  const [lookupEmail, setLookupEmail] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState<{
+    success: boolean;
+    message: string;
+    ticketNumber?: string;
+    passportUrl?: string;
+  } | null>(null);
+
   const [registeredParticipant, setRegisteredParticipant] = useState<HackathonParticipant | null>(
     null
   );
@@ -66,6 +84,47 @@ export default function HackathonRegisterPage() {
     }
   }, []);
 
+  const handleLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lookupEmail.trim()) return;
+    setLookupLoading(true);
+    setLookupResult(null);
+
+    try {
+      const res = await fetch(`/api/hackathons/${slug}/lookup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: lookupEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.found) {
+        setLookupResult({
+          success: false,
+          message: data.message || "No registered passport was found for this email address.",
+        });
+        return;
+      }
+
+      if (data.participant) {
+        saveMyPassport(data.participant);
+      }
+
+      setLookupResult({
+        success: true,
+        message: `Found Passport #${data.ticketNumber}!`,
+        ticketNumber: data.ticketNumber,
+        passportUrl: data.passportUrl,
+      });
+    } catch (err: any) {
+      setLookupResult({
+        success: false,
+        message: err.message || "Lookup request failed.",
+      });
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
@@ -89,6 +148,7 @@ export default function HackathonRegisterPage() {
     }
 
     setError(null);
+    setExistingTicketWarning(null);
     setLoading(true);
 
     const finalRole = roleTitle === "custom" ? customRole.trim() : roleTitle;
@@ -112,6 +172,21 @@ export default function HackathonRegisterPage() {
       });
 
       const data = await res.json();
+
+      // Check if user is already registered (409 Conflict)
+      if (res.status === 409 || data.alreadyRegistered) {
+        if (data.participant) {
+          saveMyPassport(data.participant);
+        }
+        setExistingTicketWarning({
+          ticketNumber: data.ticketNumber,
+          passportUrl: data.passportUrl || `/hackathons/${slug}/pass/${data.ticketNumber}`,
+          message: data.error || "You are already registered for this hackathon.",
+          participant: data.participant,
+        });
+        return;
+      }
+
       if (!res.ok || !data.participant) {
         throw new Error(data.error || "Failed to register for the hackathon.");
       }
@@ -196,12 +271,98 @@ export default function HackathonRegisterPage() {
                 Register as a solo builder or assemble a squad. Once registered, you will immediately
                 receive your animated 3D cyber passport.
               </p>
+
+              {/* Already Registered / Passport History Lookup Quick Trigger */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLookup(!showLookup)}
+                  className="font-mono text-xs font-bold text-purple hover:text-ink underline flex items-center justify-center gap-1.5 mx-auto"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  {showLookup ? "Hide Passport Lookup" : "Already registered? Look up your Passport by Email"}
+                </button>
+              </div>
             </div>
+
+            {/* Email Lookup Card */}
+            {showLookup && (
+              <div className="bg-brand-dark/95 border-2 border-purple rounded-3xl p-6 shadow-pop text-white max-w-xl mx-auto anim-pop space-y-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-lime" />
+                  <h3 className="font-mono text-sm font-black text-lime uppercase tracking-wider">
+                    FIND MY HACKER PASSPORT
+                  </h3>
+                </div>
+                <p className="font-sans text-xs text-white/80">
+                  Enter the email address you registered with to retrieve your ticket and credentials:
+                </p>
+                <form onSubmit={handleLookup} className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="email"
+                    required
+                    placeholder="your-email@domain.com"
+                    value={lookupEmail}
+                    onChange={(e) => setLookupEmail(e.target.value)}
+                    className="flex-1 px-4 py-2.5 bg-bg/10 border border-white/20 rounded-xl font-mono text-xs text-white placeholder-white/40 outline-none focus:border-lime"
+                  />
+                  <button
+                    type="submit"
+                    disabled={lookupLoading}
+                    className="btn btn-sm btn-lime text-brand-dark font-mono text-xs font-black px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shrink-0"
+                  >
+                    {lookupLoading ? "SEARCHING..." : "RECOVER PASS →"}
+                  </button>
+                </form>
+
+                {lookupResult && (
+                  <div
+                    className={`p-3 rounded-xl font-mono text-xs font-bold border ${
+                      lookupResult.success
+                        ? "bg-lime/20 border-lime text-lime"
+                        : "bg-pink/20 border-pink text-pink"
+                    }`}
+                  >
+                    <div>{lookupResult.message}</div>
+                    {lookupResult.success && lookupResult.passportUrl && (
+                      <div className="mt-2">
+                        <Link
+                          href={lookupResult.passportUrl}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-lime text-brand-dark font-black text-xs hover:bg-lime/90"
+                        >
+                          OPEN PASSPORT #{lookupResult.ticketNumber} →
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <form
               onSubmit={handleSubmit}
               className="bg-card border-2 border-ink shadow-pop-xl rounded-3xl p-6 sm:p-10 space-y-8"
             >
+              {/* Existing Ticket Banner if 409 Conflict */}
+              {existingTicketWarning && (
+                <div className="p-5 bg-purple/10 border-2 border-purple rounded-2xl space-y-3 anim-pop">
+                  <div className="flex items-center gap-2 text-purple font-mono text-xs font-black uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4" /> ALREADY REGISTERED FOR THIS EVENT
+                  </div>
+                  <p className="text-xs text-body leading-relaxed">
+                    {existingTicketWarning.message}
+                  </p>
+                  <div className="pt-1 flex items-center gap-3">
+                    <Link
+                      href={existingTicketWarning.passportUrl}
+                      className="btn btn-sm btn-purple font-mono text-xs font-black flex items-center gap-1.5"
+                    >
+                      VIEW MY PASSPORT (#{existingTicketWarning.ticketNumber}) →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div className="p-4 bg-pink/10 border-2 border-pink rounded-2xl flex items-center gap-3 text-sm text-pink font-bold">
                   <AlertCircle className="w-5 h-5 shrink-0" />

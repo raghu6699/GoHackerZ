@@ -381,21 +381,21 @@ export async function getAllHackathons(): Promise<HackathonData[]> {
 
 export async function getParticipantByTicket(ticketNumber: string): Promise<HackathonParticipant | null> {
   if (!ticketNumber) return null;
-  const clean = ticketNumber.trim().toUpperCase();
+  const clean = decodeURIComponent(ticketNumber).replace(/^#/, "").trim().toUpperCase();
 
-  const direct = memoryStore.participants.get(clean);
-  if (direct) return direct;
-
-  // Search case-insensitive in memory
-  for (const [key, val] of memoryStore.participants.entries()) {
-    if (key.toUpperCase() === clean) return val;
-  }
-
-  // Check persistent disk storage (ensures cross-device / cold-start sync)
+  // 1. Check persistent disk storage FIRST (canonical source across devices / restarts)
   const persisted = getPersistedParticipantByTicket(clean);
   if (persisted) {
     memoryStore.participants.set(clean, persisted);
     return persisted;
+  }
+
+  // 2. Fallback to memory store if not yet flushed
+  const direct = memoryStore.participants.get(clean);
+  if (direct) return direct;
+
+  for (const [key, val] of memoryStore.participants.entries()) {
+    if (key.toUpperCase() === clean) return val;
   }
 
   return null;
@@ -405,21 +405,41 @@ export async function getParticipantByEmail(
   hackathonId: string,
   email: string
 ): Promise<HackathonParticipant | null> {
+  if (!email) return null;
   const target = email.trim().toLowerCase();
-  for (const p of memoryStore.participants.values()) {
-    if (p.hackathonId === hackathonId && p.email.toLowerCase() === target) {
-      return p;
-    }
-  }
 
-  // Check disk
+  // 1. Check persistent disk storage FIRST
   const persistedList = loadPersistedParticipants();
   const found = persistedList.find(
-    (p) => p.hackathonId === hackathonId && p.email.toLowerCase() === target
+    (p) =>
+      (!hackathonId || p.hackathonId === hackathonId) &&
+      p.email.trim().toLowerCase() === target
   );
   if (found) {
+    // Hydrate teammates if in team
+    if (found.teamCode) {
+      const team = getPersistedTeamByCode(found.teamCode);
+      if (team) {
+        found.teamName = team.name;
+        found.teammates = team.members.map((m) => ({
+          name: m.name,
+          roleTitle: m.roleTitle,
+          avatarUrl: m.avatarUrl,
+        }));
+      }
+    }
     memoryStore.participants.set(found.ticketNumber, found);
     return found;
+  }
+
+  // 2. Check memory store
+  for (const p of memoryStore.participants.values()) {
+    if (
+      (!hackathonId || p.hackathonId === hackathonId) &&
+      p.email.trim().toLowerCase() === target
+    ) {
+      return p;
+    }
   }
 
   return null;

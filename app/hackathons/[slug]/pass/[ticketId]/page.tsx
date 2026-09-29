@@ -10,13 +10,20 @@ export async function generateMetadata({
   params: Promise<{ slug: string; ticketId: string }>;
 }): Promise<Metadata> {
   const { ticketId } = await params;
-  // Metadata uses a generic title — the real name is resolved client-side from localStorage
+  const participant = await getParticipantByTicket(ticketId);
+  const title = participant?.name
+    ? `${participant.name}'s Hacker Passport #${participant.ticketNumber} — GoHackerz`
+    : `Hacker Passport #${ticketId.toUpperCase()} — GoHackerz`;
+  const description = participant?.name
+    ? `Official verified Hacker Passport for ${participant.name} (${participant.roleTitle}) on GoHackerz Global Shipathon 2026.`
+    : `Official verified Hacker Passport #${ticketId.toUpperCase()} on GoHackerz Global Shipathon 2026.`;
+
   return {
-    title: `Hacker Passport #${ticketId.toUpperCase()} — GoHackerz`,
-    description: `Official verified Hacker Passport #${ticketId.toUpperCase()} on GoHackerz Global Shipathon 2026.`,
+    title,
+    description,
     openGraph: {
-      title: `Hacker Passport #${ticketId.toUpperCase()} — GoHackerz`,
-      description: "Check out this hacker's official credential from GoHackerz Global Shipathon 2026!",
+      title,
+      description,
     },
   };
 }

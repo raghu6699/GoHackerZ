@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { registerHacker, getHackathonBySlug } from "@/lib/hackathons";
+import { registerHacker, getHackathonBySlug, getParticipantByEmail } from "@/lib/hackathons";
 import { sendEmail, hackerPassportEmail } from "@/lib/mailer";
 
 export async function POST(
@@ -35,10 +35,25 @@ export async function POST(
       );
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await getParticipantByEmail(hackathon.id, cleanEmail);
+    if (existing) {
+      return NextResponse.json(
+        {
+          error: `The email "${cleanEmail}" is already registered for ${hackathon.title} with Ticket #${existing.ticketNumber}.`,
+          alreadyRegistered: true,
+          ticketNumber: existing.ticketNumber,
+          passportUrl: `/hackathons/${slug}/pass/${existing.ticketNumber}`,
+          participant: existing,
+        },
+        { status: 409 }
+      );
+    }
+
     const participant = await registerHacker({
       hackathonId: hackathon.id,
       name,
-      email,
+      email: cleanEmail,
       roleTitle: roleTitle || "Fullstack Builder",
       bio,
       discordHandle,
