@@ -60,7 +60,7 @@ export function PassPortPageClient({
     setResolved(true);
   }, [ticketId, serverParticipant]);
 
-  const isVerifiedShipper = participant.name === "Verified Shipper" && !resolved;
+  const isLoading = !participant.name && !resolved;
 
   return (
     <div className="space-y-10">
@@ -73,7 +73,7 @@ export function PassPortPageClient({
           Official Hacker Passport
         </h1>
         <p className="text-sm sm:text-base text-body">
-          {isVerifiedShipper ? (
+          {isLoading ? (
             <span className="flex items-center justify-center gap-2 text-muted">
               <Loader2 className="w-4 h-4 animate-spin" />
               Loading credential details…
@@ -81,7 +81,7 @@ export function PassPortPageClient({
           ) : (
             <>
               Authenticated credential for{" "}
-              <strong className="text-ink">{participant.name}</strong>. Tilt the
+              <strong className="text-ink">{participant.name || "Verified Builder"}</strong>. Tilt the
               pass in 3D, flip to view the mission dossier, or scan the QR code.
             </>
           )}

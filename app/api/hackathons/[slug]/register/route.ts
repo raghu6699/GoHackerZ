@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { registerHacker, getHackathonBySlug } from "@/lib/hackathons";
+import { sendEmail, hackerPassportEmail } from "@/lib/mailer";
 
 export async function POST(
   req: Request,
@@ -49,6 +50,26 @@ export async function POST(
       teamInviteCode,
     });
 
+    // Send the official Hacker Passport confirmation email
+    try {
+      const emailMsg = hackerPassportEmail({
+        to: participant.email,
+        name: participant.name,
+        ticketNumber: participant.ticketNumber,
+        roleTitle: participant.roleTitle,
+        teamName: participant.teamName,
+        teamCode: participant.teamCode,
+        hackathonSlug: hackathon.slug,
+        hackathonTitle: hackathon.title,
+      });
+      // Fire and log send result
+      sendEmail(emailMsg).catch((err) => {
+        console.error("Failed to send hacker passport email:", err);
+      });
+    } catch (mailErr) {
+      console.warn("Could not dispatch passport email:", mailErr);
+    }
+
     return NextResponse.json({ success: true, participant });
   } catch (error) {
     console.error("Hackathon registration error:", error);
@@ -58,3 +79,4 @@ export async function POST(
     );
   }
 }
+

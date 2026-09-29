@@ -180,4 +180,80 @@ export function accountConfirmationEmail(to: string, confirmUrl: string): EmailM
   };
 }
 
+export function hackerPassportEmail(params: {
+  to: string;
+  name: string;
+  ticketNumber: string;
+  roleTitle: string;
+  teamName?: string;
+  teamCode?: string;
+  hackathonSlug: string;
+  hackathonTitle: string;
+}): EmailMessage {
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const passUrl = `${site}/hackathons/${params.hackathonSlug}/pass/${params.ticketNumber}`;
+  const submitUrl = `${site}/hackathons/${params.hackathonSlug}/submit?ticket=${params.ticketNumber}`;
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+    passUrl
+  )}`;
+
+  const body = `
+    <div style="background-color:#0A071B;border:2px solid #7c5cff;border-radius:20px;padding:24px;color:#ffffff;margin:20px 0;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+      <div style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:#C6FF3D;text-transform:uppercase;">OFFICIAL HACKER CREDENTIAL</span>
+        <span style="font-family:monospace;font-size:14px;font-weight:900;color:#C6FF3D;background:#1A1440;padding:2px 8px;border-radius:4px;border:1px solid rgba(198,255,61,0.4);">#${params.ticketNumber}</span>
+      </div>
+
+      <h2 style="font-size:24px;margin:0 0 4px 0;color:#ffffff;font-weight:800;">${params.name}</h2>
+      <p style="font-family:monospace;font-size:13px;color:#D4CEF5;margin:0 0 16px 0;">// ${params.roleTitle}</p>
+
+      <table style="width:100%;margin-bottom:16px;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#8B84AD;font-size:12px;font-family:monospace;">ALLIANCE / TEAM:</td>
+          <td style="padding:6px 0;color:#ffffff;font-size:13px;font-weight:700;text-align:right;">${params.teamName || "Solo Competitor"}</td>
+        </tr>
+        ${
+          params.teamCode
+            ? `
+        <tr>
+          <td style="padding:6px 0;color:#8B84AD;font-size:12px;font-family:monospace;">INVITE CODE:</td>
+          <td style="padding:6px 0;color:#C6FF3D;font-size:13px;font-weight:700;font-family:monospace;text-align:right;">${params.teamCode}</td>
+        </tr>`
+            : ""
+        }
+        <tr>
+          <td style="padding:6px 0;color:#8B84AD;font-size:12px;font-family:monospace;">EVENT:</td>
+          <td style="padding:6px 0;color:#ffffff;font-size:13px;font-weight:700;text-align:right;">${params.hackathonTitle}</td>
+        </tr>
+      </table>
+
+      <div style="text-align:center;padding:16px 0;background:#130E29;border-radius:14px;border:1px solid rgba(255,255,255,0.1);margin-bottom:20px;">
+        <img src="${qrApiUrl}" alt="Passport QR Code" style="width:140px;height:140px;border-radius:8px;border:3px solid #C6FF3D;" />
+        <div style="font-family:monospace;font-size:10px;color:#D4CEF5;margin-top:8px;letter-spacing:1px;">SCAN TO OPEN PASSPORT ON ANY DEVICE</div>
+      </div>
+
+      <div style="text-align:center;">
+        <a href="${passUrl}" style="display:inline-block;background:#C6FF3D;color:#0A071B;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:900;font-size:14px;font-family:monospace;letter-spacing:0.5px;">VIEW 3D HACKER PASSPORT →</a>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;font-size:13px;line-height:1.6;color:#555;">
+      <h3 style="font-size:16px;color:#110D28;margin-bottom:8px;">Next Steps for the Shipathon:</h3>
+      <ul style="padding-left:20px;margin:0 0 16px 0;">
+        <li><strong>Share on X / Socials:</strong> Flex your holographic passport to recruit teammates and show you're competing.</li>
+        <li><strong>Form your Squad:</strong> If building with a team, share your invite code <code>${params.teamCode || params.ticketNumber}</code>.</li>
+        <li><strong>Build & Ship:</strong> Submissions are 100% lightweight link-based (<a href="${submitUrl}" style="color:#7c5cff;font-weight:700;">Submit Project Link</a>).</li>
+      </ul>
+      <p style="font-size:12px;color:#8B84AD;">Have questions or need help? Join our official community or reply directly to this email.</p>
+    </div>
+  `;
+
+  return {
+    to: params.to,
+    subject: `⚡ Your Hacker Passport: #${params.ticketNumber} — ${params.hackathonTitle}`,
+    html: shell(`Welcome to the Arena, ${params.name}! 🚀`, body),
+  };
+}
+
+
 

@@ -1,0 +1,83 @@
+[
+  {
+    "id": "part-01",
+    "hackathonId": "gh-shipathon-2026",
+    "ticketNumber": "GH-2026-X89B",
+    "name": "Alex Vance",
+    "email": "alex@gohackerz.dev",
+    "roleTitle": "Lead Systems Architect",
+    "bio": "Obsessed with CRDTs, Rust edge workers, and distributed state machines.",
+    "discordHandle": "alexvance#404",
+    "twitterHandle": "@alexv_dev",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "themeStyle": "lime",
+    "isCaptain": true,
+    "teamId": "team-void",
+    "teamName": "Team Void Runners",
+    "teamCode": "VOID-42",
+    "teammates": [
+      { "name": "Alex Vance", "roleTitle": "Systems Architect" },
+      { "name": "Sarah Chen", "roleTitle": "AI & Vector Search" },
+      { "name": "Dev Patel", "roleTitle": "Fullstack / Next.js" }
+    ],
+    "submission": {
+      "id": "sub-01",
+      "hackathonId": "gh-shipathon-2026",
+      "ticketNumber": "GH-2026-X89B",
+      "teamName": "Team Void Runners",
+      "trackId": "ai-agents",
+      "title": "PulseFlow AI: Autonomous PR Review Swarm",
+      "tagline": "Multi-agent swarm that stress-tests, reproduces race conditions, and drafts PR fixes automatically.",
+      "description": "PulseFlow connects to your GitHub repository and spins up a swarm of specialized agent personas to review PRs in seconds.",
+      "repoUrl": "https://github.com/gohackerz/pulseflow-ai",
+      "demoUrl": "https://pulseflow.gohackerz.dev",
+      "pitchDeckUrl": "https://gamma.app/docs/pulseflow-ai-pitch",
+      "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "gammaUrl": "https://gamma.app/docs/pulseflow-ai-pitch",
+      "techStack": ["Next.js 15", "TypeScript", "LangChain", "Supabase Vector", "Prisma"],
+      "authorName": "Alex Vance",
+      "createdAt": "2026-10-11T16:20:00Z",
+      "upvotes": 48
+    },
+    "createdAt": "2026-09-28T12:00:00Z"
+  },
+  {
+    "id": "part-02",
+    "hackathonId": "gh-shipathon-2026",
+    "ticketNumber": "GH-2026-N309",
+    "name": "Elena Rostova",
+    "email": "elena@matrix.io",
+    "roleTitle": "Fullstack AI Engineer",
+    "bio": "Building local-first speech synthesis and browser LLM inference engines.",
+    "discordHandle": "elena_r#892",
+    "twitterHandle": "@elena_builds",
+    "themeStyle": "neon",
+    "isCaptain": false,
+    "teamName": "Neural Forge",
+    "teamCode": "FORGE-99",
+    "teammates": [
+      { "name": "Elena Rostova", "roleTitle": "AI Engineer" },
+      { "name": "Marcus Brody", "roleTitle": "UI/UX Wizard" }
+    ],
+    "submission": {
+      "id": "sub-02",
+      "hackathonId": "gh-shipathon-2026",
+      "ticketNumber": "GH-2026-N309",
+      "teamName": "Neural Forge",
+      "trackId": "edge-systems",
+      "title": "EdgeWhisper: Zero-Server On-Device Voice Intelligence",
+      "tagline": "Ultra-fast voice-to-structured-data engine running 100% inside WebAssembly on Edge.",
+      "description": "Transforms long voice memos into actionable Linear tickets and architectural docs with zero cloud latency.",
+      "repoUrl": "https://github.com/gohackerz/edgewhisper",
+      "demoUrl": "https://edgewhisper.dev",
+      "pitchDeckUrl": "https://gamma.app/docs/edgewhisper-deck",
+      "videoUrl": "https://youtube.com",
+      "gammaUrl": "https://gamma.app/docs/edgewhisper-deck",
+      "techStack": ["WebAssembly", "Wasm-pack", "Next.js", "Tailwind CSS"],
+      "authorName": "Elena Rostova",
+      "createdAt": "2026-10-11T18:45:00Z",
+      "upvotes": 35
+    },
+    "createdAt": "2026-09-28T14:30:00Z"
+  }
+]

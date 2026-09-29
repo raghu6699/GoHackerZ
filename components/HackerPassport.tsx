@@ -105,8 +105,10 @@ export function HackerPassport({
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // 3D Tilt calculation
+  // 3D Tilt calculation & Card element refs
   const cardRef = useRef<HTMLDivElement>(null);
+  const frontCardRef = useRef<HTMLDivElement>(null);
+  const backCardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, glareX: 50, glareY: 50 });
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -162,138 +164,52 @@ export function HackerPassport({
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
   };
 
-  // High-Resolution Pass PNG Download via Canvas
-  const handleDownload = () => {
+  // High-Resolution True Card PNG Download via html2canvas
+  const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      const canvas = document.createElement("canvas");
-      canvas.width = 1200;
-      canvas.height = 630;
-      const ctx = canvas.getContext("2d");
+      const targetElement = isFlipped ? backCardRef.current : frontCardRef.current;
+      if (!targetElement) return;
 
-      if (ctx) {
-        // Background
-        ctx.fillStyle = "#0A071B";
-        ctx.fillRect(0, 0, 1200, 630);
+      const previousTilt = { ...tilt };
+      // Temporarily flatten 3D tilt for a pristine straight capture
+      setTilt({ rotateX: 0, rotateY: 0, glareX: 50, glareY: 50 });
 
-        // Cyber Grid Lines
-        ctx.strokeStyle = "rgba(124, 92, 255, 0.15)";
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 1200; i += 40) {
-          ctx.beginPath();
-          ctx.moveTo(i, 0);
-          ctx.lineTo(i, 630);
-          ctx.stroke();
-        }
-        for (let j = 0; j < 630; j += 40) {
-          ctx.beginPath();
-          ctx.moveTo(0, j);
-          ctx.lineTo(1200, j);
-          ctx.stroke();
-        }
+      // Small delay for DOM layout settling
+      await new Promise((resolve) => setTimeout(resolve, 80));
 
-        const drawRoundRect = (x: number, y: number, w: number, h: number, r: number) => {
-          if (typeof (ctx as any).roundRect === "function") {
-            (ctx as any).roundRect(x, y, w, h, r);
-          } else {
-            ctx.rect(x, y, w, h);
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(targetElement, {
+        scale: 3, // Ultra-sharp 3x retina resolution
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        onclone: (clonedDoc) => {
+          const clonedCard = clonedDoc.querySelector("[data-card-container]") as HTMLElement;
+          if (clonedCard) {
+            clonedCard.style.transform = "none";
           }
-        };
+          const clonedFront = clonedDoc.querySelector("[data-pass-front]") as HTMLElement;
+          if (clonedFront) {
+            clonedFront.style.transform = "none";
+          }
+          const clonedBack = clonedDoc.querySelector("[data-pass-back]") as HTMLElement;
+          if (clonedBack) {
+            clonedBack.style.transform = "none";
+          }
+        },
+      });
 
-        // Pass Container Box
-        ctx.fillStyle = "#130E29";
-        ctx.strokeStyle = theme.accent;
-        ctx.lineWidth = 4;
-        drawRoundRect(100, 65, 1000, 500, 24);
-        ctx.fill();
-        ctx.stroke();
+      // Restore user interaction tilt
+      setTilt(previousTilt);
 
-        // Header Title
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 32px 'Space Grotesk', sans-serif";
-        ctx.fillText("GOHACKERZ // HACKER PASSPORT", 160, 140);
-
-        ctx.fillStyle = theme.accent;
-        ctx.font = "bold 20px 'JetBrains Mono', monospace";
-        ctx.fillText(`TICKET ID: #${participant.ticketNumber}`, 160, 180);
-
-        // Status Stamp
-        ctx.fillStyle = theme.accent;
-        drawRoundRect(820, 105, 230, 42, 8);
-        ctx.fill();
-        ctx.fillStyle = "#110D28";
-        ctx.font = "bold 16px 'JetBrains Mono', monospace";
-        ctx.fillText("● VERIFIED BUILDER", 845, 132);
-
-        // Perforated line
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-        ctx.setLineDash([8, 8]);
-        ctx.beginPath();
-        ctx.moveTo(760, 75);
-        ctx.lineTo(760, 555);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Hacker Details
-        ctx.fillStyle = "#D4CEF5";
-        ctx.font = "16px 'JetBrains Mono', monospace";
-        ctx.fillText("HACKER NAME:", 160, 250);
-
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 40px 'Space Grotesk', sans-serif";
-        ctx.fillText(participant.name, 160, 300);
-
-        ctx.fillStyle = "#D4CEF5";
-        ctx.font = "16px 'JetBrains Mono', monospace";
-        ctx.fillText("SPECIALTY / ROLE:", 160, 360);
-
-        ctx.fillStyle = theme.accent;
-        ctx.font = "bold 26px 'Space Grotesk', sans-serif";
-        ctx.fillText(participant.roleTitle, 160, 400);
-
-        ctx.fillStyle = "#D4CEF5";
-        ctx.font = "16px 'JetBrains Mono', monospace";
-        ctx.fillText("TEAM ALLIANCE:", 160, 460);
-
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 24px 'Space Grotesk', sans-serif";
-        ctx.fillText(participant.teamName ? participant.teamName : "Solo Competitor", 160, 500);
-
-        // Stub Section (Right)
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 18px 'JetBrains Mono', monospace";
-        ctx.fillText("ACCESS LEVEL:", 800, 220);
-
-        ctx.fillStyle = theme.accent;
-        ctx.font = "bold 22px 'Space Grotesk', sans-serif";
-        ctx.fillText("VIP BUILDER", 800, 255);
-
-        ctx.fillStyle = "#D4CEF5";
-        ctx.font = "14px 'JetBrains Mono', monospace";
-        ctx.fillText("EVENT:", 800, 310);
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 16px 'Space Grotesk', sans-serif";
-        ctx.fillText("Global Shipathon 2026", 800, 335);
-
-        ctx.fillStyle = "#D4CEF5";
-        ctx.font = "14px 'JetBrains Mono', monospace";
-        ctx.fillText("PRIZE POOL:", 800, 385);
-        ctx.fillStyle = theme.accent;
-        ctx.font = "bold 20px 'JetBrains Mono', monospace";
-        ctx.fillText("CASH GRANTS + PERKS", 800, 415);
-
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-        ctx.font = "12px 'JetBrains Mono', monospace";
-        ctx.fillText("gohackerz.com/hackathons", 800, 510);
-
-        // Download trigger
-        const link = document.createElement("a");
-        link.download = `Hacker-Passport-${participant.ticketNumber}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      }
+      const link = document.createElement("a");
+      link.download = `GoHackerz-Passport-${participant.ticketNumber || "Ticket"}${isFlipped ? "-dossier" : ""}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
     } catch (e) {
-      console.error("Export error", e);
+      console.error("Passport export error:", e);
     } finally {
       setIsDownloading(false);
     }
@@ -339,6 +255,7 @@ export function HackerPassport({
       >
         <div
           ref={cardRef}
+          data-card-container
           style={
             {
               transform: `rotateX(${tilt.rotateX}deg) rotateY(${
@@ -359,6 +276,8 @@ export function HackerPassport({
           {/* CARD FRONT: THE HACKER PASSPORT CREDENTIAL */}
           {/* ========================================================================= */}
           <div
+            ref={frontCardRef}
+            data-pass-front
             className={`w-full rounded-3xl p-6 sm:p-8 bg-gradient-to-br ${theme.cardBg} border-2 ${theme.border} text-white relative overflow-hidden backface-hidden shadow-pop-lg`}
             style={{
               boxShadow: `0 20px 40px -10px ${theme.glow}, 6px 6px 0 #1A1440`,
@@ -540,6 +459,8 @@ export function HackerPassport({
           {/* CARD BACK: MISSION DOSSIER & SCHEDULE */}
           {/* ========================================================================= */}
           <div
+            ref={backCardRef}
+            data-pass-back
             className={`absolute inset-0 w-full h-full rounded-3xl p-6 sm:p-8 bg-gradient-to-br ${theme.cardBg} border-2 ${theme.border} text-white backface-hidden [transform:rotateY(180deg)] shadow-pop-lg flex flex-col justify-between overflow-y-auto`}
             style={{
               boxShadow: `0 20px 40px -10px ${theme.glow}, 6px 6px 0 #1A1440`,

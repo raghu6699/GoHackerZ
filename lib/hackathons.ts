@@ -292,6 +292,14 @@ const SEED_PARTICIPANTS: HackathonParticipant[] = [
   },
 ];
 
+import {
+  loadPersistedParticipants,
+  persistParticipant,
+  getPersistedParticipantByTicket,
+  persistTeam,
+  loadPersistedTeams,
+} from "./participant-store";
+
 // Persistent Global store (singleton across all Next.js serverless/SSR invocations and hot-reloads)
 interface GlobalHackathonStore {
   participants: Map<string, HackathonParticipant>;
@@ -304,13 +312,30 @@ const globalForHackathons = globalThis as unknown as {
 };
 
 if (!globalForHackathons.hackathonStore) {
+  const persistedParticipants = loadPersistedParticipants();
+  const allInitial = [...SEED_PARTICIPANTS];
+  for (const p of persistedParticipants) {
+    const existingIdx = allInitial.findIndex(
+      (s) => s.ticketNumber.toUpperCase() === p.ticketNumber.toUpperCase()
+    );
+    if (existingIdx >= 0) {
+      allInitial[existingIdx] = p;
+    } else {
+      allInitial.push(p);
+    }
+  }
+
   globalForHackathons.hackathonStore = {
     participants: new Map<string, HackathonParticipant>(
-      SEED_PARTICIPANTS.map((p) => [p.ticketNumber, p])
+      allInitial.map((p) => [p.ticketNumber, p])
     ),
-    teams: new Map<string, HackathonTeam>(),
+    teams: new Map<string, HackathonTeam>(
+      loadPersistedTeams().map((t) => [t.inviteCode, t])
+    ),
     submissions: new Map<string, HackathonSubmission>(
-      SEED_PARTICIPANTS.filter((p) => p.submission).map((p) => [p.submission!.id, p.submission!])
+      allInitial
+        .filter((p) => p.submission)
+        .map((p) => [p.submission!.id, p.submission!])
     ),
   };
 }
@@ -357,28 +382,16 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
   const direct = memoryStore.participants.get(clean);
   if (direct) return direct;
 
-  // Search case-insensitive
+  // Search case-insensitive in memory
   for (const [key, val] of memoryStore.participants.entries()) {
     if (key.toUpperCase() === clean) return val;
   }
 
-  // Resilient fallback for any validly formatted ticket ID (e.g. GH-2026-XXXX)
-  // Ensures QR scan NEVER gives 404 even across serverless cold starts!
-  if (/^GH-2026-[A-Z0-9]{4}$/i.test(clean)) {
-    const fallbackParticipant: HackathonParticipant = {
-      id: `part-${clean.toLowerCase()}`,
-      hackathonId: "gh-shipathon-2026",
-      ticketNumber: clean,
-      name: "Verified Shipper",
-      email: "hacker@gohackerz.dev",
-      roleTitle: "Fullstack Builder & Engineer",
-      themeStyle: "lime",
-      isCaptain: true,
-      teamName: "GoHackerz Arena Squad",
-      createdAt: new Date().toISOString(),
-    };
-    memoryStore.participants.set(clean, fallbackParticipant);
-    return fallbackParticipant;
+  // Check persistent disk storage (ensures cross-device / cold-start sync)
+  const persisted = getPersistedParticipantByTicket(clean);
+  if (persisted) {
+    memoryStore.participants.set(clean, persisted);
+    return persisted;
   }
 
   return null;
@@ -394,6 +407,17 @@ export async function getParticipantByEmail(
       return p;
     }
   }
+
+  // Check disk
+  const persistedList = loadPersistedParticipants();
+  const found = persistedList.find(
+    (p) => p.hackathonId === hackathonId && p.email.toLowerCase() === target
+  );
+  if (found) {
+    memoryStore.participants.set(found.ticketNumber, found);
+    return found;
+  }
+
   return null;
 }
 
@@ -440,6 +464,7 @@ export async function registerHacker(params: {
       createdAt: new Date().toISOString(),
     };
     memoryStore.teams.set(teamCode, newTeam);
+    persistTeam(newTeam);
   } else if (params.teamOption === "join" && params.teamInviteCode?.trim()) {
     const code = params.teamInviteCode.trim().toUpperCase();
     const foundTeam = memoryStore.teams.get(code);
@@ -481,10 +506,12 @@ export async function registerHacker(params: {
   };
 
   memoryStore.participants.set(ticketNumber, participant);
+  persistParticipant(participant);
 
   if (teamCode && memoryStore.teams.has(teamCode)) {
     const t = memoryStore.teams.get(teamCode)!;
     t.members.push(participant);
+    persistTeam(t);
   }
 
   return participant;
@@ -532,6 +559,7 @@ export async function submitProject(params: {
   if (participant) {
     participant.submission = submission;
     memoryStore.participants.set(participant.ticketNumber, participant);
+    persistParticipant(participant);
   }
 
   return submission;
