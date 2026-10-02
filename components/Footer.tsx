@@ -75,31 +75,39 @@ export function Footer() {
               </p>
             </div>
             {cols.map((c) => (
-              <div key={c.heading}>
-                <h6 className="font-mono text-[11px] sm:text-[12px] text-lime font-bold mb-2 sm:mb-3.5">
+              <div key={c.heading} className="flex flex-col">
+                <h6 className="font-mono text-[11px] sm:text-[12px] text-lime font-bold mb-2 sm:mb-3.5 tracking-wider uppercase">
                   {c.heading}
                 </h6>
-                {c.links.map((l) => (
-                  <Link
-                    key={l.label}
-                    href={l.href}
-                    className="inline-flex items-center text-[#E5E0FF] text-[13px] sm:text-[15px] py-1 hover:text-white hover:underline transition-colors group"
-                  >
-                    <span>{l.label}</span>
-                    {l.badge && (
-                      <span className="ml-2 px-2 py-0.5 text-[9.5px] bg-[#E11D48] text-white font-mono font-black rounded-full shadow-sm inline-flex items-center gap-1 tracking-wider group-hover:scale-105 transition-transform">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        {l.badge}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                <div className="flex flex-col items-start gap-1 sm:gap-1.5">
+                  {c.links.map((l) => (
+                    <Link
+                      key={l.label}
+                      href={l.href}
+                      className="inline-flex items-center text-[#E5E0FF] text-[13px] sm:text-[15px] py-0.5 hover:text-white hover:underline transition-colors group"
+                    >
+                      <span>{l.label}</span>
+                      {l.badge && (
+                        <span className="ml-2 px-2 py-0.5 text-[9.5px] bg-[#E11D48] text-white font-mono font-black rounded-full shadow-sm inline-flex items-center gap-1 tracking-wider group-hover:scale-105 transition-transform">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          {l.badge}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row justify-between gap-2 pt-4 sm:pt-6 border-t border-[#392E6B] font-mono text-[11px] sm:text-[12px] text-[#A69ECB]">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4 sm:pt-6 border-t border-[#392E6B] font-mono text-[11px] sm:text-[12px] text-[#A69ECB]">
             <span>© 2026 gohackerz.com</span>
-            <span>Privacy · Terms · RSS</span>
+            <div className="flex items-center gap-3">
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <span>·</span>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <span>·</span>
+              <Link href="/rss.xml" className="hover:text-white transition-colors">RSS</Link>
+            </div>
           </div>
         </div>
       </div>
