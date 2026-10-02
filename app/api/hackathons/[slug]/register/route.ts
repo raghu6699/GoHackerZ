@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { registerHacker, getHackathonBySlug, getParticipantByEmail } from "@/lib/hackathons";
 import { sendEmail, hackerPassportEmail } from "@/lib/mailer";
+import { getCurrentDbUser } from "@/lib/profile";
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const user = await getCurrentDbUser();
+    if (!user || !user.email) {
+      return NextResponse.json(
+        { error: "Authentication required. Please sign in to register for hackathons." },
+        { status: 401 }
+      );
+    }
+
     const { slug } = await params;
     const hackathon = await getHackathonBySlug(slug);
     if (!hackathon) {
@@ -16,7 +25,6 @@ export async function POST(
     const body = await req.json();
     const {
       name,
-      email,
       roleTitle,
       bio,
       discordHandle,
@@ -28,19 +36,14 @@ export async function POST(
       teamInviteCode,
     } = body;
 
-    if (!name?.trim() || !email?.trim()) {
-      return NextResponse.json(
-        { error: "Name and email are required to register" },
-        { status: 400 }
-      );
-    }
+    const hackerName = name?.trim() || user.name || "Anonymous Builder";
+    const cleanEmail = user.email.trim().toLowerCase();
 
-    const cleanEmail = email.trim().toLowerCase();
     const existing = await getParticipantByEmail(hackathon.id, cleanEmail);
     if (existing) {
       return NextResponse.json(
         {
-          error: `The email "${cleanEmail}" is already registered for ${hackathon.title} with Ticket #${existing.ticketNumber}.`,
+          error: `Your account email (${cleanEmail}) is already registered for ${hackathon.title} with Ticket #${existing.ticketNumber}.`,
           alreadyRegistered: true,
           ticketNumber: existing.ticketNumber,
           passportUrl: `/hackathons/${slug}/pass/${existing.ticketNumber}`,
@@ -52,13 +55,13 @@ export async function POST(
 
     const participant = await registerHacker({
       hackathonId: hackathon.id,
-      name,
+      name: hackerName,
       email: cleanEmail,
       roleTitle: roleTitle || "Fullstack Builder",
       bio,
       discordHandle,
       twitterHandle,
-      avatarUrl,
+      avatarUrl: avatarUrl || user.avatarUrl || undefined,
       themeStyle: themeStyle || "lime",
       teamOption: teamOption || "solo",
       teamName,
@@ -94,4 +97,3 @@ export async function POST(
     );
   }
 }
-
