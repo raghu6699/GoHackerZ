@@ -234,11 +234,13 @@ export default function HackathonRegisterPage() {
               </p>
             </div>
 
-            {/* The Animated 3D Holographic Passport */}
+            {/* The Animated Boarding Pass */}
             <HackerPassport
               participant={registeredParticipant}
               hackathonTitle="Global Shipathon 2026"
               isOwner={true}
+              slug={slug}
+              ticketId={registeredParticipant.ticketNumber}
             />
 
             <div className="flex items-center justify-center gap-4 pt-4">

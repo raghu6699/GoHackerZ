@@ -255,9 +255,8 @@ export function PassPortPageClient({
             </span>
           ) : (
             <>
-              Authenticated credential for{" "}
-              <strong className="text-ink">{participant.name || "Verified Builder"}</strong>. Tilt the
-              pass in 3D, flip to view the mission dossier, or scan the QR code.
+              Authenticated boarding pass for{" "}
+              <strong className="text-ink">{participant.name || "Verified Builder"}</strong>. Inspect flight credentials, scan gate QR code, or download your official boarding pass.
             </>
           )}
         </p>
@@ -268,6 +267,8 @@ export function PassPortPageClient({
         participant={participant}
         hackathonTitle={hackathonTitle}
         isOwner={isOwner}
+        slug={slug}
+        ticketId={ticketId}
         onThemeChange={handleThemeChange}
       />
 

@@ -16,9 +16,18 @@
     "teamName": "Team Void Runners",
     "teamCode": "VOID-42",
     "teammates": [
-      { "name": "Alex Vance", "roleTitle": "Systems Architect" },
-      { "name": "Sarah Chen", "roleTitle": "AI & Vector Search" },
-      { "name": "Dev Patel", "roleTitle": "Fullstack / Next.js" }
+      {
+        "name": "Alex Vance",
+        "roleTitle": "Systems Architect"
+      },
+      {
+        "name": "Sarah Chen",
+        "roleTitle": "AI & Vector Search"
+      },
+      {
+        "name": "Dev Patel",
+        "roleTitle": "Fullstack / Next.js"
+      }
     ],
     "submission": {
       "id": "sub-01",
@@ -34,7 +43,13 @@
       "pitchDeckUrl": "https://gamma.app/docs/pulseflow-ai-pitch",
       "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       "gammaUrl": "https://gamma.app/docs/pulseflow-ai-pitch",
-      "techStack": ["Next.js 15", "TypeScript", "LangChain", "Supabase Vector", "Prisma"],
+      "techStack": [
+        "Next.js 15",
+        "TypeScript",
+        "LangChain",
+        "Supabase Vector",
+        "Prisma"
+      ],
       "authorName": "Alex Vance",
       "createdAt": "2026-10-11T16:20:00Z",
       "upvotes": 48
@@ -56,8 +71,14 @@
     "teamName": "Neural Forge",
     "teamCode": "FORGE-99",
     "teammates": [
-      { "name": "Elena Rostova", "roleTitle": "AI Engineer" },
-      { "name": "Marcus Brody", "roleTitle": "UI/UX Wizard" }
+      {
+        "name": "Elena Rostova",
+        "roleTitle": "AI Engineer"
+      },
+      {
+        "name": "Marcus Brody",
+        "roleTitle": "UI/UX Wizard"
+      }
     ],
     "submission": {
       "id": "sub-02",
@@ -73,11 +94,44 @@
       "pitchDeckUrl": "https://gamma.app/docs/edgewhisper-deck",
       "videoUrl": "https://youtube.com",
       "gammaUrl": "https://gamma.app/docs/edgewhisper-deck",
-      "techStack": ["WebAssembly", "Wasm-pack", "Next.js", "Tailwind CSS"],
+      "techStack": [
+        "WebAssembly",
+        "Wasm-pack",
+        "Next.js",
+        "Tailwind CSS"
+      ],
       "authorName": "Elena Rostova",
       "createdAt": "2026-10-11T18:45:00Z",
       "upvotes": 35
     },
     "createdAt": "2026-09-28T14:30:00Z"
+  },
+  {
+    "id": "part-1790905082319",
+    "hackathonId": "gh-shipathon-2026",
+    "ticketNumber": "GH-2026-JKYM",
+    "name": "UDAY",
+    "email": "ud@gmail.com",
+    "roleTitle": "Fullstack & AI Engineer",
+    "bio": "",
+    "discordHandle": "135UD",
+    "twitterHandle": "HJ",
+    "themeStyle": "lime",
+    "isCaptain": false,
+    "createdAt": "2026-10-02T01:38:02.319Z"
+  },
+  {
+    "id": "part-1790905381352",
+    "hackathonId": "gh-shipathon-2026",
+    "ticketNumber": "GH-2026-AP3F",
+    "name": "Y",
+    "email": "yf@gmail.com",
+    "roleTitle": "Fullstack & AI Engineer",
+    "bio": "",
+    "discordHandle": "5E",
+    "twitterHandle": "JJH",
+    "themeStyle": "lime",
+    "isCaptain": false,
+    "createdAt": "2026-10-02T01:43:01.352Z"
   }
 ]
