@@ -626,3 +626,74 @@ export async function getAllSubmissions(hackathonId?: string): Promise<Hackathon
   }
   return list;
 }
+
+export async function getUserHackathonHistory(email: string): Promise<{ hackathon: HackathonData; participant: HackathonParticipant }[]> {
+  if (!email) return [];
+  const cleanEmail = email.trim().toLowerCase();
+
+  const userMap = new Map<string, HackathonParticipant>();
+
+  // 1. Check disk store
+  const diskList = loadPersistedParticipants();
+  for (const p of diskList) {
+    if (p.email && p.email.trim().toLowerCase() === cleanEmail) {
+      userMap.set(p.ticketNumber.toUpperCase(), p);
+    }
+  }
+
+  // 2. Check memory store
+  for (const p of memoryStore.participants.values()) {
+    if (p.email && p.email.trim().toLowerCase() === cleanEmail) {
+      userMap.set(p.ticketNumber.toUpperCase(), p);
+    }
+  }
+
+  // 3. Query DB if available
+  if (isDbAvailable()) {
+    try {
+      const dbRows = await prisma.hackathonParticipant.findMany({
+        where: { email: { equals: cleanEmail, mode: "insensitive" } },
+        include: { team: { include: { participants: true } } },
+      });
+      for (const row of dbRows) {
+        const participant: HackathonParticipant = {
+          id: row.id,
+          hackathonId: row.hackathonId,
+          ticketNumber: row.ticketNumber,
+          name: row.name,
+          email: row.email,
+          roleTitle: row.roleTitle || "Fullstack & AI Engineer",
+          bio: row.bio ?? undefined,
+          discordHandle: row.discordHandle ?? undefined,
+          twitterHandle: row.twitterHandle ?? undefined,
+          avatarUrl: row.avatarUrl ?? undefined,
+          themeStyle: (row.themeStyle as HackathonTheme) || "lime",
+          isCaptain: row.isCaptain,
+          teamId: row.teamId ?? undefined,
+          teamName: row.team?.name ?? undefined,
+          teamCode: row.team?.inviteCode ?? undefined,
+          teammates: row.team?.participants.map((p) => ({
+            name: p.name,
+            roleTitle: p.roleTitle,
+            avatarUrl: p.avatarUrl ?? undefined,
+          })),
+          createdAt: row.createdAt.toISOString(),
+        };
+        userMap.set(row.ticketNumber.toUpperCase(), participant);
+      }
+    } catch (e) {
+      console.warn("Could not query user hackathons from DB:", e);
+    }
+  }
+
+  const results: { hackathon: HackathonData; participant: HackathonParticipant }[] = [];
+  const allHackathons = await getAllHackathons();
+
+  for (const participant of userMap.values()) {
+    const hackathon = allHackathons.find((h) => h.id === participant.hackathonId) || FLAGSHIP_HACKATHON;
+    results.push({ hackathon, participant });
+  }
+
+  return results;
+}
+

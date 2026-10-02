@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Sparkles, Users, QrCode, ExternalLink } from "lucide-react";
 import { getCurrentDbUser } from "@/lib/profile";
 import {
   getUserArticles,
@@ -10,6 +11,7 @@ import {
   preloadCardData,
   type WithStatus,
 } from "@/lib/queries";
+import { getUserHackathonHistory } from "@/lib/hackathons";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ArticleCard } from "@/components/ArticleCard";
 import { DeleteArticleButton } from "@/components/DeleteArticleButton";
@@ -20,6 +22,7 @@ export const metadata: Metadata = { title: "Your profile — GoHackerz" };
 
 const TABS = [
   { key: "edit", label: "Edit profile", emoji: "👤" },
+  { key: "passports", label: "Hacker Passports", emoji: "🎫" },
   { key: "posts", label: "Your posts", emoji: "📝" },
   { key: "saved", label: "Saved articles", emoji: "★" },
   { key: "following", label: "Following", emoji: "💜" },
@@ -43,10 +46,11 @@ export default async function ProfilePage({
   const sp = await searchParams;
   const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "edit";
 
-  const [posts, followedAuthors, savedArticles] = await Promise.all([
+  const [posts, followedAuthors, savedArticles, userPassports] = await Promise.all([
     getUserArticles(user.id),
     getFollowedAuthors(user.id),
     getUserSavedArticles(user.id),
+    getUserHackathonHistory(user.email),
   ]);
   const followingFeed =
     tab === "following" ? await getFollowingFeed(user.id) : [];
@@ -88,6 +92,7 @@ export default async function ProfilePage({
         <div className="relative flex gap-2.5 flex-wrap mt-5">
           <span className="chip bg-lime text-[#1A1440]">{published} published</span>
           <span className="chip bg-sky text-[#1A1440]">{inProgress} in progress</span>
+          <span className="chip bg-[#D4CEF5] text-[#1A1440]">{userPassports.length} passports</span>
           <span className="chip bg-peach text-[#1A1440]">{savedArticles.length} saved</span>
           <span className="chip bg-pink text-[#1A1440]">{followedAuthors.length} following</span>
         </div>
@@ -125,6 +130,97 @@ export default async function ProfilePage({
               email: user.email,
             }}
           />
+        </div>
+      )}
+
+      {/* ── panel: passports ── */}
+      {tab === "passports" && (
+        <div className="anim space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Hacker Passports & Event History</h2>
+              <p className="text-sm text-muted">
+                Official digital boarding passes and verification credentials for hackathons you have attended.
+              </p>
+            </div>
+            <Link href="/hackathons" className="btn btn-purple btn-sm">
+              <span>Explore Arena</span> <Sparkles className="w-3.5 h-3.5 ml-1" />
+            </Link>
+          </div>
+
+          {userPassports.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-1">
+              {userPassports.map(({ hackathon, participant }) => (
+                <div
+                  key={participant.ticketNumber}
+                  className="rounded-3xl border-2 border-ink bg-card p-6 shadow-pop-lg relative overflow-hidden transition-all hover:shadow-pop-xl"
+                >
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-purple text-lime border-2 border-ink flex items-center justify-center font-bold text-xl shrink-0 shadow-pop-sm">
+                        🎫
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase bg-lime text-[#1A1440] border border-ink">
+                            {hackathon.status}
+                          </span>
+                          <span className="font-mono text-xs text-purple font-bold">
+                            Ticket #{participant.ticketNumber}
+                          </span>
+                        </div>
+                        <h3 className="text-2xl font-bold text-ink dark:text-white leading-tight">
+                          {hackathon.title}
+                        </h3>
+                        <p className="text-sm text-muted mt-1 leading-relaxed max-w-xl">
+                          {hackathon.tagline}
+                        </p>
+                        
+                        <div className="flex items-center gap-4 flex-wrap mt-3 text-xs font-mono text-body dark:text-[#D4CEF5]">
+                          <span className="flex items-center gap-1 font-semibold text-purple">
+                            <Sparkles className="w-3.5 h-3.5" /> Role: {participant.roleTitle}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5" /> Squad: {participant.teamName || "Solo Builder"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 shrink-0 w-full md:w-auto">
+                      <Link
+                        href={`/hackathons/${hackathon.slug}/pass/${participant.ticketNumber}`}
+                        className="btn btn-lime font-mono font-bold text-xs justify-center"
+                      >
+                        <QrCode className="w-4 h-4 mr-1.5" />
+                        <span>View 3D Passport</span>
+                      </Link>
+                      <Link
+                        href={`/hackathons/${hackathon.slug}`}
+                        className="btn btn-ghost text-xs justify-center font-mono"
+                      >
+                        <span>Hackathon Page</span>
+                        <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="card p-10 text-center">
+              <div className="w-16 h-16 bg-[#17132a] text-lime rounded-2xl border-2 border-ink flex items-center justify-center text-3xl mx-auto mb-4 shadow-pop-sm">
+                🎫
+              </div>
+              <h3 className="font-bold text-xl mb-2">No Hackathon Passports Yet</h3>
+              <p className="text-sm text-muted max-w-md mx-auto mb-6 leading-relaxed">
+                You haven&apos;t registered for a GoHackerz hackathon yet. Join our flagship hackathon to build with edge & AI tools, earn your official 3D Holographic Hacker Passport, and win cash grants.
+              </p>
+              <Link href="/hackathons/shipathon-2026/register" className="btn btn-lime text-[#1A1440] font-bold">
+                Register for Shipathon 2026 🚀
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

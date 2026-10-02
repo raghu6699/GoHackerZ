@@ -36,6 +36,16 @@ export function loadPersistedParticipants(): HackathonParticipant[] {
 }
 
 /**
+ * Get all participants associated with an email address.
+ */
+export function getUserParticipantsByEmail(email: string): HackathonParticipant[] {
+  if (!email) return [];
+  const cleanEmail = email.trim().toLowerCase();
+  const list = loadPersistedParticipants();
+  return list.filter((p) => p.email && p.email.trim().toLowerCase() === cleanEmail);
+}
+
+/**
  * Persist a participant to disk and database (creates or updates).
  */
 export function persistParticipant(participant: HackathonParticipant): void {
