@@ -292,6 +292,7 @@ const SEED_PARTICIPANTS: HackathonParticipant[] = [
   },
 ];
 
+import { prisma, isDbAvailable } from "./prisma";
 import {
   loadPersistedParticipants,
   persistParticipant,
@@ -390,7 +391,57 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
     return persisted;
   }
 
-  // 2. Fallback to memory store if not yet flushed
+  // 2. Query Postgres Database via Prisma if DB is available
+  if (isDbAvailable()) {
+    try {
+      const dbRow = await prisma.hackathonParticipant.findUnique({
+        where: { ticketNumber: clean },
+        include: {
+          team: {
+            include: {
+              participants: true,
+            },
+          },
+          submissions: true,
+        },
+      });
+
+      if (dbRow) {
+        const participant: HackathonParticipant = {
+          id: dbRow.id,
+          hackathonId: dbRow.hackathonId,
+          ticketNumber: dbRow.ticketNumber,
+          name: dbRow.name,
+          email: dbRow.email,
+          roleTitle: dbRow.roleTitle || "Fullstack & AI Engineer",
+          bio: dbRow.bio ?? undefined,
+          discordHandle: dbRow.discordHandle ?? undefined,
+          twitterHandle: dbRow.twitterHandle ?? undefined,
+          avatarUrl: dbRow.avatarUrl ?? undefined,
+          themeStyle: (dbRow.themeStyle as HackathonTheme) || "lime",
+          isCaptain: dbRow.isCaptain,
+          teamId: dbRow.teamId ?? undefined,
+          teamName: dbRow.team?.name ?? undefined,
+          teamCode: dbRow.team?.inviteCode ?? undefined,
+          teammates: dbRow.team?.participants.map((p) => ({
+            name: p.name,
+            roleTitle: p.roleTitle,
+            avatarUrl: p.avatarUrl ?? undefined,
+          })),
+          createdAt: dbRow.createdAt.toISOString(),
+        };
+
+        // Cache into disk and memory
+        persistParticipant(participant);
+        memoryStore.participants.set(clean, participant);
+        return participant;
+      }
+    } catch (e) {
+      console.warn("Could not query participant from DB:", e);
+    }
+  }
+
+  // 3. Fallback to memory store if not yet flushed
   const direct = memoryStore.participants.get(clean);
   if (direct) return direct;
 

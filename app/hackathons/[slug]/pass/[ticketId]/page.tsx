@@ -47,13 +47,12 @@ export default async function HackerPassportPage({
       id: `part-${clean.toLowerCase()}`,
       hackathonId: hackathon?.id || "gh-shipathon-2026",
       ticketNumber: clean,
-      // Empty name — the client will fill this from localStorage
       name: "",
       email: "",
-      roleTitle: "Builder & Engineer",
+      roleTitle: "",
       themeStyle: "lime",
       isCaptain: false,
-      teamName: "GoHackerz Arena Squad",
+      teamName: "",
       createdAt: new Date().toISOString(),
     };
   }

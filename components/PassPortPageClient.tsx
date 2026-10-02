@@ -37,18 +37,16 @@ export function PassPortPageClient({
     if (isMatch) {
       setIsOwner(true);
 
-      // Server is the canonical source of truth for dynamic team roster and database state
       const merged: HackathonParticipant = {
         ...serverParticipant,
-        name: serverParticipant.name || myPassport?.name || "",
-        email: serverParticipant.email || myPassport?.email || "",
-        roleTitle: serverParticipant.roleTitle || myPassport?.roleTitle || "Builder & Engineer",
-        bio: serverParticipant.bio || myPassport?.bio,
-        discordHandle: serverParticipant.discordHandle || myPassport?.discordHandle,
-        twitterHandle: serverParticipant.twitterHandle || myPassport?.twitterHandle,
-        avatarUrl: serverParticipant.avatarUrl || myPassport?.avatarUrl,
+        name: myPassport?.name || serverParticipant.name || "",
+        email: myPassport?.email || serverParticipant.email || "",
+        roleTitle: myPassport?.roleTitle || serverParticipant.roleTitle || "Fullstack & AI Engineer",
+        bio: myPassport?.bio || serverParticipant.bio,
+        discordHandle: myPassport?.discordHandle || serverParticipant.discordHandle,
+        twitterHandle: myPassport?.twitterHandle || serverParticipant.twitterHandle,
+        avatarUrl: myPassport?.avatarUrl || serverParticipant.avatarUrl,
         themeStyle: myPassport?.themeStyle || serverParticipant.themeStyle || "lime",
-        // ALWAYS trust server for team state (squad roster, captain status, team code)
         teamName: serverParticipant.teamName || myPassport?.teamName,
         teamCode: serverParticipant.teamCode || myPassport?.teamCode,
         isCaptain: serverParticipant.isCaptain ?? myPassport?.isCaptain ?? false,
@@ -60,11 +58,12 @@ export function PassPortPageClient({
       };
 
       setParticipant(merged);
-      // Persist the freshest state back into localStorage so cache never retains stale team state
+      // Persist the freshest state back into localStorage so cache never retains stale state
       saveMyPassport(merged);
 
-      // If server participant didn't have name (e.g. offline registration), sync name to server
-      if (!serverParticipant.name && myPassport?.name) {
+      // ALWAYS sync full participant details (name, roleTitle, team, theme) to server disk & DB
+      // so that ANY visitor scanning the QR or opening the shared link sees the exact real details
+      if (merged.name && merged.ticketNumber) {
         fetch(`/api/hackathons/${slug}/sync`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

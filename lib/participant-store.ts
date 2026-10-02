@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { prisma, isDbAvailable } from "./prisma";
 import type { HackathonParticipant, HackathonTeam, HackathonSubmission } from "./hackathons";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -35,7 +36,7 @@ export function loadPersistedParticipants(): HackathonParticipant[] {
 }
 
 /**
- * Persist a participant to disk (creates or updates).
+ * Persist a participant to disk and database (creates or updates).
  */
 export function persistParticipant(participant: HackathonParticipant): void {
   try {
@@ -54,8 +55,44 @@ export function persistParticipant(participant: HackathonParticipant): void {
     }
 
     fs.writeFileSync(PARTICIPANTS_FILE, JSON.stringify(current, null, 2), "utf-8");
+
+    // Async sync to Postgres Database via Prisma
+    if (isDbAvailable() && participant.ticketNumber && participant.name) {
+      prisma.hackathonParticipant
+        .upsert({
+          where: { ticketNumber: participant.ticketNumber.trim().toUpperCase() },
+          update: {
+            name: participant.name.trim(),
+            email: participant.email?.trim() || "",
+            roleTitle: participant.roleTitle?.trim() || "Fullstack & AI Engineer",
+            bio: participant.bio?.trim() || null,
+            discordHandle: participant.discordHandle?.trim() || null,
+            twitterHandle: participant.twitterHandle?.trim() || null,
+            avatarUrl: participant.avatarUrl || null,
+            themeStyle: participant.themeStyle || "lime",
+            isCaptain: participant.isCaptain ?? false,
+          },
+          create: {
+            id: participant.id || `part-${Date.now()}`,
+            hackathonId: participant.hackathonId || "gh-shipathon-2026",
+            ticketNumber: participant.ticketNumber.trim().toUpperCase(),
+            name: participant.name.trim(),
+            email: participant.email?.trim() || "",
+            roleTitle: participant.roleTitle?.trim() || "Fullstack & AI Engineer",
+            bio: participant.bio?.trim() || null,
+            discordHandle: participant.discordHandle?.trim() || null,
+            twitterHandle: participant.twitterHandle?.trim() || null,
+            avatarUrl: participant.avatarUrl || null,
+            themeStyle: participant.themeStyle || "lime",
+            isCaptain: participant.isCaptain ?? false,
+          },
+        })
+        .catch((err) => {
+          console.warn("Async DB participant upsert notice:", err?.message || err);
+        });
+    }
   } catch (error) {
-    console.error("Failed to save participant to disk:", error);
+    console.error("Failed to save participant to disk/DB:", error);
   }
 }
 

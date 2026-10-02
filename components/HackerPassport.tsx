@@ -220,9 +220,11 @@ export function HackerPassport({
 
   const handleShareX = () => {
     const text = encodeURIComponent(
-      `⚡ BOARDING PASS CONFIRMED: Heading to ${hackathonTitle} on @GoHackerz!\n\n🎫 Ticket: #${activeTicketId}\n🚀 Seat: 01A (First Class Builder)\n👥 Squad: ${
+      `⚡ BOARDING PASS CONFIRMED: Heading to ${hackathonTitle} on @GoHackerz!\n\n🎫 Ticket: #${activeTicketId}\n🚀 Track / Role: ${
+        participant.roleTitle || "Fullstack & AI Engineer"
+      }\n👥 Squad: ${
         participant.teamName || "Solo Competitor"
-      }\n\nScan my boarding pass →`
+      }\n\nScan my official boarding pass →`
     );
     window.open(
       `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(passportUrl)}`,
@@ -461,7 +463,7 @@ export function HackerPassport({
                   TRACK / ROLE
                 </span>
                 <span className="font-mono text-xs font-bold text-white/90 truncate block">
-                  {participant.roleTitle || "Builder"}
+                  {participant.roleTitle || "Fullstack & AI Engineer"}
                 </span>
               </div>
 
@@ -571,7 +573,7 @@ export function HackerPassport({
                   {displayName}
                 </p>
                 <p className="font-mono text-[9px] text-white/60 truncate">
-                  {participant.ticketNumber || activeTicketId}
+                  {participant.roleTitle || "Fullstack & AI Engineer"} · #{participant.ticketNumber || activeTicketId}
                 </p>
                 <span className="font-mono text-[8px] text-emerald-400 font-bold block">
                   ● GATE VERIFIED
