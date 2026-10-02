@@ -242,6 +242,42 @@ export function HackathonRegisterClient({ user, hackathon, slug }: HackathonRegi
               </p>
             </div>
 
+            {/* Squad Created Alert Banner */}
+            {registeredParticipant.teamCode && (
+              <div className="bg-brand-dark border-2 border-lime rounded-3xl p-6 shadow-pop text-white max-w-2xl mx-auto space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-lime" />
+                    <h3 className="font-mono text-sm font-black text-lime uppercase tracking-wider">
+                      SQUAD ALLIANCE: &quot;{registeredParticipant.teamName || "Squad"}&quot;
+                    </h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-[#d4cef5] bg-purple/40 px-2.5 py-1 rounded-full border border-purple">
+                    {registeredParticipant.isCaptain ? "★ SQUAD CAPTAIN" : "● SQUAD MEMBER"}
+                  </span>
+                </div>
+                <p className="text-xs text-[#D4CEF5] leading-relaxed">
+                  Share your squad invite code with up to 3 teammates so their Hacker Passports automatically link to your team roster:
+                </p>
+                <div className="flex items-center gap-3 pt-1 flex-wrap">
+                  <div className="font-mono font-black text-base text-lime bg-black/50 px-4 py-2 rounded-xl border border-lime/40 tracking-wider">
+                    {registeredParticipant.teamCode}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = `${window.location.origin}/hackathons/${slug}/register?team=${registeredParticipant.teamCode}`;
+                      navigator.clipboard.writeText(link);
+                      alert(`Squad invite link copied!\n${link}`);
+                    }}
+                    className="btn btn-sm btn-lime text-[#1A1440] font-mono text-xs font-bold"
+                  >
+                    COPY SQUAD INVITE LINK 📋
+                  </button>
+                </div>
+              </div>
+            )}
+
             <HackerPassport
               participant={registeredParticipant}
               hackathonTitle={hackathon.title}

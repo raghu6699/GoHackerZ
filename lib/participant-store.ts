@@ -51,6 +51,16 @@ export function getUserParticipantsByEmail(email: string): HackathonParticipant[
 export function persistParticipant(participant: HackathonParticipant): void {
   try {
     ensureDirectoryExists();
+
+    // If teamCode is present but teamId is missing, attempt to resolve teamId
+    if (participant.teamCode && !participant.teamId) {
+      const team = getPersistedTeamByCode(participant.teamCode);
+      if (team) {
+        participant.teamId = team.id;
+        participant.teamName = team.name;
+      }
+    }
+
     const current = loadPersistedParticipants();
     const index = current.findIndex(
       (p) =>
@@ -81,6 +91,7 @@ export function persistParticipant(participant: HackathonParticipant): void {
             avatarUrl: participant.avatarUrl || null,
             themeStyle: participant.themeStyle || "lime",
             isCaptain: participant.isCaptain ?? false,
+            teamId: participant.teamId || null,
           },
           create: {
             id: participant.id || `part-${Date.now()}`,
@@ -95,6 +106,7 @@ export function persistParticipant(participant: HackathonParticipant): void {
             avatarUrl: participant.avatarUrl || null,
             themeStyle: participant.themeStyle || "lime",
             isCaptain: participant.isCaptain ?? false,
+            teamId: participant.teamId || null,
           },
         })
         .catch((err) => {
@@ -118,10 +130,16 @@ export function getPersistedParticipantByTicket(ticketNumber: string): Hackathon
   if (!participant) return null;
 
   // Hydrate teammates from canonical team record if in a team
-  if (participant.teamCode) {
-    const team = getPersistedTeamByCode(participant.teamCode);
+  if (participant.teamCode || participant.teamId) {
+    const team = participant.teamCode
+      ? getPersistedTeamByCode(participant.teamCode)
+      : loadPersistedTeams().find((t) => t.id === participant.teamId);
+
     if (team) {
+      participant.teamId = team.id;
       participant.teamName = team.name;
+      participant.teamCode = team.inviteCode;
+      participant.isCaptain = team.captainId?.toUpperCase() === participant.ticketNumber.toUpperCase();
       participant.teammates = team.members.map((m) => ({
         name: m.name,
         roleTitle: m.roleTitle,
@@ -149,7 +167,7 @@ export function loadPersistedTeams(): HackathonTeam[] {
 }
 
 /**
- * Persist a team to disk (creates or updates).
+ * Persist a team to disk and database (creates or updates).
  */
 export function persistTeam(team: HackathonTeam): void {
   try {
@@ -164,8 +182,30 @@ export function persistTeam(team: HackathonTeam): void {
       current.push(team);
     }
     fs.writeFileSync(TEAMS_FILE, JSON.stringify(current, null, 2), "utf-8");
+
+    // Async sync to Postgres Database via Prisma
+    if (isDbAvailable() && team.inviteCode && team.name) {
+      prisma.hackathonTeam
+        .upsert({
+          where: { inviteCode: team.inviteCode.trim().toUpperCase() },
+          update: {
+            name: team.name.trim(),
+            tagline: team.tagline || null,
+          },
+          create: {
+            id: team.id || `team-${Date.now()}`,
+            hackathonId: team.hackathonId || "gh-shipathon-2026",
+            name: team.name.trim(),
+            tagline: team.tagline || null,
+            inviteCode: team.inviteCode.trim().toUpperCase(),
+          },
+        })
+        .catch((err) => {
+          console.warn("Async DB team upsert notice:", err?.message || err);
+        });
+    }
   } catch (error) {
-    console.error("Failed to save team to disk:", error);
+    console.error("Failed to save team to disk/DB:", error);
   }
 }
 
@@ -251,30 +291,27 @@ export function createNewTeam(params: {
   const inviteCode = `${prefix}-${rand}`;
   const teamId = `team-${Date.now()}`;
 
-  const newTeam: HackathonTeam = {
-    id: teamId,
-    hackathonId: params.hackathonId || creator.hackathonId || "gh-shipathon-2026",
-    name,
-    inviteCode,
-    captainId: creator.ticketNumber,
-    members: [
-      {
-        ...creator,
-        isCaptain: true,
-      },
-    ],
-    createdAt: new Date().toISOString(),
-  };
-
-  persistTeam(newTeam);
-
   // Update creator participant
   creator.teamId = teamId;
   creator.teamName = name;
   creator.teamCode = inviteCode;
   creator.isCaptain = true;
   creator.teammates = [{ name: creator.name, roleTitle: creator.roleTitle, avatarUrl: creator.avatarUrl }];
+  
+  // Persist participant with teamId
   persistParticipant(creator);
+
+  const newTeam: HackathonTeam = {
+    id: teamId,
+    hackathonId: params.hackathonId || creator.hackathonId || "gh-shipathon-2026",
+    name,
+    inviteCode,
+    captainId: creator.ticketNumber,
+    members: [creator],
+    createdAt: new Date().toISOString(),
+  };
+
+  persistTeam(newTeam);
 
   return { success: true, team: newTeam };
 }
