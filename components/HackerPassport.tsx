@@ -290,10 +290,7 @@ export function HackerPassport({
     }
 
     try {
-      // Render the live card at a stable landscape width instead of capturing
-      // the narrow, truncated mobile layout shown in the page.
-      const renderCanvas = async (): Promise<string> => {
-        const exportNode = passRef.current!.cloneNode(true) as HTMLDivElement;
+      const prepareExportNode = (exportNode: HTMLElement) => {
         exportNode.style.width = "940px";
         exportNode.style.maxWidth = "none";
         exportNode.style.flexDirection = "row";
@@ -339,9 +336,33 @@ export function HackerPassport({
           element.style.overflowWrap = "anywhere";
         });
 
-        exportNode.style.position = "fixed";
-        exportNode.style.left = "-10000px";
-        exportNode.style.top = "0";
+      };
+
+      // Keep Android on its previously working html2canvas capture path.
+      const renderCanvas = async (): Promise<string> => {
+        if (!isIOS) {
+          const html2canvas = (await import("html2canvas")).default;
+          const canvas = await html2canvas(passRef.current!, {
+            scale: 2,
+            backgroundColor: "#08090c",
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            windowWidth: 940,
+            onclone: (clonedDocument) => {
+              const clonedPass = clonedDocument.querySelector<HTMLElement>("[data-passport-card]");
+              if (clonedPass) prepareExportNode(clonedPass);
+            },
+          });
+          return canvas.toDataURL("image/png");
+        }
+
+        const exportNode = passRef.current!.cloneNode(true) as HTMLDivElement;
+        prepareExportNode(exportNode);
+        exportNode.style.position = "absolute";
+        exportNode.style.left = "0";
+        exportNode.style.top = `${document.documentElement.scrollHeight + 32}px`;
+        exportNode.style.zIndex = "-1";
         document.body.appendChild(exportNode);
         try {
           const { toPng } = await import("html-to-image");
@@ -355,7 +376,7 @@ export function HackerPassport({
         }
       };
 
-      const timeoutMs = isIOS ? 15000 : 30000;
+      const timeoutMs = 30000;
       const timeout = new Promise<null>((resolve) =>
         setTimeout(() => resolve(null), timeoutMs)
       );
@@ -458,6 +479,7 @@ export function HackerPassport({
       <div className="w-full flex justify-center py-2 px-1">
         <div
           ref={passRef}
+          data-passport-card
           className="relative w-full max-w-[940px] rounded-3xl overflow-hidden text-white shadow-2xl flex flex-col md:flex-row items-stretch"
           style={{
             background: "linear-gradient(145deg, #111218 0%, #171923 50%, #0d0e13 100%)",
