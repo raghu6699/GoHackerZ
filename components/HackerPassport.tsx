@@ -165,6 +165,17 @@ const BarcodePattern = ({ code, height = 48 }: { code: string; height?: number }
   );
 };
 
+export function normalizeTheme(theme?: string): ThemeKey {
+  if (!theme) return "lime";
+  const lower = theme.toLowerCase().trim();
+  if (lower === "neon" || lower === "electric violet" || lower === "purple") return "purple";
+  if (lower === "matrix" || lower === "matrix green" || lower === "sky" || lower === "cyan") return "sky";
+  if (lower === "gold" || lower === "solar gold" || lower === "prestige gold" || lower === "amber") return "amber";
+  if (lower === "pink" || lower === "magenta" || lower === "neon magenta") return "pink";
+  if (THEMES[lower as ThemeKey]) return lower as ThemeKey;
+  return "lime";
+}
+
 /* ================================================================== */
 /*  Main Hacker Boarding Pass Component                               */
 /* ================================================================== */
@@ -179,12 +190,12 @@ export function HackerPassport({
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTheme, setActiveTheme] = useState<ThemeKey>(
-    (participant.themeStyle as ThemeKey) || "lime"
+    normalizeTheme(participant.themeStyle)
   );
 
   useEffect(() => {
-    if (participant.themeStyle && THEMES[participant.themeStyle as ThemeKey]) {
-      setActiveTheme(participant.themeStyle as ThemeKey);
+    if (participant.themeStyle) {
+      setActiveTheme(normalizeTheme(participant.themeStyle));
     }
   }, [participant.themeStyle]);
 

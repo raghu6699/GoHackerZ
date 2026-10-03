@@ -49,7 +49,7 @@ export default async function HackathonDetailPage({
     <div className="min-h-screen py-8 sm:py-12">
       <div className="wrap max-w-5xl mx-auto space-y-10">
         {/* Active Passport Banner if visitor has already registered */}
-        <MyPassportBanner slug={hackathon.slug} />
+        <MyPassportBanner slug={hackathon.slug} hackathonId={hackathon.id} />
 
         {/* Breadcrumb & Status */}
         <div className="flex items-center justify-between">
@@ -124,7 +124,7 @@ export default async function HackathonDetailPage({
         {/* Tracks & Prizes Section */}
         <section className="space-y-6">
           <div className="flex items-center gap-2">
-            <Trophy className="w-6 h-6 text-lime" />
+            <Trophy className="w-6 h-6 text-purple" />
             <h2 className="text-2xl sm:text-3xl font-extrabold text-ink">
               Tracks & Cash Prizes ({hackathon.prizePool})
             </h2>
@@ -206,7 +206,7 @@ export default async function HackathonDetailPage({
         {/* Sponsors & Perks */}
         <section className="space-y-6">
           <div className="flex items-center gap-2">
-            <Gift className="w-6 h-6 text-pink" />
+            <Gift className="w-6 h-6 text-purple" />
             <h2 className="text-2xl sm:text-3xl font-extrabold text-ink">
               Sponsors & Hacker Perks
             </h2>
@@ -233,7 +233,7 @@ export default async function HackathonDetailPage({
         {/* FAQs */}
         <section className="space-y-6">
           <div className="flex items-center gap-2">
-            <HelpCircle className="w-6 h-6 text-sky" />
+            <HelpCircle className="w-6 h-6 text-purple" />
             <h2 className="text-2xl sm:text-3xl font-extrabold text-ink">
               Frequently Asked Questions
             </h2>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { Avatar } from "./Avatar";
+import { clearMyPassport } from "@/lib/passport-storage";
 import type { User } from "@supabase/supabase-js";
 
 /**
@@ -80,6 +81,9 @@ export function NavAuth() {
 
   async function signOut() {
     setOpen(false);
+    // Clear passport data BEFORE supabase signOut so localStorage is clean
+    // for the next user who logs in on this device/browser
+    clearMyPassport();
     const supabase = createClient();
     if (supabase) await supabase.auth.signOut();
     setUser(null);

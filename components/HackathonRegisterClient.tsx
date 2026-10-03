@@ -639,9 +639,9 @@ export function HackathonRegisterClient({ user, hackathon, slug }: HackathonRegi
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { id: "lime", name: "Cyber Lime", color: "bg-[#CCFF00]" },
-                    { id: "neon", name: "Neon Purple", color: "bg-[#A855F7]" },
-                    { id: "matrix", name: "Matrix Green", color: "bg-[#22C55E]" },
-                    { id: "gold", name: "Prestige Gold", color: "bg-[#F59E0B]" },
+                    { id: "purple", name: "Neon Purple", color: "bg-[#A855F7]" },
+                    { id: "sky", name: "Matrix Green", color: "bg-[#22C55E]" },
+                    { id: "amber", name: "Prestige Gold", color: "bg-[#F59E0B]" },
                   ].map((theme) => (
                     <button
                       key={theme.id}

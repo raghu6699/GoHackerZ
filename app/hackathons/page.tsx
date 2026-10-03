@@ -18,7 +18,7 @@ export default async function HackathonsPage() {
     <div className="min-h-screen py-8 sm:py-14">
       <div className="wrap max-w-6xl mx-auto space-y-10 sm:space-y-14">
         {/* Active Passport Banner if visitor has already registered */}
-        <MyPassportBanner slug={activeHackathon.slug} />
+        <MyPassportBanner slug={activeHackathon.slug} hackathonId={activeHackathon.id} />
 
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-brand-dark text-white rounded-3xl p-7 sm:p-14 border-2 border-ink shadow-pop-xl">
@@ -69,7 +69,7 @@ export default async function HackathonsPage() {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <Flame className="w-6 h-6 text-lime" />
+              <Flame className="w-6 h-6 text-purple" />
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
                 Active Flagship Hackathon
               </h2>
@@ -168,7 +168,7 @@ export default async function HackathonsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-card border-2 border-ink rounded-2xl p-6 shadow-pop-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-lime/20 border border-lime flex items-center justify-center text-lime font-bold">
+              <div className="w-10 h-10 rounded-xl bg-purple/20 border border-purple flex items-center justify-center text-purple font-bold">
                 🎫
               </div>
               <h3 className="font-bold text-lg text-ink">Holographic 3D Passports</h3>

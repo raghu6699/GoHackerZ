@@ -6,7 +6,7 @@ import {
   leaveCurrentTeam,
   getPersistedParticipantByTicket,
 } from "@/lib/participant-store";
-import { getHackathonBySlug } from "@/lib/hackathons";
+import { getHackathonBySlug, getParticipantByTicket } from "@/lib/hackathons";
 
 export async function GET(
   req: Request,
@@ -60,6 +60,12 @@ export async function POST(
 
     if (!ticketNumber) {
       return NextResponse.json({ error: "Ticket number is required" }, { status: 400 });
+    }
+
+    // Ensure participant exists and is cached in disk/memory store
+    const existing = await getParticipantByTicket(ticketNumber);
+    if (!existing) {
+      return NextResponse.json({ error: `Participant with ticket #${ticketNumber} not found.` }, { status: 404 });
     }
 
     if (action === "join") {

@@ -25,7 +25,7 @@ export type HackathonSponsor = {
   logoText: string;
 };
 
-export type HackathonTheme = "lime" | "neon" | "matrix" | "gold";
+export type HackathonTheme = "lime" | "purple" | "sky" | "pink" | "amber";
 
 export type HackathonData = {
   id: string;
@@ -260,7 +260,7 @@ const SEED_PARTICIPANTS: HackathonParticipant[] = [
     bio: "Building local-first speech synthesis and browser LLM inference engines.",
     discordHandle: "elena_r#892",
     twitterHandle: "@elena_builds",
-    themeStyle: "neon",
+    themeStyle: "purple",
     isCaptain: false,
     teamName: "Neural Forge",
     teamCode: "FORGE-99",

@@ -258,7 +258,7 @@ export function addMemberToTeam(params: {
   participant.teamId = team.id;
   participant.teamName = team.name;
   participant.teamCode = team.inviteCode;
-  participant.isCaptain = team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase();
+  participant.isCaptain = !!(team.captainId && team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase());
   persistParticipant(participant);
 
   // Sync teammates across all participants in this team
@@ -333,6 +333,7 @@ export function leaveCurrentTeam(participantTicket: string): { success: boolean;
 
     // If captain left and members remain, promote first member to captain
     if (
+      team.captainId &&
       team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase() &&
       team.members.length > 0
     ) {

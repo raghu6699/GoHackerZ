@@ -27,14 +27,26 @@ export function PassPortPageClient({
   const [isRefreshingRoster, setIsRefreshingRoster] = useState(false);
 
   useEffect(() => {
-    const myPassport = getMyPassport("gh-shipathon-2026");
+    // Use the actual hackathonId so keys are consistent across the app
+    const hackId = serverParticipant.hackathonId || "gh-shipathon-2026";
+    const myPassport = getMyPassport(hackId);
     const activeTicket = getActiveTicketNumber();
 
-    const isMatch =
+    // Ownership check: ticket number must match AND (if we have an email in both,
+    // they must also match) to prevent a logged-out user from claiming
+    // another user's passport that happens to be in local storage
+    const ticketMatch =
       (myPassport && myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()) ||
       (activeTicket && activeTicket.toUpperCase() === ticketId.toUpperCase());
 
-    if (isMatch) {
+    const emailSafe =
+      !serverParticipant.email ||
+      !myPassport?.email ||
+      myPassport.email.trim().toLowerCase() === serverParticipant.email.trim().toLowerCase();
+
+    const isMatch = ticketMatch && emailSafe;
+
+    if (isMatch && myPassport) {
       setIsOwner(true);
 
       const merged: HackathonParticipant = {
@@ -46,7 +58,8 @@ export function PassPortPageClient({
         discordHandle: myPassport?.discordHandle || serverParticipant.discordHandle,
         twitterHandle: myPassport?.twitterHandle || serverParticipant.twitterHandle,
         avatarUrl: myPassport?.avatarUrl || serverParticipant.avatarUrl,
-        themeStyle: myPassport?.themeStyle || serverParticipant.themeStyle || "lime",
+        // Server is authoritative for theme (saved after registration); fall back to local
+        themeStyle: serverParticipant.themeStyle || myPassport?.themeStyle || "lime",
         teamName: serverParticipant.teamName || myPassport?.teamName,
         teamCode: serverParticipant.teamCode || myPassport?.teamCode,
         isCaptain: serverParticipant.isCaptain ?? myPassport?.isCaptain ?? false,
@@ -76,6 +89,7 @@ export function PassPortPageClient({
     }
     setResolved(true);
   }, [ticketId, serverParticipant, slug]);
+
 
   // Refresh active team squad roster directly from server
   const handleRefreshRoster = async () => {
@@ -111,7 +125,8 @@ export function PassPortPageClient({
     (t: HackathonTheme) => {
       setParticipant((prev) => {
         const updated = { ...prev, themeStyle: t };
-        const myPassport = getMyPassport("gh-shipathon-2026");
+        const hackId = prev.hackathonId || "gh-shipathon-2026";
+        const myPassport = getMyPassport(hackId);
         if (myPassport && myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()) {
           saveMyPassport({ ...myPassport, themeStyle: t });
           fetch(`/api/hackathons/${slug}/sync`, {

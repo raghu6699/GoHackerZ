@@ -3,29 +3,53 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getMyPassport, getActiveTicketNumber } from "@/lib/passport-storage";
+import { createClient } from "@/lib/supabase-browser";
 import type { HackathonParticipant } from "@/lib/hackathons";
-import { Sparkles, ArrowRight, Code2, ShieldCheck, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
 
 interface MyPassportBannerProps {
   slug?: string;
+  hackathonId?: string;
   className?: string;
 }
 
-export function MyPassportBanner({ slug = "shipathon-2026", className = "" }: MyPassportBannerProps) {
+export function MyPassportBanner({
+  slug = "shipathon-2026",
+  hackathonId = "gh-shipathon-2026",
+  className = "",
+}: MyPassportBannerProps) {
   const [passport, setPassport] = useState<HackathonParticipant | null>(null);
   const [ticketNum, setTicketNum] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = getMyPassport("gh-shipathon-2026");
-    const activeCode = getActiveTicketNumber();
+    // Only show the banner when the user is actually authenticated so that
+    // a signed-out visitor doesn't see stale data from a previous session.
+    const supabase = createClient();
+    if (!supabase) return;
 
-    if (saved) {
-      setPassport(saved);
-      setTicketNum(saved.ticketNumber);
-    } else if (activeCode) {
-      setTicketNum(activeCode);
-    }
-  }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) {
+        // Not logged in — don't show any passport banner
+        return;
+      }
+
+      const saved = getMyPassport(hackathonId);
+      const activeCode = getActiveTicketNumber();
+
+      if (saved) {
+        // Make sure this passport belongs to the current logged-in user
+        const currentEmail = session.user.email?.trim().toLowerCase();
+        if (currentEmail && saved.email && saved.email.trim().toLowerCase() !== currentEmail) {
+          // Stale passport from a different account — ignore it
+          return;
+        }
+        setPassport(saved);
+        setTicketNum(saved.ticketNumber);
+      } else if (activeCode) {
+        setTicketNum(activeCode);
+      }
+    });
+  }, [hackathonId]);
 
   if (!ticketNum) return null;
 
