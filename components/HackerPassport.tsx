@@ -537,7 +537,7 @@ export function HackerPassport({
                 <span className="font-mono text-[8.5px] text-white/40 uppercase tracking-wider block">
                   PASSENGER NAME
                 </span>
-                <span className="font-mono text-xs sm:text-sm font-bold text-white truncate block">
+                <span className="font-mono text-xs sm:text-sm font-bold text-white block min-w-0 leading-5 [overflow-wrap:anywhere]">
                   {displayName.toUpperCase()}
                 </span>
               </div>
@@ -573,7 +573,7 @@ export function HackerPassport({
                 <span className="font-mono text-[8.5px] text-white/40 uppercase tracking-wider block">
                   SQUAD ALLIANCE
                 </span>
-                <span className="font-mono text-xs font-bold text-white/90 truncate block">
+                <span className="font-mono text-xs font-bold text-white/90 block min-w-0 leading-5 [overflow-wrap:anywhere]">
                   {participant.teamName
                     ? `${participant.teamName}${participant.teamCode ? ` [${participant.teamCode}]` : ""}`
                     : "Solo Competitor"}
@@ -584,7 +584,7 @@ export function HackerPassport({
                 <span className="font-mono text-[8.5px] text-white/40 uppercase tracking-wider block">
                   TRACK / ROLE
                 </span>
-                <span className="font-mono text-xs font-bold text-white/90 truncate block">
+                <span className="font-mono text-xs font-bold text-white/90 block min-w-0 leading-5 [overflow-wrap:anywhere]">
                   {participant.roleTitle || "Fullstack & AI Engineer"}
                 </span>
               </div>
@@ -690,11 +690,11 @@ export function HackerPassport({
                   </span>
                 )}
               </div>
-              <div className="min-w-0">
-                <p className="font-mono text-xs font-bold text-white truncate">
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-xs font-bold text-white leading-5 [overflow-wrap:anywhere]">
                   {displayName}
                 </p>
-                <p className="font-mono text-[9px] text-white/60 truncate">
+                <p className="font-mono text-[9px] text-white/60 leading-4 [overflow-wrap:anywhere]">
                   {participant.roleTitle || "Fullstack & AI Engineer"} · #{participant.ticketNumber || activeTicketId}
                 </p>
                 <span className="font-mono text-[8px] text-emerald-400 font-bold block">
