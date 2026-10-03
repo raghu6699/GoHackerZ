@@ -41,10 +41,95 @@ export const memoryStore =
     return store;
   })();
 
+let _tablesEnsured = false;
+export async function ensureTablesExist(): Promise<void> {
+  if (_tablesEnsured || !isDbAvailable()) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        CREATE TYPE "HackathonStatus" AS ENUM ('UPCOMING', 'ACTIVE', 'JUDGING', 'COMPLETED');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+
+      CREATE TABLE IF NOT EXISTS "Hackathon" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "slug" TEXT NOT NULL UNIQUE,
+        "title" TEXT NOT NULL,
+        "tagline" TEXT NOT NULL,
+        "description" TEXT NOT NULL,
+        "coverImage" TEXT,
+        "status" "HackathonStatus" NOT NULL DEFAULT 'ACTIVE',
+        "startDate" TIMESTAMP(3) NOT NULL,
+        "endDate" TIMESTAMP(3) NOT NULL,
+        "submissionDeadline" TIMESTAMP(3) NOT NULL,
+        "prizePool" TEXT NOT NULL,
+        "tracks" JSONB NOT NULL,
+        "rules" JSONB NOT NULL,
+        "faqs" JSONB,
+        "sponsors" JSONB,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS "HackathonTeam" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "hackathonId" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "tagline" TEXT,
+        "inviteCode" TEXT NOT NULL UNIQUE,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS "HackathonParticipant" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "hackathonId" TEXT NOT NULL,
+        "teamId" TEXT,
+        "userId" TEXT,
+        "name" TEXT NOT NULL,
+        "email" TEXT NOT NULL,
+        "roleTitle" TEXT NOT NULL,
+        "bio" TEXT,
+        "discordHandle" TEXT,
+        "twitterHandle" TEXT,
+        "avatarUrl" TEXT,
+        "ticketNumber" TEXT NOT NULL UNIQUE,
+        "themeStyle" TEXT NOT NULL DEFAULT 'lime',
+        "isCaptain" BOOLEAN NOT NULL DEFAULT false,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS "HackathonSubmission" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "hackathonId" TEXT NOT NULL,
+        "teamId" TEXT UNIQUE,
+        "participantId" TEXT NOT NULL,
+        "trackId" TEXT,
+        "title" TEXT NOT NULL,
+        "tagline" TEXT NOT NULL,
+        "description" TEXT NOT NULL,
+        "repoUrl" TEXT NOT NULL,
+        "demoUrl" TEXT,
+        "pitchDeckUrl" TEXT,
+        "videoUrl" TEXT,
+        "gammaUrl" TEXT,
+        "techStack" JSONB NOT NULL,
+        "upvotes" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    _tablesEnsured = true;
+  } catch (e) {
+    console.warn("[ensureTablesExist] Self-healing notice:", e);
+  }
+}
+
 /** Ensure the flagship hackathon row exists in DB. Returns the real DB cuid. */
 export async function ensureHackathonInDb(hackathonIdOrSlug?: string): Promise<string> {
   if (!isDbAvailable()) return FALLBACK_HACKATHON_ID;
   try {
+    await ensureTablesExist();
     const target = (hackathonIdOrSlug || "shipathon-2026").trim();
     const cleanSlug = target.replace(/^gh-/, "");
 
@@ -362,6 +447,7 @@ export async function getTeamByCode(code: string, _hackathonIdOrSlug?: string): 
   // 1. Try Postgres DB first (case-insensitive query, source of truth)
   if (isDbAvailable()) {
     try {
+      await ensureTablesExist();
       const dbTeam = await prisma.hackathonTeam.findFirst({
         where: {
           inviteCode: { equals: clean, mode: "insensitive" },
