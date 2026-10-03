@@ -51,13 +51,24 @@ export async function ensureHackathonInDb(hackathonIdOrSlug?: string): Promise<s
     // 1. Try finding by id or slug
     const existing = await prisma.hackathon.findFirst({
       where: {
-        OR: [{ id: target }, { slug: target }, { slug: cleanSlug }],
+        OR: [
+          { id: target },
+          { slug: target },
+          { slug: cleanSlug },
+          { slug: "shipathon-2026" },
+        ],
       },
       select: { id: true, slug: true },
     });
     if (existing) return existing.id;
 
-    // 2. Create flagship hackathon if missing
+    // 2. If any hackathon exists at all in the DB, use it
+    const anyHackathon = await prisma.hackathon.findFirst({
+      select: { id: true },
+    });
+    if (anyHackathon) return anyHackathon.id;
+
+    // 3. Create flagship hackathon if table is completely empty
     const created = await prisma.hackathon.create({
       data: {
         slug: cleanSlug || "shipathon-2026",
@@ -75,7 +86,11 @@ export async function ensureHackathonInDb(hackathonIdOrSlug?: string): Promise<s
     });
     return created.id;
   } catch (e) {
-    console.warn("[ensureHackathonInDb] Could not seed hackathon:", e);
+    console.error("[ensureHackathonInDb] Error:", e);
+    try {
+      const fallback = await prisma.hackathon.findFirst({ select: { id: true } });
+      if (fallback) return fallback.id;
+    } catch {}
     return FALLBACK_HACKATHON_ID;
   }
 }
@@ -184,8 +199,10 @@ export async function persistParticipantToDb(participant: HackathonParticipant):
     // Get the real team DB id if we only have a teamCode
     let resolvedTeamId: string | null = participant.teamId || null;
     if (!resolvedTeamId && participant.teamCode) {
-      const team = await prisma.hackathonTeam.findUnique({
-        where: { inviteCode: participant.teamCode.trim().toUpperCase() },
+      const team = await prisma.hackathonTeam.findFirst({
+        where: {
+          inviteCode: { equals: participant.teamCode.trim().replace(/^#/, ""), mode: "insensitive" },
+        },
         select: { id: true },
       });
       resolvedTeamId = team?.id || null;
@@ -204,6 +221,7 @@ export async function persistParticipantToDb(participant: HackathonParticipant):
         themeStyle: participant.themeStyle || "lime",
         isCaptain: participant.isCaptain ?? false,
         teamId: resolvedTeamId,
+        hackathonId,
       },
       create: {
         id: participant.id || `part-${Date.now()}`,
@@ -231,7 +249,7 @@ export async function persistParticipantToDb(participant: HackathonParticipant):
  */
 export function getPersistedParticipantByTicket(ticketNumber: string): HackathonParticipant | null {
   if (!ticketNumber) return null;
-  const clean = ticketNumber.trim().toUpperCase();
+  const clean = ticketNumber.trim().replace(/^#/, "").toUpperCase();
   const list = loadPersistedParticipants();
   const participant = list.find((p) => p.ticketNumber.toUpperCase() === clean);
   if (!participant) return null;
@@ -244,7 +262,7 @@ export function getPersistedParticipantByTicket(ticketNumber: string): Hackathon
     if (team) {
       participant.teamId = team.id;
       participant.teamName = team.name;
-      participant.teamCode = team.inviteCode;
+      participant.teamCode = team.inviteCode.toUpperCase();
       participant.isCaptain = team.captainId?.toUpperCase() === participant.ticketNumber.toUpperCase();
       participant.teammates = team.members.map((m) => ({
         name: m.name,
@@ -308,14 +326,14 @@ export async function persistTeamToDb(team: HackathonTeam): Promise<void> {
   try {
     const hackathonId = await getHackathonDbId(team.hackathonId);
     await prisma.hackathonTeam.upsert({
-      where: { inviteCode: team.inviteCode.trim().toUpperCase() },
-      update: { name: team.name.trim(), tagline: team.tagline || null },
+      where: { inviteCode: team.inviteCode.trim().replace(/^#/, "").toUpperCase() },
+      update: { name: team.name.trim(), tagline: team.tagline || null, hackathonId },
       create: {
         id: team.id || `team-${Date.now()}`,
         hackathonId,
         name: team.name.trim(),
         tagline: team.tagline || null,
-        inviteCode: team.inviteCode.trim().toUpperCase(),
+        inviteCode: team.inviteCode.trim().replace(/^#/, "").toUpperCase(),
       },
     });
   } catch (err) {
@@ -328,23 +346,26 @@ export async function persistTeamToDb(team: HackathonTeam): Promise<void> {
  */
 export function getPersistedTeamByCode(code: string): HackathonTeam | null {
   if (!code) return null;
-  const clean = code.trim().toUpperCase();
+  const clean = code.trim().replace(/^#/, "").toUpperCase();
   const teams = loadPersistedTeams();
-  return teams.find((t) => t.inviteCode.toUpperCase() === clean) || null;
+  return teams.find((t) => t.inviteCode && t.inviteCode.toUpperCase() === clean) || null;
 }
 
 /**
- * Find a team by invite code — tries Postgres first, falls back to memory, then disk.
+ * Find a team by invite code — tries Postgres first (case-insensitive), falls back to memory, then disk.
  */
-export async function getTeamByCode(code: string, hackathonIdOrSlug?: string): Promise<HackathonTeam | null> {
+export async function getTeamByCode(code: string, _hackathonIdOrSlug?: string): Promise<HackathonTeam | null> {
   if (!code) return null;
-  const clean = code.trim().toUpperCase();
+  const clean = code.trim().replace(/^#/, "").toUpperCase();
+  if (!clean) return null;
 
-  // 1. Try Postgres DB first (source of truth)
+  // 1. Try Postgres DB first (case-insensitive query, source of truth)
   if (isDbAvailable()) {
     try {
-      const dbTeam = await prisma.hackathonTeam.findUnique({
-        where: { inviteCode: clean },
+      const dbTeam = await prisma.hackathonTeam.findFirst({
+        where: {
+          inviteCode: { equals: clean, mode: "insensitive" },
+        },
         include: {
           hackathon: true,
           participants: {
@@ -354,31 +375,12 @@ export async function getTeamByCode(code: string, hackathonIdOrSlug?: string): P
       });
 
       if (dbTeam) {
-        // If hackathonIdOrSlug is provided, validate hackathon match
-        if (hackathonIdOrSlug) {
-          const target = hackathonIdOrSlug.trim();
-          const cleanSlug = target.replace(/^gh-/, "");
-          const matches =
-            dbTeam.hackathonId === target ||
-            dbTeam.hackathon?.slug === target ||
-            dbTeam.hackathon?.slug === cleanSlug ||
-            dbTeam.hackathon?.id === target;
-
-          if (!matches && dbTeam.hackathon?.slug && cleanSlug !== "shipathon-2026") {
-            console.warn(`[getTeamByCode] Hackathon mismatch for team ${clean}:`, {
-              dbHackathon: dbTeam.hackathon?.slug,
-              requested: target,
-            });
-            return null;
-          }
-        }
-
         const captain = dbTeam.participants.find((p) => p.isCaptain) || dbTeam.participants[0];
         const teamObj: HackathonTeam = {
           id: dbTeam.id,
           hackathonId: dbTeam.hackathonId,
           name: dbTeam.name,
-          inviteCode: dbTeam.inviteCode,
+          inviteCode: dbTeam.inviteCode.toUpperCase(),
           captainId: captain?.ticketNumber || "",
           members: dbTeam.participants.map((p) => ({
             id: p.id,
@@ -395,7 +397,7 @@ export async function getTeamByCode(code: string, hackathonIdOrSlug?: string): P
             isCaptain: p.isCaptain,
             teamId: dbTeam.id,
             teamName: dbTeam.name,
-            teamCode: dbTeam.inviteCode,
+            teamCode: dbTeam.inviteCode.toUpperCase(),
             createdAt: p.createdAt.toISOString(),
           })),
           createdAt: dbTeam.createdAt.toISOString(),
@@ -403,20 +405,25 @@ export async function getTeamByCode(code: string, hackathonIdOrSlug?: string): P
 
         // Cache into memory & disk
         memoryStore.teams.set(clean, teamObj);
+        memoryStore.teams.set(dbTeam.inviteCode.toUpperCase(), teamObj);
         writeToDiskTeam(teamObj);
         return teamObj;
       }
     } catch (e) {
-      console.warn("Could not query team from DB:", e);
+      console.error("[getTeamByCode] DB error querying team:", e);
     }
   }
 
   // 2. Check memory store
-  const memTeam = memoryStore.teams.get(clean);
-  if (memTeam) return memTeam;
+  for (const [k, v] of memoryStore.teams.entries()) {
+    if (k.toUpperCase() === clean || v.inviteCode.toUpperCase() === clean) {
+      return v;
+    }
+  }
 
   // 3. Disk fallback
-  const diskTeam = getPersistedTeamByCode(clean);
+  const diskTeams = loadPersistedTeams();
+  const diskTeam = diskTeams.find((t) => t.inviteCode && t.inviteCode.toUpperCase() === clean);
   if (diskTeam) {
     memoryStore.teams.set(clean, diskTeam);
     return diskTeam;
@@ -453,7 +460,8 @@ export async function addMemberToTeam(params: {
   participantObj?: HackathonParticipant;
   hackathonId?: string;
 }): Promise<{ success: boolean; team?: HackathonTeam; participant?: HackathonParticipant; error?: string }> {
-  const code = (params.teamCode || "").trim().toUpperCase();
+  const rawCode = params.teamCode || "";
+  const code = rawCode.trim().replace(/^#/, "").toUpperCase();
   if (!code) {
     return { success: false, error: "Please enter a valid team invite code." };
   }
@@ -469,38 +477,40 @@ export async function addMemberToTeam(params: {
 
   let participant = params.participantObj;
   if (!participant && params.participantTicket) {
+    const cleanTicket = params.participantTicket.trim().replace(/^#/, "").toUpperCase();
     participant =
-      memoryStore.participants.get(params.participantTicket.toUpperCase()) ||
-      getPersistedParticipantByTicket(params.participantTicket) ||
+      memoryStore.participants.get(cleanTicket) ||
+      getPersistedParticipantByTicket(cleanTicket) ||
       undefined;
-  }
 
-  // If still not found, try DB lookup for participant
-  if (!participant && params.participantTicket && isDbAvailable()) {
-    try {
-      const dbP = await prisma.hackathonParticipant.findUnique({
-        where: { ticketNumber: params.participantTicket.trim().toUpperCase() },
-      });
-      if (dbP) {
-        participant = {
-          id: dbP.id,
-          hackathonId: dbP.hackathonId,
-          ticketNumber: dbP.ticketNumber,
-          name: dbP.name,
-          email: dbP.email,
-          roleTitle: dbP.roleTitle,
-          bio: dbP.bio ?? undefined,
-          discordHandle: dbP.discordHandle ?? undefined,
-          twitterHandle: dbP.twitterHandle ?? undefined,
-          avatarUrl: dbP.avatarUrl ?? undefined,
-          themeStyle: (dbP.themeStyle as HackathonTheme) || "lime",
-          isCaptain: dbP.isCaptain,
-          teamId: dbP.teamId ?? undefined,
-          createdAt: dbP.createdAt.toISOString(),
-        };
+    if (!participant && isDbAvailable()) {
+      try {
+        const dbP = await prisma.hackathonParticipant.findFirst({
+          where: {
+            ticketNumber: { equals: cleanTicket, mode: "insensitive" },
+          },
+        });
+        if (dbP) {
+          participant = {
+            id: dbP.id,
+            hackathonId: dbP.hackathonId,
+            ticketNumber: dbP.ticketNumber,
+            name: dbP.name,
+            email: dbP.email,
+            roleTitle: dbP.roleTitle,
+            bio: dbP.bio ?? undefined,
+            discordHandle: dbP.discordHandle ?? undefined,
+            twitterHandle: dbP.twitterHandle ?? undefined,
+            avatarUrl: dbP.avatarUrl ?? undefined,
+            themeStyle: (dbP.themeStyle as HackathonTheme) || "lime",
+            isCaptain: dbP.isCaptain,
+            teamId: dbP.teamId ?? undefined,
+            createdAt: dbP.createdAt.toISOString(),
+          };
+        }
+      } catch (e) {
+        console.warn("Could not find participant in DB:", e);
       }
-    } catch (e) {
-      console.warn("Could not find participant in DB:", e);
     }
   }
 
@@ -523,7 +533,7 @@ export async function addMemberToTeam(params: {
   // Update participant squad fields
   participant.teamId = team.id;
   participant.teamName = team.name;
-  participant.teamCode = team.inviteCode;
+  participant.teamCode = team.inviteCode.toUpperCase();
   participant.isCaptain = !!(
     team.captainId && team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase()
   );
@@ -533,22 +543,27 @@ export async function addMemberToTeam(params: {
     team.members.push({ ...participant, isCaptain: participant.isCaptain });
   }
 
-  // DB: upsert team first, then upsert participant with team FK (all awaited)
+  // DB: persist team and participant link in PostgreSQL (awaited)
   if (isDbAvailable()) {
     try {
-      const hackathonId = await getHackathonDbId(params.hackathonId || team.hackathonId);
+      const hackathonDbId = await getHackathonDbId(params.hackathonId || team.hackathonId);
 
       // Ensure team exists in DB
       const dbTeam = await prisma.hackathonTeam.upsert({
         where: { inviteCode: team.inviteCode.toUpperCase() },
-        update: { name: team.name },
+        update: {
+          name: team.name,
+          hackathonId: hackathonDbId,
+        },
         create: {
-          id: team.id,
-          hackathonId,
+          hackathonId: hackathonDbId,
           name: team.name,
           inviteCode: team.inviteCode.toUpperCase(),
         },
       });
+
+      team.id = dbTeam.id;
+      participant.teamId = dbTeam.id;
 
       // Update participant's teamId in DB
       await prisma.hackathonParticipant.upsert({
@@ -556,10 +571,11 @@ export async function addMemberToTeam(params: {
         update: {
           teamId: dbTeam.id,
           isCaptain: participant.isCaptain,
+          hackathonId: hackathonDbId,
         },
         create: {
           id: participant.id || `part-${Date.now()}`,
-          hackathonId,
+          hackathonId: hackathonDbId,
           ticketNumber: participant.ticketNumber.trim().toUpperCase(),
           name: participant.name.trim(),
           email: participant.email?.trim() || "",
@@ -574,7 +590,7 @@ export async function addMemberToTeam(params: {
         },
       });
 
-      // Refetch full roster from DB to guarantee 100% database truth
+      // Refetch full roster from DB
       const dbMembers = await prisma.hackathonParticipant.findMany({
         where: { teamId: dbTeam.id },
         orderBy: { createdAt: "asc" },
@@ -596,12 +612,14 @@ export async function addMemberToTeam(params: {
           isCaptain: p.isCaptain,
           teamId: dbTeam.id,
           teamName: dbTeam.name,
-          teamCode: dbTeam.inviteCode,
+          teamCode: dbTeam.inviteCode.toUpperCase(),
           createdAt: p.createdAt.toISOString(),
         }));
       }
-    } catch (e) {
-      console.warn("[addMemberToTeam] DB error:", e);
+      console.info(`[addMemberToTeam] Successfully added ${participant.name} to team "${dbTeam.name}" in DB.`);
+    } catch (e: any) {
+      console.error("[addMemberToTeam] DB error:", e);
+      return { success: false, error: "Failed to join team in database: " + (e?.message || "Unknown error") };
     }
   }
 
@@ -634,37 +652,40 @@ export async function createNewTeam(params: {
 
   let creator = params.creatorParticipant;
   if (!creator && params.creatorTicket) {
+    const cleanTicket = params.creatorTicket.trim().replace(/^#/, "").toUpperCase();
     creator =
-      memoryStore.participants.get(params.creatorTicket.toUpperCase()) ||
-      getPersistedParticipantByTicket(params.creatorTicket) ||
+      memoryStore.participants.get(cleanTicket) ||
+      getPersistedParticipantByTicket(cleanTicket) ||
       undefined;
-  }
 
-  if (!creator && params.creatorTicket && isDbAvailable()) {
-    try {
-      const dbP = await prisma.hackathonParticipant.findUnique({
-        where: { ticketNumber: params.creatorTicket.trim().toUpperCase() },
-      });
-      if (dbP) {
-        creator = {
-          id: dbP.id,
-          hackathonId: dbP.hackathonId,
-          ticketNumber: dbP.ticketNumber,
-          name: dbP.name,
-          email: dbP.email,
-          roleTitle: dbP.roleTitle,
-          bio: dbP.bio ?? undefined,
-          discordHandle: dbP.discordHandle ?? undefined,
-          twitterHandle: dbP.twitterHandle ?? undefined,
-          avatarUrl: dbP.avatarUrl ?? undefined,
-          themeStyle: (dbP.themeStyle as HackathonTheme) || "lime",
-          isCaptain: dbP.isCaptain,
-          teamId: dbP.teamId ?? undefined,
-          createdAt: dbP.createdAt.toISOString(),
-        };
+    if (!creator && isDbAvailable()) {
+      try {
+        const dbP = await prisma.hackathonParticipant.findFirst({
+          where: {
+            ticketNumber: { equals: cleanTicket, mode: "insensitive" },
+          },
+        });
+        if (dbP) {
+          creator = {
+            id: dbP.id,
+            hackathonId: dbP.hackathonId,
+            ticketNumber: dbP.ticketNumber,
+            name: dbP.name,
+            email: dbP.email,
+            roleTitle: dbP.roleTitle,
+            bio: dbP.bio ?? undefined,
+            discordHandle: dbP.discordHandle ?? undefined,
+            twitterHandle: dbP.twitterHandle ?? undefined,
+            avatarUrl: dbP.avatarUrl ?? undefined,
+            themeStyle: (dbP.themeStyle as HackathonTheme) || "lime",
+            isCaptain: dbP.isCaptain,
+            teamId: dbP.teamId ?? undefined,
+            createdAt: dbP.createdAt.toISOString(),
+          };
+        }
+      } catch (e) {
+        console.warn("Could not find creator in DB:", e);
       }
-    } catch (e) {
-      console.warn("Could not find creator in DB:", e);
     }
   }
 
@@ -672,8 +693,23 @@ export async function createNewTeam(params: {
 
   // Generate unique invite code (e.g. TEAM-3508 or HACK-8921)
   const prefix = name.replace(/[^A-Za-z0-9]/g, "").slice(0, 4).toUpperCase() || "TEAM";
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  const inviteCode = `${prefix}-${rand}`;
+  let inviteCode = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // Ensure uniqueness in DB
+  if (isDbAvailable()) {
+    try {
+      let attempts = 0;
+      while (attempts < 5) {
+        const exists = await prisma.hackathonTeam.findFirst({
+          where: { inviteCode: { equals: inviteCode, mode: "insensitive" } },
+        });
+        if (!exists) break;
+        inviteCode = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+        attempts++;
+      }
+    } catch {}
+  }
+
   const teamId = `team-${Date.now()}`;
 
   // Update creator
@@ -696,14 +732,16 @@ export async function createNewTeam(params: {
   // DB: upsert hackathon → team → participant (sequential, all awaited)
   if (isDbAvailable()) {
     try {
-      const hackathonId = await getHackathonDbId(params.hackathonId || creator.hackathonId);
+      const hackathonDbId = await getHackathonDbId(params.hackathonId || creator.hackathonId);
 
       const dbTeam = await prisma.hackathonTeam.upsert({
         where: { inviteCode: inviteCode.toUpperCase() },
-        update: { name: name.trim() },
+        update: {
+          name: name.trim(),
+          hackathonId: hackathonDbId,
+        },
         create: {
-          id: teamId,
-          hackathonId,
+          hackathonId: hackathonDbId,
           name: name.trim(),
           inviteCode: inviteCode.toUpperCase(),
         },
@@ -714,10 +752,14 @@ export async function createNewTeam(params: {
 
       await prisma.hackathonParticipant.upsert({
         where: { ticketNumber: creator.ticketNumber.trim().toUpperCase() },
-        update: { teamId: dbTeam.id, isCaptain: true },
+        update: {
+          teamId: dbTeam.id,
+          isCaptain: true,
+          hackathonId: hackathonDbId,
+        },
         create: {
           id: creator.id || `part-${Date.now()}`,
-          hackathonId,
+          hackathonId: hackathonDbId,
           ticketNumber: creator.ticketNumber.trim().toUpperCase(),
           name: creator.name.trim(),
           email: creator.email?.trim() || "",
@@ -731,8 +773,10 @@ export async function createNewTeam(params: {
           teamId: dbTeam.id,
         },
       });
-    } catch (e) {
-      console.warn("[createNewTeam] DB error:", e);
+      console.info(`[createNewTeam] Successfully created team "${dbTeam.name}" (${dbTeam.inviteCode}) in DB.`);
+    } catch (e: any) {
+      console.error("[createNewTeam] DB persistence error:", e);
+      return { success: false, error: "Failed to create team in database: " + (e?.message || "Unknown error") };
     }
   }
 
@@ -747,7 +791,7 @@ export async function createNewTeam(params: {
  * Leave current team and revert to Solo Builder.
  */
 export async function leaveCurrentTeam(participantTicket: string): Promise<{ success: boolean; error?: string }> {
-  const clean = participantTicket.trim().toUpperCase();
+  const clean = participantTicket.trim().replace(/^#/, "").toUpperCase();
   const participant =
     memoryStore.participants.get(clean) ||
     getPersistedParticipantByTicket(clean);

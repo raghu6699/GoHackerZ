@@ -16,16 +16,16 @@ export async function GET(
 ) {
   try {
     const { searchParams } = new URL(req.url);
-    const code = searchParams.get("code")?.trim().toUpperCase();
+    const code = searchParams.get("code")?.trim().replace(/^#/, "").toUpperCase();
 
     if (!code) {
       return NextResponse.json({ error: "Team code parameter required" }, { status: 400 });
     }
 
-    // DB-backed lookup — returns real-time membership from Postgres + disk fallback
+    // DB-backed lookup — returns real-time membership from Postgres + memory/disk fallback
     const team = await getTeamByCode(code);
     if (!team) {
-      return NextResponse.json({ error: `Team "${code}" not found` }, { status: 404 });
+      return NextResponse.json({ error: `Team with invite code "${code}" was not found. Please check the code and try again.` }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -76,21 +76,13 @@ export async function POST(
     }
 
     if (action === "join") {
-      if (!teamCode) {
+      const code = (teamCode || "").trim().replace(/^#/, "").toUpperCase();
+      if (!code) {
         return NextResponse.json({ error: "Team code is required to join a squad" }, { status: 400 });
       }
 
-      // Verify team exists BEFORE attempting join
-      const teamExists = await getTeamByCode(teamCode.trim().toUpperCase());
-      if (!teamExists) {
-        return NextResponse.json(
-          { error: `Team with invite code "${teamCode.trim().toUpperCase()}" was not found. Please check the code and try again.` },
-          { status: 404 }
-        );
-      }
-
       const result = await addMemberToTeam({
-        teamCode,
+        teamCode: code,
         participantTicket: ticketNumber,
         hackathonId: hackathon?.id,
       });
@@ -104,7 +96,7 @@ export async function POST(
       return NextResponse.json({
         success: true,
         team: result.team,
-        participant: updatedParticipant || existing,
+        participant: updatedParticipant || result.participant || existing,
         message: `Successfully joined ${result.team?.name}!`,
       });
     }
