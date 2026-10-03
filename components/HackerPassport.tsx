@@ -465,7 +465,9 @@ export function HackerPassport({
                   SQUAD ALLIANCE
                 </span>
                 <span className="font-mono text-xs font-bold text-white/90 truncate block">
-                  {participant.teamName || "Solo Competitor"}
+                  {participant.teamName
+                    ? `${participant.teamName}${participant.teamCode ? ` [${participant.teamCode}]` : ""}`
+                    : "Solo Competitor"}
                 </span>
               </div>
 

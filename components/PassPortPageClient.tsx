@@ -289,12 +289,12 @@ export function PassPortPageClient({
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-purple" />
               <h3 className="font-mono text-sm font-black text-ink uppercase tracking-wider">
-                {participant.teamCode ? "SQUAD ALLIANCE ROSTER" : "SQUAD FORMATION"}
+                {participant.teamCode || participant.teamName ? "SQUAD ALLIANCE ROSTER" : "SQUAD FORMATION"}
               </h3>
             </div>
-            {participant.teamCode ? (
+            {participant.teamCode || participant.teamName ? (
               <span className="font-mono text-xs font-black px-2.5 py-1 rounded bg-brand-dark text-lime">
-                {participant.isCaptain ? "★ SQUAD CAPTAIN" : "● SQUAD MEMBER"}
+                {participant.isCaptain !== false ? "★ SQUAD CAPTAIN" : "● SQUAD MEMBER"}
               </span>
             ) : (
               <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-muted/20 text-muted">
@@ -316,7 +316,7 @@ export function PassPortPageClient({
             </div>
           )}
 
-          {participant.teamCode ? (
+          {participant.teamCode || participant.teamName ? (
             /* Squad Active View */
             <div className="space-y-4">
               <div className="bg-bg border-2 border-ink/15 rounded-2xl p-4 space-y-3">
