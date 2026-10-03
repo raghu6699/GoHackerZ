@@ -473,13 +473,12 @@ export async function getParticipantByEmail(
   if (!email) return null;
   const target = email.trim().toLowerCase();
 
-  // 1. Query Postgres Database FIRST when available (canonical team membership source)
+  // 1. Query Postgres Database FIRST when available (canonical source)
   if (isDbAvailable()) {
     try {
       const dbRow = await prisma.hackathonParticipant.findFirst({
         where: {
           email: target,
-          ...(hackathonId ? { hackathonId } : {}),
         },
         include: {
           team: {
@@ -527,11 +526,10 @@ export async function getParticipantByEmail(
   const persistedList = loadPersistedParticipants();
   const found = persistedList.find(
     (p) =>
-      (!hackathonId || p.hackathonId === hackathonId) &&
+      (!hackathonId || p.hackathonId === hackathonId || p.hackathonId === "gh-shipathon-2026") &&
       p.email.trim().toLowerCase() === target
   );
   if (found) {
-    // Hydrate teammates from local disk team cache
     if (found.teamCode) {
       const team = getPersistedTeamByCode(found.teamCode);
       if (team) {
@@ -550,7 +548,7 @@ export async function getParticipantByEmail(
   // 3. Check memory store
   for (const p of memoryStore.participants.values()) {
     if (
-      (!hackathonId || p.hackathonId === hackathonId) &&
+      (!hackathonId || p.hackathonId === hackathonId || p.hackathonId === "gh-shipathon-2026") &&
       p.email.trim().toLowerCase() === target
     ) {
       return p;
@@ -594,38 +592,45 @@ export async function registerHacker(params: {
     createdAt: existing?.createdAt || new Date().toISOString(),
   };
 
-  // 1. Persist participant to DB FIRST (awaited) so team FK operations can reference it
-  //    This is critical: createNewTeam/addMemberToTeam upsert the participant's teamId,
-  //    which requires the participant row to exist (or they use upsert themselves).
-  persistParticipant(participant); // disk write (sync)
-  await persistParticipantToDb(participant); // DB write (awaited)
+  // 1. Initial participant save
+  persistParticipant(participant);
+  await persistParticipantToDb(participant);
   memoryStore.participants.set(ticketNumber, participant);
 
-  // 2. Handle team formation (mutates `participant` in-place with teamId/teamCode)
-  if (params.teamOption === "create" && params.teamName?.trim()) {
+  // 2. Handle team formation
+  if (params.teamOption === "create") {
+    const tName = params.teamName?.trim();
+    if (!tName) {
+      throw new Error("Please provide a name for your new squad.");
+    }
     const teamRes = await createNewTeam({
-      teamName: params.teamName.trim(),
+      teamName: tName,
       creatorParticipant: participant,
       hackathonId: params.hackathonId,
     });
-    if (teamRes.success && teamRes.team) {
-      memoryStore.teams.set(teamRes.team.inviteCode, teamRes.team);
+    if (!teamRes.success || !teamRes.team) {
+      throw new Error(teamRes.error || "Failed to create squad.");
     }
-  } else if (params.teamOption === "join" && params.teamInviteCode?.trim()) {
-    const code = params.teamInviteCode.trim().toUpperCase();
+    memoryStore.teams.set(teamRes.team.inviteCode, teamRes.team);
+  } else if (params.teamOption === "join") {
+    const code = (params.teamInviteCode || "").trim().toUpperCase();
+    if (!code) {
+      throw new Error("Please enter a valid team invite code.");
+    }
     const joinRes = await addMemberToTeam({
       teamCode: code,
       participantObj: participant,
+      hackathonId: params.hackathonId,
     });
-    if (joinRes.success && joinRes.team) {
-      memoryStore.teams.set(joinRes.team.inviteCode, joinRes.team);
-    } else if (!joinRes.success) {
-      console.warn(`[registerHacker] Could not join team "${code}": ${joinRes.error}`);
+    if (!joinRes.success || !joinRes.team) {
+      throw new Error(joinRes.error || `Team with invite code "${code}" was not found. Please check the code and try again.`);
     }
+    memoryStore.teams.set(joinRes.team.inviteCode, joinRes.team);
   }
 
-  // 3. Re-persist participant with final squad data (teamId/teamCode now set)
+  // 3. Final synchronization with squad state
   persistParticipant(participant);
+  await persistParticipantToDb(participant);
   memoryStore.participants.set(ticketNumber, participant);
 
   return participant;

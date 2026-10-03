@@ -117,6 +117,33 @@ export function PassPortPageClient({
     }
   };
 
+  // Auto-refresh squad roster on mount if user is part of a squad
+  useEffect(() => {
+    if (!participant.teamCode) return;
+    fetch(`/api/hackathons/${slug}/team?code=${participant.teamCode}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.team?.members) {
+          const squadRoster = data.team.members.map((m: any) => ({
+            name: m.name,
+            roleTitle: m.roleTitle,
+            avatarUrl: m.avatarUrl,
+          }));
+          setParticipant((prev) => {
+            if (!prev.teamCode) return prev;
+            const updated = {
+              ...prev,
+              teamName: data.team.name,
+              teammates: squadRoster,
+            };
+            saveMyPassport(updated);
+            return updated;
+          });
+        }
+      })
+      .catch(() => {});
+  }, [participant.teamCode, slug]);
+
   const handleThemeChange = useCallback(
     (t: HackathonTheme) => {
       setParticipant((prev) => {

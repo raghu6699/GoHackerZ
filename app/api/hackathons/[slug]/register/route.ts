@@ -75,11 +75,12 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true, participant });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Hackathon registration error:", error);
+    const msg = error?.message || "Failed to process hackathon registration";
     return NextResponse.json(
-      { error: "Failed to process hackathon registration" },
-      { status: 500 }
+      { error: msg },
+      { status: 400 }
     );
   }
 }

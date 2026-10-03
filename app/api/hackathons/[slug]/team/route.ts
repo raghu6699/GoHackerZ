@@ -92,6 +92,7 @@ export async function POST(
       const result = await addMemberToTeam({
         teamCode,
         participantTicket: ticketNumber,
+        hackathonId: hackathon?.id,
       });
 
       if (!result.success) {
