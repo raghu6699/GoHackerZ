@@ -39,20 +39,6 @@ export async function POST(
     const hackerName = name?.trim() || user.name || "Anonymous Builder";
     const cleanEmail = user.email.trim().toLowerCase();
 
-    const existing = await getParticipantByEmail(hackathon.id, cleanEmail);
-    if (existing) {
-      return NextResponse.json(
-        {
-          error: `Your account email (${cleanEmail}) is already registered for ${hackathon.title} with Ticket #${existing.ticketNumber}.`,
-          alreadyRegistered: true,
-          ticketNumber: existing.ticketNumber,
-          passportUrl: `/hackathons/${slug}/pass/${existing.ticketNumber}`,
-          participant: existing,
-        },
-        { status: 409 }
-      );
-    }
-
     const participant = await registerHacker({
       hackathonId: hackathon.id,
       name: hackerName,

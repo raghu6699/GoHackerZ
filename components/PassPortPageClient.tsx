@@ -54,13 +54,13 @@ export function PassPortPageClient({
         discordHandle: myPassport?.discordHandle || serverParticipant.discordHandle,
         twitterHandle: myPassport?.twitterHandle || serverParticipant.twitterHandle,
         avatarUrl: myPassport?.avatarUrl || serverParticipant.avatarUrl,
-        // Server is authoritative for theme (saved after registration); fall back to local
-        themeStyle: serverParticipant.themeStyle || myPassport?.themeStyle || "lime",
+        // Cleanly prioritize theme and squad data
+        themeStyle: myPassport?.themeStyle || serverParticipant.themeStyle || "lime",
         teamName: serverParticipant.teamName || myPassport?.teamName,
         teamCode: serverParticipant.teamCode || myPassport?.teamCode,
         isCaptain: serverParticipant.isCaptain ?? myPassport?.isCaptain ?? false,
         teammates:
-          serverParticipant.teammates && serverParticipant.teammates.length > 0
+          (serverParticipant.teammates && serverParticipant.teammates.length > 0)
             ? serverParticipant.teammates
             : myPassport?.teammates,
         submission: serverParticipant.submission || myPassport?.submission,

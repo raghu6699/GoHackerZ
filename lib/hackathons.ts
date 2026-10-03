@@ -511,29 +511,26 @@ export async function registerHacker(params: {
   teamInviteCode?: string;
 }): Promise<HackathonParticipant> {
   const existing = await getParticipantByEmail(params.hackathonId, params.email);
-  if (existing) {
-    return existing;
-  }
-
-  const ticketNumber = generateTicketNumber();
+  const ticketNumber = existing ? existing.ticketNumber : generateTicketNumber();
 
   let participant: HackathonParticipant = {
-    id: `part-${Date.now()}`,
+    ...(existing || {}),
+    id: existing ? existing.id : `part-${Date.now()}`,
     hackathonId: params.hackathonId,
     ticketNumber,
-    name: params.name.trim(),
+    name: params.name.trim() || (existing ? existing.name : "Hacker"),
     email: params.email.trim().toLowerCase(),
-    roleTitle: params.roleTitle.trim() || "Fullstack Hacker",
-    bio: params.bio?.trim(),
-    discordHandle: params.discordHandle?.trim(),
-    twitterHandle: params.twitterHandle?.trim(),
-    avatarUrl: params.avatarUrl,
-    themeStyle: params.themeStyle || "lime",
-    isCaptain: false,
-    createdAt: new Date().toISOString(),
+    roleTitle: params.roleTitle.trim() || (existing ? existing.roleTitle : "Fullstack Hacker"),
+    bio: params.bio?.trim() ?? existing?.bio,
+    discordHandle: params.discordHandle?.trim() ?? existing?.discordHandle,
+    twitterHandle: params.twitterHandle?.trim() ?? existing?.twitterHandle,
+    avatarUrl: params.avatarUrl || existing?.avatarUrl,
+    themeStyle: params.themeStyle || existing?.themeStyle || "lime",
+    isCaptain: existing?.isCaptain ?? false,
+    createdAt: existing?.createdAt || new Date().toISOString(),
   };
 
-  // 1. Initial participant save
+  // 1. Save participant
   persistParticipant(participant);
   memoryStore.participants.set(ticketNumber, participant);
 
@@ -567,6 +564,10 @@ export async function registerHacker(params: {
       }
     }
   }
+
+  // Ensure freshest participant is persisted
+  persistParticipant(participant);
+  memoryStore.participants.set(ticketNumber, participant);
 
   return participant;
 }
