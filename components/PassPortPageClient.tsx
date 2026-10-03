@@ -54,16 +54,18 @@ export function PassPortPageClient({
         discordHandle: myPassport?.discordHandle || serverParticipant.discordHandle,
         twitterHandle: myPassport?.twitterHandle || serverParticipant.twitterHandle,
         avatarUrl: myPassport?.avatarUrl || serverParticipant.avatarUrl,
-        // Cleanly prioritize theme and squad data
+        // Cleanly prioritize theme and squad data from localStorage
         themeStyle: myPassport?.themeStyle || serverParticipant.themeStyle || "lime",
-        teamName: serverParticipant.teamName || myPassport?.teamName,
-        teamCode: serverParticipant.teamCode || myPassport?.teamCode,
-        isCaptain: serverParticipant.isCaptain ?? myPassport?.isCaptain ?? false,
+        teamName: myPassport?.teamName || serverParticipant.teamName || undefined,
+        teamCode: myPassport?.teamCode || serverParticipant.teamCode || undefined,
+        isCaptain: myPassport?.isCaptain ?? serverParticipant.isCaptain ?? false,
         teammates:
-          (serverParticipant.teammates && serverParticipant.teammates.length > 0)
+          (myPassport?.teammates && myPassport.teammates.length > 0)
+            ? myPassport.teammates
+            : (serverParticipant.teammates && serverParticipant.teammates.length > 0)
             ? serverParticipant.teammates
-            : myPassport?.teammates,
-        submission: serverParticipant.submission || myPassport?.submission,
+            : undefined,
+        submission: myPassport?.submission || serverParticipant.submission,
       };
 
       setParticipant(merged);
@@ -103,8 +105,10 @@ export function PassPortPageClient({
         setParticipant((prev) => {
           const updated = {
             ...prev,
-            teamName: data.team.name,
+            teamName: data.team.name || prev.teamName,
+            teamCode: data.team.inviteCode || prev.teamCode,
             teammates: squadRoster,
+            isCaptain: prev.isCaptain,
           };
           saveMyPassport(updated);
           return updated;
@@ -133,8 +137,10 @@ export function PassPortPageClient({
             if (!prev.teamCode) return prev;
             const updated = {
               ...prev,
-              teamName: data.team.name,
+              teamName: data.team.name || prev.teamName,
+              teamCode: data.team.inviteCode || prev.teamCode,
               teammates: squadRoster,
+              isCaptain: prev.isCaptain,
             };
             saveMyPassport(updated);
             return updated;
@@ -277,6 +283,13 @@ export function PassPortPageClient({
       saveMyPassport(data.participant);
       setTeamMsg({ type: "success", text: data.message || "Squad created!" });
       setNewTeamNameInput("");
+
+      // Synchronize to server immediately
+      fetch(`/api/hackathons/${slug}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participant: data.participant }),
+      }).catch(() => {});
     } catch (err: any) {
       setTeamMsg({ type: "error", text: err.message || "Could not create team." });
     } finally {

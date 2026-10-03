@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { persistParticipant, getPersistedParticipantByTicket } from "@/lib/participant-store";
+import { persistParticipant, persistParticipantToDb } from "@/lib/participant-store";
 import type { HackathonParticipant } from "@/lib/hackathons";
 
 export async function POST(
@@ -17,8 +17,9 @@ export async function POST(
       );
     }
 
-    // Persist to server disk
+    // Persist to server memory, disk & DB
     persistParticipant(participant);
+    await persistParticipantToDb(participant);
 
     return NextResponse.json({ success: true, participant });
   } catch (error) {
