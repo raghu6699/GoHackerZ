@@ -254,10 +254,6 @@ export function HackerPassport({
       (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    // Server-side fallback URL (always reliable — used when canvas hangs on iOS)
-    const serverImageUrl = `${origin}/api/hackathons/${activeSlug}/pass/${activeTicketId}/image?theme=${activeTheme}`;
-
     // ── iOS: open a blank tab NOW (synchronously, inside the user-gesture stack)
     // so WebKit doesn't block it as a pop-up. We'll populate it after rendering.
     let iosTab: Window | null = null;
@@ -294,29 +290,69 @@ export function HackerPassport({
     }
 
     try {
-      // Capture the live DOM on iOS so the export matches the displayed pass.
+      // Render the live card at a stable landscape width instead of capturing
+      // the narrow, truncated mobile layout shown in the page.
       const renderCanvas = async (): Promise<string> => {
-        if (isIOS) {
-          const { toPng } = await import("html-to-image");
-          return toPng(passRef.current!, {
-            pixelRatio: 2,
-            backgroundColor: "#08090c",
-            width: passRef.current!.scrollWidth,
-            height: passRef.current!.scrollHeight,
+        const exportNode = passRef.current!.cloneNode(true) as HTMLDivElement;
+        exportNode.style.width = "940px";
+        exportNode.style.maxWidth = "none";
+        exportNode.style.flexDirection = "row";
+
+        const mainPanel = exportNode.querySelector<HTMLElement>("[data-passport-main]");
+        const grid = exportNode.querySelector<HTMLElement>("[data-passport-details]");
+        const verticalDivider = exportNode.querySelector<HTMLElement>("[data-passport-vertical-divider]");
+        const mobileDivider = exportNode.querySelector<HTMLElement>("[data-passport-mobile-divider]");
+        const stub = exportNode.querySelector<HTMLElement>("[data-passport-stub]");
+        const footer = exportNode.querySelector<HTMLElement>("[data-passport-footer]");
+
+        if (mainPanel) {
+          mainPanel.style.flex = "1 1 auto";
+          mainPanel.style.minWidth = "0";
+        }
+        if (grid) {
+          grid.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
+          Array.from(grid.children).forEach((cell) => {
+            (cell as HTMLElement).style.minWidth = "0";
           });
         }
+        if (verticalDivider) verticalDivider.style.display = "flex";
+        if (mobileDivider) mobileDivider.style.display = "none";
+        if (stub) {
+          stub.style.width = "280px";
+          stub.style.flex = "0 0 280px";
+          stub.style.borderTop = "0";
+          stub.style.borderLeft = "1px solid rgba(255,255,255,0.1)";
+        }
+        if (footer) {
+          footer.style.flexDirection = "row";
+          const barcode = footer.lastElementChild as HTMLElement | null;
+          if (barcode) {
+            barcode.style.width = "220px";
+            barcode.style.flex = "0 0 220px";
+          }
+        }
 
-        const html2canvas = (await import("html2canvas")).default;
-        const canvas = await html2canvas(passRef.current!, {
-          scale: 2,
-          backgroundColor: "#08090c",
-          useCORS: true,
-          allowTaint: false,
-          logging: false,
-          windowWidth: passRef.current!.scrollWidth,
-          windowHeight: passRef.current!.scrollHeight,
+        exportNode.querySelectorAll<HTMLElement>(".truncate").forEach((element) => {
+          element.style.overflow = "visible";
+          element.style.textOverflow = "clip";
+          element.style.whiteSpace = "normal";
+          element.style.overflowWrap = "anywhere";
         });
-        return canvas.toDataURL("image/png");
+
+        exportNode.style.position = "fixed";
+        exportNode.style.left = "-10000px";
+        exportNode.style.top = "0";
+        document.body.appendChild(exportNode);
+        try {
+          const { toPng } = await import("html-to-image");
+          return await toPng(exportNode, {
+            pixelRatio: 2,
+            backgroundColor: "#08090c",
+            width: 940,
+          });
+        } finally {
+          exportNode.remove();
+        }
       };
 
       const timeoutMs = isIOS ? 15000 : 30000;
@@ -328,10 +364,10 @@ export function HackerPassport({
 
       if (isIOS) {
         if (!iosTab || iosTab.closed) {
-          // Tab was blocked — fallback: Web Share with server-side image or alert
+          // Tab was blocked — share the exact rendered image when supported.
           try {
-            const imageUrl = result || serverImageUrl;
-            const blob = await (await fetch(imageUrl)).blob();
+            if (!result) throw new Error("Could not render the complete boarding pass. Please try again.");
+            const blob = await (await fetch(result)).blob();
             const file = new File([blob], `GoHackerz-BoardingPass-${activeTicketId}.png`, { type: "image/png" });
             if (navigator.canShare?.({ files: [file] })) {
               await navigator.share({ files: [file], title: "GoHackerz Boarding Pass" });
@@ -342,11 +378,11 @@ export function HackerPassport({
           return;
         }
 
+        const doc = iosTab.document;
+        const msg = doc.getElementById("msg");
         if (result) {
           // ✅ Canvas succeeded — inject the exact rendered image
-          const doc = iosTab.document;
           const sp = doc.getElementById("sp");
-          const msg = doc.getElementById("msg");
           const img = doc.getElementById("bp") as HTMLImageElement | null;
           const hint = doc.getElementById("hint");
           if (sp) sp.style.display = "none";
@@ -354,19 +390,14 @@ export function HackerPassport({
           if (img) { img.src = result; img.style.display = "block"; }
           if (hint) hint.style.display = "block";
         } else {
-          // ⏱ Timed out — redirect to server-side PNG (reliable fallback)
-          // The user sees the boarding pass in the tab and can long-press to save.
-          iosTab.location.href = serverImageUrl;
+          if (msg) msg.textContent = "Could not render the complete boarding pass. Close this tab and try again.";
         }
         return;
       }
 
       // ── Desktop / Android: standard anchor download ──
-      const dataUrl = result ?? serverImageUrl; // result is always non-null on desktop (longer timeout)
-      const isDataUrl = dataUrl.startsWith("data:");
-      const blob = isDataUrl
-        ? await (await fetch(dataUrl)).blob()
-        : await (await fetch(serverImageUrl)).blob();
+      if (!result) throw new Error("Could not render the complete boarding pass. Please try again.");
+      const blob = await (await fetch(result)).blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.style.display = "none";
@@ -447,7 +478,7 @@ export function HackerPassport({
           {/* ======================================================== */}
           {/* LEFT: MAIN FLIGHT BOARDING PASS                          */}
           {/* ======================================================== */}
-          <div className="flex-1 p-6 sm:p-8 flex flex-col justify-between space-y-6 relative z-10">
+          <div data-passport-main className="flex-1 p-6 sm:p-8 flex flex-col justify-between space-y-6 relative z-10">
             {/* Top Bar */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
@@ -533,7 +564,7 @@ export function HackerPassport({
             </div>
 
             {/* Passenger & Flight Specs Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl">
+            <div data-passport-details className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl">
               <div>
                 <span className="font-mono text-[8.5px] text-white/40 uppercase tracking-wider block">
                   PASSENGER NAME
@@ -611,7 +642,7 @@ export function HackerPassport({
             </div>
 
             {/* Bottom Bar: Braille Encoding + 1D Barcode Graphic */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2 border-t border-white/10">
+            <div data-passport-footer className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2 border-t border-white/10">
               {/* Tactile Braille Name Bar */}
               <div className="space-y-0.5">
                 <span className="font-mono text-[8px] text-white/40 uppercase tracking-widest block">
@@ -638,7 +669,7 @@ export function HackerPassport({
           {/* ======================================================== */}
           {/* PERFORATED NOTCHED DIVIDER (Aviation Tear-Off Strip)      */}
           {/* ======================================================== */}
-          <div className="relative hidden md:flex flex-col items-center justify-between py-0 w-8 shrink-0">
+          <div data-passport-vertical-divider className="relative hidden md:flex flex-col items-center justify-between py-0 w-8 shrink-0">
             {/* Top Cutout Notch */}
             <div className="w-6 h-6 rounded-full bg-[#08090c] -mt-3 border-b border-white/20 shadow-inner" />
 
@@ -650,7 +681,7 @@ export function HackerPassport({
           </div>
 
           {/* Horizontal Divider for Mobile */}
-          <div className="relative flex md:hidden items-center justify-between px-0 h-6">
+          <div data-passport-mobile-divider className="relative flex md:hidden items-center justify-between px-0 h-6">
             <div className="w-6 h-6 rounded-full bg-[#08090c] -ml-3 border-r border-white/20" />
             <div className="w-full border-b-2 border-dashed border-white/20 mx-1" />
             <div className="w-6 h-6 rounded-full bg-[#08090c] -mr-3 border-l border-white/20" />
@@ -660,6 +691,7 @@ export function HackerPassport({
           {/* RIGHT: TEAR-OFF BOARDING PASS STUB (Passenger Receipt)   */}
           {/* ======================================================== */}
           <div
+            data-passport-stub
             className="w-full md:w-[280px] p-6 flex flex-col justify-between space-y-4 bg-black/40 relative z-10 shrink-0 border-t md:border-t-0 md:border-l border-white/10"
           >
             {/* Stub Header */}
