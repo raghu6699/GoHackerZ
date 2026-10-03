@@ -248,31 +248,152 @@ export function HackerPassport({
   const handleDownload = async () => {
     if (!passRef.current) return;
     setDownloading(true);
+
     try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(passRef.current, {
-        pixelRatio: 3,
-        backgroundColor: "#08090c",
-      });
-      const a = document.createElement("a");
-      a.download = `GoHackerz-BoardingPass-${activeTicketId}.png`;
-      a.href = dataUrl;
-      a.click();
-    } catch {
-      try {
+      // ── Detect iOS (iPhone / iPad including iPadOS 13+ desktop-mode) ──
+      const isIOS =
+        typeof navigator !== "undefined" &&
+        (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+      // ── 1. Render the passport card to a PNG data URL ──
+      let dataUrl = "";
+      let blob: Blob | null = null;
+
+      // On iOS, html-to-image can silently produce a blank image due to
+      // WebKit CORS canvas tainting. We force html2canvas first on iOS
+      // because it has better WebKit quirks handling, then fall back to
+      // html-to-image on desktop.
+      const renderWithHtml2Canvas = async (): Promise<string> => {
         const html2canvas = (await import("html2canvas")).default;
-        const canvas = await html2canvas(passRef.current, {
-          scale: 3,
+        const canvas = await html2canvas(passRef.current!, {
+          scale: 2,
           backgroundColor: "#08090c",
           useCORS: true,
+          allowTaint: false,
+          logging: false,
+          // Ensure full element is captured on iOS
+          windowWidth: passRef.current!.scrollWidth,
+          windowHeight: passRef.current!.scrollHeight,
         });
-        const a = document.createElement("a");
-        a.download = `GoHackerz-BoardingPass-${activeTicketId}.png`;
-        a.href = canvas.toDataURL("image/png");
-        a.click();
-      } catch (e) {
-        console.error("Download error:", e);
+        return canvas.toDataURL("image/png");
+      };
+
+      const renderWithHtmlToImage = async (): Promise<string> => {
+        const { toPng } = await import("html-to-image");
+        return toPng(passRef.current!, {
+          pixelRatio: 2,
+          backgroundColor: "#08090c",
+          cacheBust: true,
+        });
+      };
+
+      try {
+        if (isIOS) {
+          // On iOS: try html2canvas first, fall back to html-to-image
+          try {
+            dataUrl = await renderWithHtml2Canvas();
+          } catch {
+            dataUrl = await renderWithHtmlToImage();
+          }
+        } else {
+          // On Desktop/Android: html-to-image first (sharper output), then html2canvas
+          try {
+            dataUrl = await renderWithHtmlToImage();
+          } catch {
+            dataUrl = await renderWithHtml2Canvas();
+          }
+        }
+      } catch (renderErr) {
+        console.error("All rendering methods failed:", renderErr);
+        throw new Error("Could not render boarding pass image.");
       }
+
+      if (!dataUrl || dataUrl === "data:,") {
+        throw new Error("Rendered image is empty.");
+      }
+
+      // Convert data URL → Blob (needed for Web Share API)
+      const res = await fetch(dataUrl);
+      blob = await res.blob();
+
+      const fileName = `GoHackerz-BoardingPass-${activeTicketId}.png`;
+
+      // ── 2. iOS: try Web Share API (iOS 15+) → fallback open-in-tab ──
+      if (isIOS) {
+        // Try Web Share API with file attachment (iOS 15+, Safari 15+)
+        if (
+          typeof navigator !== "undefined" &&
+          navigator.share &&
+          blob
+        ) {
+          try {
+            const file = new File([blob], fileName, { type: "image/png" });
+            const canShareFiles =
+              navigator.canShare && navigator.canShare({ files: [file] });
+            if (canShareFiles) {
+              await navigator.share({
+                files: [file],
+                title: `GoHackerz Boarding Pass #${activeTicketId}`,
+                text: `My Hacker Passport – GoHackerz Global Shipathon 2026`,
+              });
+              return; // User handled save via share sheet
+            }
+          } catch (shareErr: any) {
+            if (shareErr?.name === "AbortError") return; // User cancelled
+            console.warn("Web Share API failed, opening data URL tab:", shareErr);
+          }
+        }
+
+        // iOS Fallback: open data URL in a new tab.
+        // User can long-press the image → "Add to Photos" / "Save Image".
+        const newTab = window.open();
+        if (newTab) {
+          newTab.document.write(
+            `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GoHackerz Boarding Pass</title>
+  <style>
+    body { margin:0; background:#08090c; display:flex; flex-direction:column;
+           align-items:center; justify-content:center; min-height:100vh; gap:12px; }
+    img  { max-width:100%; border-radius:12px; }
+    p    { color:#aaa; font-family:sans-serif; font-size:13px; text-align:center; padding:0 16px; }
+  </style>
+</head>
+<body>
+  <img src="${dataUrl}" alt="Boarding Pass" />
+  <p>Long-press the image above and tap <strong>"Save to Photos"</strong> or <strong>"Save Image"</strong>.</p>
+</body>
+</html>`
+          );
+          newTab.document.close();
+        } else {
+          // Pop-up blocked – last resort: open dataUrl directly
+          window.location.href = dataUrl;
+        }
+        return;
+      }
+
+      // ── 3. Desktop / Android: standard anchor download ──
+      const blobUrl = window.URL.createObjectURL(blob!);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 1000);
+    } catch (e: any) {
+      console.error("Boarding pass download failed:", e);
+      alert(
+        e?.message ||
+          "Could not generate boarding pass. Please take a screenshot instead."
+      );
     } finally {
       setDownloading(false);
     }
