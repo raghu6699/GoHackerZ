@@ -17,9 +17,15 @@ interface HackathonRegisterClientProps {
   };
   hackathon: HackathonData;
   slug: string;
+  initialParticipant?: HackathonParticipant | null;
 }
 
-export function HackathonRegisterClient({ user, hackathon, slug }: HackathonRegisterClientProps) {
+export function HackathonRegisterClient({
+  user,
+  hackathon,
+  slug,
+  initialParticipant = null,
+}: HackathonRegisterClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -58,7 +64,7 @@ export function HackathonRegisterClient({ user, hackathon, slug }: HackathonRegi
   } | null>(null);
 
   const [registeredParticipant, setRegisteredParticipant] = useState<HackathonParticipant | null>(
-    null
+    initialParticipant
   );
 
   // Check if visitor arrived via 1-click team invite link
@@ -84,13 +90,25 @@ export function HackathonRegisterClient({ user, hackathon, slug }: HackathonRegi
     }
   }, [searchParams, slug]);
 
-  // Check if this visitor already minted a passport in this browser
+  // Check if this visitor already minted a passport in this browser for THIS email
   useEffect(() => {
-    const existing = getMyPassport(hackathon.id || "gh-shipathon-2026");
-    if (existing) {
-      setRegisteredParticipant(existing);
+    if (initialParticipant) {
+      setRegisteredParticipant(initialParticipant);
+      saveMyPassport(initialParticipant);
+      return;
     }
-  }, [hackathon.id]);
+
+    const existing = getMyPassport(hackathon.id || "gh-shipathon-2026", user.email);
+    if (
+      existing &&
+      existing.email &&
+      existing.email.trim().toLowerCase() === user.email.trim().toLowerCase()
+    ) {
+      setRegisteredParticipant(existing);
+    } else {
+      setRegisteredParticipant(null);
+    }
+  }, [hackathon.id, user.email, initialParticipant]);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();

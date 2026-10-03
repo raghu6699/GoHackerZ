@@ -29,24 +29,20 @@ export function PassPortPageClient({
   useEffect(() => {
     // Use the actual hackathonId so keys are consistent across the app
     const hackId = serverParticipant.hackathonId || "gh-shipathon-2026";
-    const myPassport = getMyPassport(hackId);
-    const activeTicket = getActiveTicketNumber();
+    const activeEmail = (localStorage.getItem("gh_active_email") || "").trim().toLowerCase();
+    const myPassport = getMyPassport(hackId, activeEmail || undefined);
 
-    // Ownership check: ticket number must match AND (if we have an email in both,
-    // they must also match) to prevent a logged-out user from claiming
-    // another user's passport that happens to be in local storage
-    const ticketMatch =
-      (myPassport && myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()) ||
-      (activeTicket && activeTicket.toUpperCase() === ticketId.toUpperCase());
+    // Strict ownership verification:
+    // 1. myPassport exists and matches the exact ticket ID
+    // 2. The ticket's registered email matches the logged-in active email
+    const isExactMatch =
+      !!myPassport &&
+      myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase() &&
+      (!serverParticipant.email ||
+        !myPassport.email ||
+        myPassport.email.trim().toLowerCase() === serverParticipant.email.trim().toLowerCase());
 
-    const emailSafe =
-      !serverParticipant.email ||
-      !myPassport?.email ||
-      myPassport.email.trim().toLowerCase() === serverParticipant.email.trim().toLowerCase();
-
-    const isMatch = ticketMatch && emailSafe;
-
-    if (isMatch && myPassport) {
+    if (isExactMatch) {
       setIsOwner(true);
 
       const merged: HackathonParticipant = {

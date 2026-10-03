@@ -28,30 +28,26 @@ export function MyPassportBanner({
     if (!supabase) return;
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        // Not logged in — don't show any passport banner
+      const currentEmail = session?.user?.email?.trim().toLowerCase();
+      if (!currentEmail) {
+        setPassport(null);
+        setTicketNum(null);
         return;
       }
 
-      const saved = getMyPassport(hackathonId);
-      const activeCode = getActiveTicketNumber();
+      const saved = getMyPassport(hackathonId, currentEmail);
 
-      if (saved) {
-        // Make sure this passport belongs to the current logged-in user
-        const currentEmail = session.user.email?.trim().toLowerCase();
-        if (currentEmail && saved.email && saved.email.trim().toLowerCase() !== currentEmail) {
-          // Stale passport from a different account — ignore it
-          return;
-        }
+      if (saved && saved.email && saved.email.trim().toLowerCase() === currentEmail) {
         setPassport(saved);
         setTicketNum(saved.ticketNumber);
-      } else if (activeCode) {
-        setTicketNum(activeCode);
+      } else {
+        setPassport(null);
+        setTicketNum(null);
       }
     });
   }, [hackathonId]);
 
-  if (!ticketNum) return null;
+  if (!ticketNum || !passport) return null;
 
   return (
     <div

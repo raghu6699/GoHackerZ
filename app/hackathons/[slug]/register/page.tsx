@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentDbUser } from "@/lib/profile";
-import { getHackathonBySlug, FLAGSHIP_HACKATHON } from "@/lib/hackathons";
+import { getHackathonBySlug, getParticipantByEmail, FLAGSHIP_HACKATHON } from "@/lib/hackathons";
 import { HackathonRegisterClient } from "@/components/HackathonRegisterClient";
 import { Lock, Ticket, Trophy, UserCheck, ArrowRight } from "lucide-react";
 
@@ -94,6 +94,11 @@ export default async function HackathonRegisterPage({
     );
   }
 
+  // Check if this specific logged-in user is already registered on the server
+  const existingParticipant = user.email
+    ? await getParticipantByEmail(hackathon.id, user.email)
+    : null;
+
   return (
     <HackathonRegisterClient
       user={{
@@ -104,6 +109,7 @@ export default async function HackathonRegisterPage({
       }}
       hackathon={hackathon}
       slug={slug}
+      initialParticipant={existingParticipant}
     />
   );
 }

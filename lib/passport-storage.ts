@@ -43,31 +43,35 @@ export function saveMyPassport(participant: HackathonParticipant) {
   }
 }
 
-export function getMyPassport(hackathonId = "gh-shipathon-2026"): HackathonParticipant | null {
+export function getMyPassport(
+  hackathonId = "gh-shipathon-2026",
+  forEmail?: string
+): HackathonParticipant | null {
   if (typeof window === "undefined") return null;
 
   try {
-    // Try email-scoped key first (current user)
-    const activeEmail = localStorage.getItem(ACTIVE_EMAIL_KEY);
-    if (activeEmail) {
-      const scopedKey = buildStorageKey(hackathonId, activeEmail);
-      const scopedRaw = localStorage.getItem(scopedKey);
-      if (scopedRaw) {
-        return JSON.parse(scopedRaw);
+    const activeEmail = (forEmail || localStorage.getItem(ACTIVE_EMAIL_KEY) || "")
+      .trim()
+      .toLowerCase();
+
+    if (!activeEmail) {
+      return null;
+    }
+
+    // Look up email-scoped key
+    const scopedKey = buildStorageKey(hackathonId, activeEmail);
+    const scopedRaw = localStorage.getItem(scopedKey);
+    if (scopedRaw) {
+      const parsed: HackathonParticipant = JSON.parse(scopedRaw);
+      if (parsed.email && parsed.email.trim().toLowerCase() === activeEmail) {
+        return parsed;
       }
     }
 
-    // Fallback: legacy unscoped key (for existing users who registered before this change)
+    // Clean up any stray legacy unscoped key so it doesn't cause leakage
     const legacyKey = buildStorageKey(hackathonId);
-    const legacyRaw = localStorage.getItem(legacyKey);
-    if (legacyRaw) {
-      const parsed: HackathonParticipant = JSON.parse(legacyRaw);
-      // Migrate to scoped key if we now have an email
-      if (parsed.email && activeEmail && parsed.email.trim().toLowerCase() === activeEmail) {
-        saveMyPassport(parsed);
-        localStorage.removeItem(legacyKey);
-      }
-      return parsed;
+    if (localStorage.getItem(legacyKey)) {
+      localStorage.removeItem(legacyKey);
     }
   } catch (e) {
     console.error("Failed to read passport from storage:", e);
@@ -76,16 +80,20 @@ export function getMyPassport(hackathonId = "gh-shipathon-2026"): HackathonParti
   return null;
 }
 
-export function getActiveTicketNumber(): string | null {
+export function getActiveTicketNumber(forEmail?: string): string | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const val = localStorage.getItem(ACTIVE_TICKET_KEY);
-    if (val) return val;
+    const activeEmail = (forEmail || localStorage.getItem(ACTIVE_EMAIL_KEY) || "")
+      .trim()
+      .toLowerCase();
 
-    // Check cookie
-    const match = document.cookie.match(/gh_active_ticket=([^;]+)/);
-    if (match) return match[1];
+    if (!activeEmail) return null;
+
+    const pass = getMyPassport("gh-shipathon-2026", activeEmail);
+    if (pass && pass.email && pass.email.trim().toLowerCase() === activeEmail) {
+      return pass.ticketNumber;
+    }
   } catch {
     return null;
   }
