@@ -654,27 +654,31 @@ export function HackathonRegisterClient({
                   03 // PASSPORT HOLOGRAPHIC THEME
                 </h3>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {[
                     { id: "lime", name: "Cyber Lime", color: "bg-[#CCFF00]" },
-                    { id: "purple", name: "Neon Purple", color: "bg-[#A855F7]" },
-                    { id: "sky", name: "Matrix Green", color: "bg-[#22C55E]" },
-                    { id: "amber", name: "Prestige Gold", color: "bg-[#F59E0B]" },
-                  ].map((theme) => (
-                    <button
-                      key={theme.id}
-                      type="button"
-                      onClick={() => setThemeStyle(theme.id as HackathonTheme)}
-                      className={`p-3 rounded-xl border-2 flex items-center gap-2.5 transition-all ${
-                        themeStyle === theme.id
-                          ? "border-ink bg-card shadow-pop-sm scale-105"
-                          : "border-ink/20 bg-bg opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full border border-ink ${theme.color}`} />
-                      <span className="font-mono text-xs font-bold text-ink">{theme.name}</span>
-                    </button>
-                  ))}
+                    { id: "purple", name: "Neon Purple", color: "bg-[#C084FC]" },
+                    { id: "sky", name: "Supersonic Cyan", color: "bg-[#38BDF8]" },
+                    { id: "pink", name: "Neon Magenta", color: "bg-[#F472B6]" },
+                    { id: "amber", name: "Solar Gold", color: "bg-[#FBBF24]" },
+                  ].map((theme) => {
+                    const isSelected = themeStyle === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => setThemeStyle(theme.id as HackathonTheme)}
+                        className={`p-3 rounded-xl border-2 flex items-center gap-2.5 transition-all text-left ${
+                          isSelected
+                            ? "border-purple bg-purple/15 shadow-pop-sm scale-105 ring-2 ring-purple font-black"
+                            : "border-ink/20 bg-bg opacity-75 hover:opacity-100 hover:border-ink"
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full border border-ink/40 shrink-0 ${theme.color}`} />
+                        <span className="font-mono text-xs text-ink truncate">{theme.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

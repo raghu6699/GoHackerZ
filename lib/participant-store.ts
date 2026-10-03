@@ -69,7 +69,25 @@ export function persistParticipant(participant: HackathonParticipant): void {
     );
 
     if (index >= 0) {
-      current[index] = { ...current[index], ...participant };
+      const existing = current[index];
+      current[index] = {
+        ...existing,
+        ...participant,
+        // Preserve squad data if existing record has team and incoming does not
+        teamId: participant.teamId || existing.teamId,
+        teamName: participant.teamName || existing.teamName,
+        teamCode: participant.teamCode || existing.teamCode,
+        isCaptain: participant.isCaptain ?? existing.isCaptain,
+        teammates:
+          participant.teammates && participant.teammates.length > 0
+            ? participant.teammates
+            : existing.teammates,
+        // Preserve themeStyle if incoming is default lime and existing is non-lime
+        themeStyle:
+          participant.themeStyle && participant.themeStyle !== "lime"
+            ? participant.themeStyle
+            : existing.themeStyle || participant.themeStyle || "lime",
+      };
     } else {
       current.push(participant);
     }
