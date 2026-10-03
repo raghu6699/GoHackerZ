@@ -290,98 +290,45 @@ export function HackerPassport({
     }
 
     try {
-      const prepareExportNode = (exportNode: HTMLElement) => {
-        exportNode.style.width = "940px";
-        exportNode.style.maxWidth = "none";
-        exportNode.style.flexDirection = "row";
-
-        const mainPanel = exportNode.querySelector<HTMLElement>("[data-passport-main]");
-        const grid = exportNode.querySelector<HTMLElement>("[data-passport-details]");
-        const verticalDivider = exportNode.querySelector<HTMLElement>("[data-passport-vertical-divider]");
-        const mobileDivider = exportNode.querySelector<HTMLElement>("[data-passport-mobile-divider]");
-        const stub = exportNode.querySelector<HTMLElement>("[data-passport-stub]");
-        const footer = exportNode.querySelector<HTMLElement>("[data-passport-footer]");
-
-        if (mainPanel) {
-          mainPanel.style.flex = "1 1 auto";
-          mainPanel.style.minWidth = "0";
-        }
-        if (grid) {
-          grid.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
-          Array.from(grid.children).forEach((cell) => {
-            (cell as HTMLElement).style.minWidth = "0";
-          });
-        }
-        if (verticalDivider) verticalDivider.style.display = "flex";
-        if (mobileDivider) mobileDivider.style.display = "none";
-        if (stub) {
-          stub.style.width = "280px";
-          stub.style.flex = "0 0 280px";
-          stub.style.borderTop = "0";
-          stub.style.borderLeft = "1px solid rgba(255,255,255,0.1)";
-        }
-        if (footer) {
-          footer.style.flexDirection = "row";
-          const barcode = footer.lastElementChild as HTMLElement | null;
-          if (barcode) {
-            barcode.style.width = "220px";
-            barcode.style.flex = "0 0 220px";
-          }
-        }
-
-        exportNode.querySelectorAll<HTMLElement>(".truncate").forEach((element) => {
-          element.style.overflow = "visible";
-          element.style.textOverflow = "clip";
-          element.style.whiteSpace = "normal";
-          element.style.overflowWrap = "anywhere";
+      const renderWithHtml2Canvas = async (): Promise<string> => {
+        const html2canvas = (await import("html2canvas")).default;
+        const canvas = await html2canvas(passRef.current!, {
+          scale: 2,
+          backgroundColor: "#08090c",
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
         });
-
+        return canvas.toDataURL("image/png");
       };
 
-      // Keep Android on its previously working html2canvas capture path.
+      const renderWithHtmlToImage = async (): Promise<string> => {
+        const { toPng } = await import("html-to-image");
+        return toPng(passRef.current!, {
+          pixelRatio: 2,
+          backgroundColor: "#08090c",
+          cacheBust: true,
+        });
+      };
+
+      const renderWithinTimeout = async (render: () => Promise<string>): Promise<string | null> => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+        const timeout = new Promise<null>((resolve) => {
+          timeoutId = setTimeout(() => resolve(null), 15000);
+        });
+        const result = await Promise.race([render().catch(() => null), timeout]);
+        clearTimeout(timeoutId!);
+        return result;
+      };
+
       const renderCanvas = async (): Promise<string> => {
-        if (!isIOS) {
-          const html2canvas = (await import("html2canvas")).default;
-          const canvas = await html2canvas(passRef.current!, {
-            scale: 2,
-            backgroundColor: "#08090c",
-            useCORS: true,
-            allowTaint: false,
-            logging: false,
-            windowWidth: 940,
-            onclone: (clonedDocument) => {
-              const clonedPass = clonedDocument.querySelector<HTMLElement>("[data-passport-card]");
-              if (clonedPass) prepareExportNode(clonedPass);
-            },
-          });
-          return canvas.toDataURL("image/png");
-        }
-
-        const exportNode = passRef.current!.cloneNode(true) as HTMLDivElement;
-        prepareExportNode(exportNode);
-        exportNode.style.position = "absolute";
-        exportNode.style.left = "0";
-        exportNode.style.top = `${document.documentElement.scrollHeight + 32}px`;
-        exportNode.style.zIndex = "-1";
-        document.body.appendChild(exportNode);
-        try {
-          const { toPng } = await import("html-to-image");
-          return await toPng(exportNode, {
-            pixelRatio: 2,
-            backgroundColor: "#08090c",
-            width: 940,
-          });
-        } finally {
-          exportNode.remove();
-        }
+        const primaryRenderer = isIOS ? renderWithHtmlToImage : renderWithHtml2Canvas;
+        const fallbackRenderer = isIOS ? renderWithHtml2Canvas : renderWithHtmlToImage;
+        const primaryResult = await renderWithinTimeout(primaryRenderer);
+        return primaryResult || (await renderWithinTimeout(fallbackRenderer)) || "";
       };
 
-      const timeoutMs = 30000;
-      const timeout = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), timeoutMs)
-      );
-
-      const result = await Promise.race([renderCanvas(), timeout]);
+      const result = await renderCanvas();
 
       if (isIOS) {
         if (!iosTab || iosTab.closed) {
@@ -411,13 +358,13 @@ export function HackerPassport({
           if (img) { img.src = result; img.style.display = "block"; }
           if (hint) hint.style.display = "block";
         } else {
-          if (msg) msg.textContent = "Could not render the complete boarding pass. Close this tab and try again.";
+          if (msg) msg.textContent = "Could not render the boarding pass. Close this tab and try again.";
         }
         return;
       }
 
       // ── Desktop / Android: standard anchor download ──
-      if (!result) throw new Error("Could not render the complete boarding pass. Please try again.");
+      if (!result) throw new Error("Could not render the boarding pass. Please try again.");
       const blob = await (await fetch(result)).blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -479,7 +426,6 @@ export function HackerPassport({
       <div className="w-full flex justify-center py-2 px-1">
         <div
           ref={passRef}
-          data-passport-card
           className="relative w-full max-w-[940px] rounded-3xl overflow-hidden text-white shadow-2xl flex flex-col md:flex-row items-stretch"
           style={{
             background: "linear-gradient(145deg, #111218 0%, #171923 50%, #0d0e13 100%)",
@@ -500,7 +446,7 @@ export function HackerPassport({
           {/* ======================================================== */}
           {/* LEFT: MAIN FLIGHT BOARDING PASS                          */}
           {/* ======================================================== */}
-          <div data-passport-main className="flex-1 p-6 sm:p-8 flex flex-col justify-between space-y-6 relative z-10">
+          <div className="flex-1 p-6 sm:p-8 flex flex-col justify-between space-y-6 relative z-10">
             {/* Top Bar */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
@@ -586,7 +532,7 @@ export function HackerPassport({
             </div>
 
             {/* Passenger & Flight Specs Grid */}
-            <div data-passport-details className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl">
               <div>
                 <span className="font-mono text-[8.5px] text-white/40 uppercase tracking-wider block">
                   PASSENGER NAME
@@ -664,7 +610,7 @@ export function HackerPassport({
             </div>
 
             {/* Bottom Bar: Braille Encoding + 1D Barcode Graphic */}
-            <div data-passport-footer className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2 border-t border-white/10">
               {/* Tactile Braille Name Bar */}
               <div className="space-y-0.5">
                 <span className="font-mono text-[8px] text-white/40 uppercase tracking-widest block">
@@ -691,7 +637,7 @@ export function HackerPassport({
           {/* ======================================================== */}
           {/* PERFORATED NOTCHED DIVIDER (Aviation Tear-Off Strip)      */}
           {/* ======================================================== */}
-          <div data-passport-vertical-divider className="relative hidden md:flex flex-col items-center justify-between py-0 w-8 shrink-0">
+          <div className="relative hidden md:flex flex-col items-center justify-between py-0 w-8 shrink-0">
             {/* Top Cutout Notch */}
             <div className="w-6 h-6 rounded-full bg-[#08090c] -mt-3 border-b border-white/20 shadow-inner" />
 
@@ -703,7 +649,7 @@ export function HackerPassport({
           </div>
 
           {/* Horizontal Divider for Mobile */}
-          <div data-passport-mobile-divider className="relative flex md:hidden items-center justify-between px-0 h-6">
+          <div className="relative flex md:hidden items-center justify-between px-0 h-6">
             <div className="w-6 h-6 rounded-full bg-[#08090c] -ml-3 border-r border-white/20" />
             <div className="w-full border-b-2 border-dashed border-white/20 mx-1" />
             <div className="w-6 h-6 rounded-full bg-[#08090c] -mr-3 border-l border-white/20" />
@@ -713,7 +659,6 @@ export function HackerPassport({
           {/* RIGHT: TEAR-OFF BOARDING PASS STUB (Passenger Receipt)   */}
           {/* ======================================================== */}
           <div
-            data-passport-stub
             className="w-full md:w-[280px] p-6 flex flex-col justify-between space-y-4 bg-black/40 relative z-10 shrink-0 border-t md:border-t-0 md:border-l border-white/10"
           >
             {/* Stub Header */}
