@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import {
+  getTeamByCode,
   getPersistedTeamByCode,
   addMemberToTeam,
   createNewTeam,
   leaveCurrentTeam,
   getPersistedParticipantByTicket,
+  syncTeamParticipants,
 } from "@/lib/participant-store";
 import { getHackathonBySlug, getParticipantByTicket } from "@/lib/hackathons";
 
@@ -20,7 +22,8 @@ export async function GET(
       return NextResponse.json({ error: "Team code parameter required" }, { status: 400 });
     }
 
-    const team = getPersistedTeamByCode(code);
+    // DB-backed lookup — returns real-time membership from Postgres + disk fallback
+    const team = await getTeamByCode(code);
     if (!team) {
       return NextResponse.json({ error: `Team "${code}" not found` }, { status: 404 });
     }
@@ -39,6 +42,7 @@ export async function GET(
           roleTitle: m.roleTitle,
           avatarUrl: m.avatarUrl,
           isCaptain: m.isCaptain,
+          ticketNumber: m.ticketNumber,
         })),
       },
     });
@@ -62,17 +66,30 @@ export async function POST(
       return NextResponse.json({ error: "Ticket number is required" }, { status: 400 });
     }
 
-    // Ensure participant exists and is cached in disk/memory store
+    // Ensure participant exists — query DB so we always get fresh team membership
     const existing = await getParticipantByTicket(ticketNumber);
     if (!existing) {
-      return NextResponse.json({ error: `Participant with ticket #${ticketNumber} not found.` }, { status: 404 });
+      return NextResponse.json(
+        { error: `Participant with ticket #${ticketNumber} not found.` },
+        { status: 404 }
+      );
     }
 
     if (action === "join") {
       if (!teamCode) {
         return NextResponse.json({ error: "Team code is required to join a squad" }, { status: 400 });
       }
-      const result = addMemberToTeam({
+
+      // Verify team exists BEFORE attempting join
+      const teamExists = await getTeamByCode(teamCode.trim().toUpperCase());
+      if (!teamExists) {
+        return NextResponse.json(
+          { error: `Team with invite code "${teamCode.trim().toUpperCase()}" was not found. Please check the code and try again.` },
+          { status: 404 }
+        );
+      }
+
+      const result = await addMemberToTeam({
         teamCode,
         participantTicket: ticketNumber,
       });
@@ -81,11 +98,12 @@ export async function POST(
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
 
-      const updatedParticipant = getPersistedParticipantByTicket(ticketNumber);
+      // After join, fetch fresh participant state from DB
+      const updatedParticipant = await getParticipantByTicket(ticketNumber);
       return NextResponse.json({
         success: true,
         team: result.team,
-        participant: updatedParticipant,
+        participant: updatedParticipant || existing,
         message: `Successfully joined ${result.team?.name}!`,
       });
     }
@@ -94,7 +112,7 @@ export async function POST(
       if (!teamName?.trim()) {
         return NextResponse.json({ error: "Team name is required" }, { status: 400 });
       }
-      const result = createNewTeam({
+      const result = await createNewTeam({
         teamName,
         creatorTicket: ticketNumber,
         hackathonId: hackathon?.id,
@@ -104,25 +122,26 @@ export async function POST(
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
 
-      const updatedParticipant = getPersistedParticipantByTicket(ticketNumber);
+      // After create, fetch fresh participant state from DB
+      const updatedParticipant = await getParticipantByTicket(ticketNumber);
       return NextResponse.json({
         success: true,
         team: result.team,
-        participant: updatedParticipant,
+        participant: updatedParticipant || existing,
         message: `Successfully created team "${result.team?.name}" with invite code ${result.team?.inviteCode}!`,
       });
     }
 
     if (action === "leave") {
-      const result = leaveCurrentTeam(ticketNumber);
+      const result = await leaveCurrentTeam(ticketNumber);
       if (!result.success) {
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
 
-      const updatedParticipant = getPersistedParticipantByTicket(ticketNumber);
+      const updatedParticipant = await getParticipantByTicket(ticketNumber);
       return NextResponse.json({
         success: true,
-        participant: updatedParticipant,
+        participant: updatedParticipant || { ...existing, teamId: undefined, teamName: undefined, teamCode: undefined, isCaptain: false },
         message: "You have left the squad and are now hacking Solo.",
       });
     }

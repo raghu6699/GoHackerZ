@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { prisma, isDbAvailable } from "./prisma";
-import type { HackathonParticipant, HackathonTeam, HackathonSubmission } from "./hackathons";
+import type { HackathonParticipant, HackathonTeam, HackathonSubmission, HackathonTheme } from "./hackathons";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PARTICIPANTS_FILE = path.join(DATA_DIR, "participants.json");
@@ -228,7 +228,7 @@ export function persistTeam(team: HackathonTeam): void {
 }
 
 /**
- * Find a team by its unique invite code (e.g. VOID-42).
+ * Find a team by its unique invite code (e.g. VOID-42) - Synchronous fallback
  */
 export function getPersistedTeamByCode(code: string): HackathonTeam | null {
   if (!code) return null;
@@ -238,15 +238,74 @@ export function getPersistedTeamByCode(code: string): HackathonTeam | null {
 }
 
 /**
+ * Find a team by its unique invite code with Postgres DB lookup
+ */
+export async function getTeamByCode(code: string): Promise<HackathonTeam | null> {
+  if (!code) return null;
+  const clean = code.trim().toUpperCase();
+
+  // 1. If Postgres DB is available, query canonical DB record
+  if (isDbAvailable()) {
+    try {
+      const dbTeam = await prisma.hackathonTeam.findUnique({
+        where: { inviteCode: clean },
+        include: {
+          participants: true,
+        },
+      });
+
+      if (dbTeam) {
+        const captain = dbTeam.participants.find((p) => p.isCaptain) || dbTeam.participants[0];
+        const teamObj: HackathonTeam = {
+          id: dbTeam.id,
+          hackathonId: dbTeam.hackathonId,
+          name: dbTeam.name,
+          inviteCode: dbTeam.inviteCode,
+          captainId: captain?.ticketNumber || "",
+          members: dbTeam.participants.map((p) => ({
+            id: p.id,
+            hackathonId: p.hackathonId,
+            ticketNumber: p.ticketNumber,
+            name: p.name,
+            email: p.email,
+            roleTitle: p.roleTitle,
+            bio: p.bio ?? undefined,
+            discordHandle: p.discordHandle ?? undefined,
+            twitterHandle: p.twitterHandle ?? undefined,
+            avatarUrl: p.avatarUrl ?? undefined,
+            themeStyle: (p.themeStyle as HackathonTheme) || "lime",
+            isCaptain: p.isCaptain,
+            teamId: dbTeam.id,
+            teamName: dbTeam.name,
+            teamCode: dbTeam.inviteCode,
+            createdAt: p.createdAt.toISOString(),
+          })),
+          createdAt: dbTeam.createdAt.toISOString(),
+        };
+
+        // Cache into disk
+        persistTeam(teamObj);
+        return teamObj;
+      }
+    } catch (e) {
+      console.warn("Could not query team by code from DB:", e);
+    }
+  }
+
+  // 2. Fallback to disk storage
+  return getPersistedTeamByCode(clean);
+}
+
+/**
  * Add a participant to a team and synchronize teammates across all members.
  */
-export function addMemberToTeam(params: {
+export async function addMemberToTeam(params: {
   teamCode: string;
   participantTicket?: string;
   participantObj?: HackathonParticipant;
-}): { success: boolean; team?: HackathonTeam; error?: string } {
+}): Promise<{ success: boolean; team?: HackathonTeam; error?: string }> {
   const code = params.teamCode.trim().toUpperCase();
-  const team = getPersistedTeamByCode(code);
+  const team = await getTeamByCode(code);
   if (!team) {
     return { success: false, error: `Team with invite code "${code}" was not found.` };
   }
@@ -260,11 +319,14 @@ export function addMemberToTeam(params: {
   }
 
   // Check if team is full (maximum 4 builders)
-  if (team.members.length >= 4 && !team.members.some((m) => m.ticketNumber === participant.ticketNumber)) {
+  if (
+    team.members.length >= 4 &&
+    !team.members.some((m) => m.ticketNumber.toUpperCase() === participant.ticketNumber.toUpperCase())
+  ) {
     return { success: false, error: "This squad is already full (maximum 4 members reached)." };
   }
 
-  // Add member to team if not already member
+  // Add member to team in memory if not already member
   const exists = team.members.some(
     (m) => m.ticketNumber.toUpperCase() === participant.ticketNumber.toUpperCase()
   );
@@ -273,22 +335,67 @@ export function addMemberToTeam(params: {
       ...participant,
       isCaptain: false,
     });
-    persistTeam(team);
   }
 
   // Update participant's team references
   participant.teamId = team.id;
   participant.teamName = team.name;
   participant.teamCode = team.inviteCode;
-  participant.isCaptain = !!(team.captainId && team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase());
-  participant.teammates = team.members.map((m) => ({
+  participant.isCaptain = !!(
+    team.captainId && team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase()
+  );
+
+  // Sync to Postgres Database with await
+  if (isDbAvailable() && participant.ticketNumber) {
+    try {
+      await prisma.hackathonParticipant.update({
+        where: { ticketNumber: participant.ticketNumber.trim().toUpperCase() },
+        data: {
+          teamId: team.id,
+          isCaptain: participant.isCaptain,
+        },
+      });
+
+      // Refetch all active members directly from DB
+      const dbMembers = await prisma.hackathonParticipant.findMany({
+        where: { teamId: team.id },
+      });
+      if (dbMembers.length > 0) {
+        team.members = dbMembers.map((p) => ({
+          id: p.id,
+          hackathonId: p.hackathonId,
+          ticketNumber: p.ticketNumber,
+          name: p.name,
+          email: p.email,
+          roleTitle: p.roleTitle,
+          bio: p.bio ?? undefined,
+          discordHandle: p.discordHandle ?? undefined,
+          twitterHandle: p.twitterHandle ?? undefined,
+          avatarUrl: p.avatarUrl ?? undefined,
+          themeStyle: (p.themeStyle as HackathonTheme) || "lime",
+          isCaptain: p.isCaptain,
+          teamId: team.id,
+          teamName: team.name,
+          teamCode: team.inviteCode,
+          createdAt: p.createdAt.toISOString(),
+        }));
+      }
+    } catch (e) {
+      console.warn("DB error updating participant team membership:", e);
+    }
+  }
+
+  // Build full squad roster
+  const squadRoster = team.members.map((m) => ({
     name: m.name,
     roleTitle: m.roleTitle,
     avatarUrl: m.avatarUrl,
   }));
-  persistParticipant(participant);
+  participant.teammates = squadRoster;
 
-  // Sync teammates across all participants in this team
+  // Persist to local disk cache & sync teammate records
+  persistTeam(team);
+  persistParticipant(participant);
   syncTeamParticipants(team);
 
   return { success: true, team };
@@ -297,12 +404,12 @@ export function addMemberToTeam(params: {
 /**
  * Create a new team and assign the creator as Captain.
  */
-export function createNewTeam(params: {
+export async function createNewTeam(params: {
   teamName: string;
   creatorTicket?: string;
   creatorParticipant?: HackathonParticipant;
   hackathonId?: string;
-}): { success: boolean; team?: HackathonTeam; error?: string } {
+}): Promise<{ success: boolean; team?: HackathonTeam; error?: string }> {
   const name = params.teamName.trim();
   if (!name) {
     return { success: false, error: "Team name is required." };
@@ -328,9 +435,6 @@ export function createNewTeam(params: {
   creator.teamCode = inviteCode;
   creator.isCaptain = true;
   creator.teammates = [{ name: creator.name, roleTitle: creator.roleTitle, avatarUrl: creator.avatarUrl }];
-  
-  // Persist participant with teamId
-  persistParticipant(creator);
 
   const newTeam: HackathonTeam = {
     id: teamId,
@@ -342,7 +446,41 @@ export function createNewTeam(params: {
     createdAt: new Date().toISOString(),
   };
 
+  // Sync to Postgres Database with await
+  if (isDbAvailable()) {
+    try {
+      await prisma.hackathonTeam.upsert({
+        where: { inviteCode: inviteCode.trim().toUpperCase() },
+        update: {
+          name: name.trim(),
+          tagline: newTeam.tagline || null,
+        },
+        create: {
+          id: teamId,
+          hackathonId: newTeam.hackathonId,
+          name: name.trim(),
+          tagline: newTeam.tagline || null,
+          inviteCode: inviteCode.trim().toUpperCase(),
+        },
+      });
+
+      if (creator.ticketNumber) {
+        await prisma.hackathonParticipant.update({
+          where: { ticketNumber: creator.ticketNumber.trim().toUpperCase() },
+          data: {
+            teamId: teamId,
+            isCaptain: true,
+          },
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn("DB error saving new team:", e);
+    }
+  }
+
+  // Persist to local disk cache
   persistTeam(newTeam);
+  persistParticipant(creator);
 
   return { success: true, team: newTeam };
 }
@@ -350,35 +488,53 @@ export function createNewTeam(params: {
 /**
  * Leave current team and revert to Solo Builder.
  */
-export function leaveCurrentTeam(participantTicket: string): { success: boolean; error?: string } {
-  const participant = getPersistedParticipantByTicket(participantTicket);
-  if (!participant || !participant.teamCode) {
-    return { success: false, error: "Participant is not in a team." };
+export async function leaveCurrentTeam(participantTicket: string): Promise<{ success: boolean; error?: string }> {
+  const clean = participantTicket.trim().toUpperCase();
+  const participant = getPersistedParticipantByTicket(clean);
+  if (!participant || (!participant.teamCode && !participant.teamId)) {
+    return { success: false, error: "Participant is not currently in a team." };
   }
 
-  const team = getPersistedTeamByCode(participant.teamCode);
-  if (team) {
-    team.members = team.members.filter(
-      (m) => m.ticketNumber.toUpperCase() !== participant.ticketNumber.toUpperCase()
-    );
+  const oldCode = participant.teamCode;
+  const oldTeamId = participant.teamId;
 
-    // If captain left and members remain, promote first member to captain
-    if (
-      team.captainId &&
-      team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase() &&
-      team.members.length > 0
-    ) {
-      team.captainId = team.members[0].ticketNumber;
-      team.members[0].isCaptain = true;
-      const promoted = getPersistedParticipantByTicket(team.members[0].ticketNumber);
-      if (promoted) {
-        promoted.isCaptain = true;
-        persistParticipant(promoted);
-      }
+  // 1. Remove from database
+  if (isDbAvailable()) {
+    try {
+      await prisma.hackathonParticipant.update({
+        where: { ticketNumber: clean },
+        data: {
+          teamId: null,
+          isCaptain: false,
+        },
+      });
+    } catch (e) {
+      console.warn("DB error leaving team:", e);
     }
+  }
 
-    persistTeam(team);
-    syncTeamParticipants(team);
+  // 2. Remove from team disk cache
+  if (oldCode || oldTeamId) {
+    const team = (oldCode ? await getTeamByCode(oldCode) : null) ||
+      loadPersistedTeams().find((t) => t.id === oldTeamId) || null;
+
+    if (team) {
+      team.members = team.members.filter(
+        (m) => m.ticketNumber.toUpperCase() !== clean
+      );
+
+      if (
+        team.captainId &&
+        team.captainId.toUpperCase() === clean &&
+        team.members.length > 0
+      ) {
+        team.captainId = team.members[0].ticketNumber;
+        team.members[0].isCaptain = true;
+      }
+
+      persistTeam(team);
+      syncTeamParticipants(team);
+    }
   }
 
   // Revert participant to solo
@@ -395,7 +551,7 @@ export function leaveCurrentTeam(participantTicket: string): { success: boolean;
 /**
  * Synchronize teammates list across all participants belonging to a team.
  */
-function syncTeamParticipants(team: HackathonTeam) {
+export function syncTeamParticipants(team: HackathonTeam) {
   const participants = loadPersistedParticipants();
   const squadRoster = team.members.map((m) => ({
     name: m.name,

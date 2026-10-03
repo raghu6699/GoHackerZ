@@ -384,14 +384,7 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
   if (!ticketNumber) return null;
   const clean = decodeURIComponent(ticketNumber).replace(/^#/, "").trim().toUpperCase();
 
-  // 1. Check persistent disk storage FIRST (canonical source across devices / restarts)
-  const persisted = getPersistedParticipantByTicket(clean);
-  if (persisted) {
-    memoryStore.participants.set(clean, persisted);
-    return persisted;
-  }
-
-  // 2. Query Postgres Database via Prisma if DB is available
+  // 1. Query Postgres Database FIRST when available - it is the canonical source for team membership
   if (isDbAvailable()) {
     try {
       const dbRow = await prisma.hackathonParticipant.findUnique({
@@ -441,6 +434,13 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
     }
   }
 
+  // 2. Fallback to persistent disk storage
+  const persisted = getPersistedParticipantByTicket(clean);
+  if (persisted) {
+    memoryStore.participants.set(clean, persisted);
+    return persisted;
+  }
+
   // 3. Fallback to memory store if not yet flushed
   const direct = memoryStore.participants.get(clean);
   if (direct) return direct;
@@ -459,7 +459,57 @@ export async function getParticipantByEmail(
   if (!email) return null;
   const target = email.trim().toLowerCase();
 
-  // 1. Check persistent disk storage FIRST
+  // 1. Query Postgres Database FIRST when available (canonical team membership source)
+  if (isDbAvailable()) {
+    try {
+      const dbRow = await prisma.hackathonParticipant.findFirst({
+        where: {
+          email: target,
+          ...(hackathonId ? { hackathonId } : {}),
+        },
+        include: {
+          team: {
+            include: { participants: true },
+          },
+          submissions: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (dbRow) {
+        const participant: HackathonParticipant = {
+          id: dbRow.id,
+          hackathonId: dbRow.hackathonId,
+          ticketNumber: dbRow.ticketNumber,
+          name: dbRow.name,
+          email: dbRow.email,
+          roleTitle: dbRow.roleTitle || "Fullstack & AI Engineer",
+          bio: dbRow.bio ?? undefined,
+          discordHandle: dbRow.discordHandle ?? undefined,
+          twitterHandle: dbRow.twitterHandle ?? undefined,
+          avatarUrl: dbRow.avatarUrl ?? undefined,
+          themeStyle: (dbRow.themeStyle as HackathonTheme) || "lime",
+          isCaptain: dbRow.isCaptain,
+          teamId: dbRow.teamId ?? undefined,
+          teamName: dbRow.team?.name ?? undefined,
+          teamCode: dbRow.team?.inviteCode ?? undefined,
+          teammates: dbRow.team?.participants.map((p) => ({
+            name: p.name,
+            roleTitle: p.roleTitle,
+            avatarUrl: p.avatarUrl ?? undefined,
+          })),
+          createdAt: dbRow.createdAt.toISOString(),
+        };
+        persistParticipant(participant);
+        memoryStore.participants.set(participant.ticketNumber, participant);
+        return participant;
+      }
+    } catch (e) {
+      console.warn("Could not query participant by email from DB:", e);
+    }
+  }
+
+  // 2. Fallback: disk storage
   const persistedList = loadPersistedParticipants();
   const found = persistedList.find(
     (p) =>
@@ -467,7 +517,7 @@ export async function getParticipantByEmail(
       p.email.trim().toLowerCase() === target
   );
   if (found) {
-    // Hydrate teammates if in team
+    // Hydrate teammates from local disk team cache
     if (found.teamCode) {
       const team = getPersistedTeamByCode(found.teamCode);
       if (team) {
@@ -483,7 +533,7 @@ export async function getParticipantByEmail(
     return found;
   }
 
-  // 2. Check memory store
+  // 3. Check memory store
   for (const p of memoryStore.participants.values()) {
     if (
       (!hackathonId || p.hackathonId === hackathonId) &&
@@ -532,22 +582,26 @@ export async function registerHacker(params: {
 
   // 1. Handle team formation first (this mutates `participant`)
   if (params.teamOption === "create" && params.teamName?.trim()) {
-    const teamRes = createNewTeam({
+    const teamRes = await createNewTeam({
       teamName: params.teamName.trim(),
       creatorParticipant: participant,
       hackathonId: params.hackathonId,
     });
     if (teamRes.success && teamRes.team) {
       memoryStore.teams.set(teamRes.team.inviteCode, teamRes.team);
+      // participant object was mutated in-place by createNewTeam
     }
   } else if (params.teamOption === "join" && params.teamInviteCode?.trim()) {
     const code = params.teamInviteCode.trim().toUpperCase();
-    const joinRes = addMemberToTeam({
+    const joinRes = await addMemberToTeam({
       teamCode: code,
       participantObj: participant,
     });
     if (joinRes.success && joinRes.team) {
       memoryStore.teams.set(joinRes.team.inviteCode, joinRes.team);
+      // participant object was mutated in-place by addMemberToTeam
+    } else if (!joinRes.success) {
+      console.warn(`[registerHacker] Could not join team "${code}": ${joinRes.error}`);
     }
   }
 
