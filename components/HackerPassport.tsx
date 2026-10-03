@@ -246,31 +246,90 @@ export function HackerPassport({
   const passRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async () => {
+    if (!passRef.current) return;
     setDownloading(true);
-    try {
-      // ── Server-side PNG: works on ALL devices including iOS ──
-      // The API endpoint renders the boarding pass with next/og (Satori)
-      // and returns a real PNG file — no client-side canvas needed.
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const imageUrl = `${origin}/api/hackathons/${activeSlug}/pass/${activeTicketId}/image?theme=${activeTheme}`;
 
-      const isIOS =
-        typeof navigator !== "undefined" &&
-        (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
-          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+    const isIOS =
+      typeof navigator !== "undefined" &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+    // ── iOS: open a blank tab NOW (synchronously, inside the user-gesture stack)
+    // so WebKit doesn't block it as a pop-up. We'll populate it after rendering.
+    let iosTab: Window | null = null;
+    if (isIOS) {
+      iosTab = window.open("", "_blank");
+      if (iosTab) {
+        iosTab.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GoHackerz Boarding Pass</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #08090c; min-height: 100vh; display: flex; flex-direction: column;
+           align-items: center; justify-content: center; gap: 16px; padding: 20px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #a3e63533;
+               border-top-color: #a3e635; border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    p { color: #a3e635; font-family: sans-serif; font-size: 14px; letter-spacing: 1px; }
+    img { max-width: 100%; border-radius: 12px; display: none; }
+    .hint { color: #aaa; font-family: sans-serif; font-size: 12px; text-align: center;
+            padding: 0 20px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="spinner" id="sp"></div>
+  <p id="msg">Generating your boarding pass...</p>
+  <img id="bp" alt="Boarding Pass" />
+  <p class="hint" id="hint">Long-press the image and tap <strong>Save to Photos</strong></p>
+</body>
+</html>`);
+        iosTab.document.close();
+      }
+    }
+
+    try {
+      // ── Render the exact on-screen card with html2canvas ──
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(passRef.current, {
+        scale: 2,
+        backgroundColor: "#08090c",
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        windowWidth: passRef.current.scrollWidth,
+        windowHeight: passRef.current.scrollHeight,
+      });
+      const dataUrl = canvas.toDataURL("image/png");
 
       if (isIOS) {
-        // iOS Safari does not honour Content-Disposition: attachment for programmatic clicks.
-        // Opening in a new tab lets Safari display the PNG, and the user can
-        // long-press → "Save to Photos" / share it via the native share sheet.
-        window.open(imageUrl, "_blank");
+        if (iosTab && !iosTab.closed) {
+          // Inject the rendered image into the pre-opened tab
+          const doc = iosTab.document;
+          const sp = doc.getElementById("sp");
+          const msg = doc.getElementById("msg");
+          const img = doc.getElementById("bp") as HTMLImageElement | null;
+          const hint = doc.getElementById("hint");
+          if (sp) sp.style.display = "none";
+          if (msg) msg.style.display = "none";
+          if (img) { img.src = dataUrl; img.style.display = "block"; }
+          if (hint) hint.style.display = "block";
+        } else {
+          // Tab was blocked — last-resort: try Web Share API, else alert
+          const blob = await (await fetch(dataUrl)).blob();
+          const file = new File([blob], `GoHackerz-BoardingPass-${activeTicketId}.png`, { type: "image/png" });
+          if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], title: "GoHackerz Boarding Pass" });
+          } else {
+            alert("Pop-up blocked. Please allow pop-ups for this site, then try again.");
+          }
+        }
         return;
       }
 
-      // Desktop / Android: fetch the PNG and trigger an anchor download
-      const res = await fetch(imageUrl);
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const blob = await res.blob();
+      // ── Desktop / Android: standard anchor download ──
+      const blob = await (await fetch(dataUrl)).blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.style.display = "none";
@@ -284,10 +343,8 @@ export function HackerPassport({
       }, 1000);
     } catch (e: any) {
       console.error("Boarding pass download failed:", e);
-      alert(
-        e?.message ||
-          "Could not generate boarding pass. Please try again or take a screenshot."
-      );
+      if (iosTab && !iosTab.closed) iosTab.close();
+      alert(e?.message || "Could not generate boarding pass. Please take a screenshot instead.");
     } finally {
       setDownloading(false);
     }
