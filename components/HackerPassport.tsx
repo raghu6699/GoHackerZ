@@ -254,6 +254,10 @@ export function HackerPassport({
       (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    // Server-side fallback URL (always reliable — used when canvas hangs on iOS)
+    const serverImageUrl = `${origin}/api/hackathons/${activeSlug}/pass/${activeTicketId}/image?theme=${activeTheme}`;
+
     // ── iOS: open a blank tab NOW (synchronously, inside the user-gesture stack)
     // so WebKit doesn't block it as a pop-up. We'll populate it after rendering.
     let iosTab: Window | null = null;
@@ -291,21 +295,47 @@ export function HackerPassport({
 
     try {
       // ── Render the exact on-screen card with html2canvas ──
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(passRef.current, {
-        scale: 2,
-        backgroundColor: "#08090c",
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        windowWidth: passRef.current.scrollWidth,
-        windowHeight: passRef.current.scrollHeight,
-      });
-      const dataUrl = canvas.toDataURL("image/png");
+      // On iOS, html2canvas can hang indefinitely (WebKit canvas quirks).
+      // We race it against an 8-second timeout; on timeout we fall back
+      // to the server-side PNG URL in the already-open tab.
+      const renderCanvas = async (): Promise<string> => {
+        const html2canvas = (await import("html2canvas")).default;
+        const canvas = await html2canvas(passRef.current!, {
+          scale: 2,
+          backgroundColor: "#08090c",
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          windowWidth: passRef.current!.scrollWidth,
+          windowHeight: passRef.current!.scrollHeight,
+        });
+        return canvas.toDataURL("image/png");
+      };
+
+      const timeoutMs = isIOS ? 8000 : 30000;
+      const timeout = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), timeoutMs)
+      );
+
+      const result = await Promise.race([renderCanvas(), timeout]);
 
       if (isIOS) {
-        if (iosTab && !iosTab.closed) {
-          // Inject the rendered image into the pre-opened tab
+        if (!iosTab || iosTab.closed) {
+          // Tab was blocked — fallback: Web Share with server-side image or alert
+          try {
+            const blob = await (await fetch(serverImageUrl)).blob();
+            const file = new File([blob], `GoHackerz-BoardingPass-${activeTicketId}.png`, { type: "image/png" });
+            if (navigator.canShare?.({ files: [file] })) {
+              await navigator.share({ files: [file], title: "GoHackerz Boarding Pass" });
+            } else {
+              alert("Pop-up blocked. Please allow pop-ups for this site, then try again.");
+            }
+          } catch { alert("Please allow pop-ups for this site, then try again."); }
+          return;
+        }
+
+        if (result) {
+          // ✅ Canvas succeeded — inject the exact rendered image
           const doc = iosTab.document;
           const sp = doc.getElementById("sp");
           const msg = doc.getElementById("msg");
@@ -313,23 +343,22 @@ export function HackerPassport({
           const hint = doc.getElementById("hint");
           if (sp) sp.style.display = "none";
           if (msg) msg.style.display = "none";
-          if (img) { img.src = dataUrl; img.style.display = "block"; }
+          if (img) { img.src = result; img.style.display = "block"; }
           if (hint) hint.style.display = "block";
         } else {
-          // Tab was blocked — last-resort: try Web Share API, else alert
-          const blob = await (await fetch(dataUrl)).blob();
-          const file = new File([blob], `GoHackerz-BoardingPass-${activeTicketId}.png`, { type: "image/png" });
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: "GoHackerz Boarding Pass" });
-          } else {
-            alert("Pop-up blocked. Please allow pop-ups for this site, then try again.");
-          }
+          // ⏱ Timed out — redirect to server-side PNG (reliable fallback)
+          // The user sees the boarding pass in the tab and can long-press to save.
+          iosTab.location.href = serverImageUrl;
         }
         return;
       }
 
       // ── Desktop / Android: standard anchor download ──
-      const blob = await (await fetch(dataUrl)).blob();
+      const dataUrl = result ?? serverImageUrl; // result is always non-null on desktop (longer timeout)
+      const isDataUrl = dataUrl.startsWith("data:");
+      const blob = isDataUrl
+        ? await (await fetch(dataUrl)).blob()
+        : await (await fetch(serverImageUrl)).blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.style.display = "none";
