@@ -66,6 +66,42 @@ export function HackathonRegisterClient({
   const [registeredParticipant, setRegisteredParticipant] = useState<HackathonParticipant | null>(
     initialParticipant
   );
+  const [joiningInvite, setJoiningInvite] = useState(false);
+  const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
+
+  const handleJoinFromInvite = async (codeToJoin: string) => {
+    if (!registeredParticipant) return;
+    setJoiningInvite(true);
+    setInviteSuccessMsg(null);
+    try {
+      const res = await fetch(`/api/hackathons/${slug}/team`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "join",
+          ticketNumber: registeredParticipant.ticketNumber,
+          teamCode: codeToJoin.trim().toUpperCase(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.participant) {
+        throw new Error(data.error || "Failed to join team.");
+      }
+      setRegisteredParticipant(data.participant);
+      saveMyPassport(data.participant);
+      setInviteSuccessMsg(`Joined squad "${data.team?.name || codeToJoin}"!`);
+      // Sync back to server
+      fetch(`/api/hackathons/${slug}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participant: data.participant }),
+      }).catch(() => {});
+    } catch (err: any) {
+      alert(err.message || "Failed to join squad.");
+    } finally {
+      setJoiningInvite(false);
+    }
+  };
 
   // Check if visitor arrived via 1-click team invite link
   useEffect(() => {
@@ -259,6 +295,45 @@ export function HackathonRegisterClient({
                 download your high-res pass, or share your badge on socials!
               </p>
             </div>
+
+            {/* Incoming Squad Invite Banner for Already Registered Hacker */}
+            {teamInviteCode && invitedTeamInfo && registeredParticipant.teamCode !== teamInviteCode && (
+              <div className="bg-lime/20 border-2 border-ink rounded-3xl p-6 shadow-pop text-ink max-w-2xl mx-auto space-y-3 anim-pop">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-purple" />
+                    <h3 className="font-mono text-sm font-black uppercase tracking-wider text-ink">
+                      SQUAD INVITE DETECTED
+                    </h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold bg-purple text-white px-2.5 py-1 rounded-full">
+                    CODE: {teamInviteCode}
+                  </span>
+                </div>
+                <p className="text-xs text-ink leading-relaxed">
+                  You have an invitation to join squad <strong>&quot;{invitedTeamInfo.name}&quot;</strong> ({invitedTeamInfo.count}/4 members).
+                  Click below to link your Hacker Passport to this squad:
+                </p>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    disabled={joiningInvite}
+                    onClick={() => handleJoinFromInvite(teamInviteCode)}
+                    className="btn btn-sm btn-purple font-mono text-xs font-bold flex items-center gap-2"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-lime" />
+                    {joiningInvite ? "JOINING SQUAD..." : `ACCEPT INVITE & JOIN "${invitedTeamInfo.name.toUpperCase()}" ⚡`}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {inviteSuccessMsg && (
+              <div className="bg-lime/20 border-2 border-lime text-brand-dark p-4 rounded-2xl max-w-2xl mx-auto font-mono text-xs font-bold flex items-center gap-2 anim-pop">
+                <span>✓</span>
+                <span>{inviteSuccessMsg}</span>
+              </div>
+            )}
 
             {/* Squad Created Alert Banner */}
             {registeredParticipant.teamCode && (

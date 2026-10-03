@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
 import { getMyPassport, getActiveTicketNumber, saveMyPassport } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
@@ -137,12 +137,40 @@ export function PassPortPageClient({
     [ticketId, slug]
   );
 
+  const searchParams = useSearchParams();
   const [teamCodeInput, setTeamCodeInput] = useState("");
   const [newTeamNameInput, setNewTeamNameInput] = useState("");
   const [activeTab, setActiveTab] = useState<"join" | "create">("join");
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamMsg, setTeamMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copiedInvite, setCopiedInvite] = useState(false);
+  const [urlInviteTeam, setUrlInviteTeam] = useState<{ code: string; name: string; count: number } | null>(null);
+
+  // Check URL query parameters for team invite code
+  useEffect(() => {
+    const invite =
+      searchParams?.get("team") ||
+      searchParams?.get("join") ||
+      searchParams?.get("invite") ||
+      searchParams?.get("code");
+
+    if (invite) {
+      const clean = invite.trim().toUpperCase();
+      setTeamCodeInput(clean);
+      fetch(`/api/hackathons/${slug}/team?code=${clean}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.team) {
+            setUrlInviteTeam({
+              code: clean,
+              name: data.team.name,
+              count: data.team.membersCount,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [searchParams, slug]);
 
   const handleCopySquadLink = () => {
     if (!participant.teamCode) return;
@@ -155,9 +183,8 @@ export function PassPortPageClient({
     }
   };
 
-  const handleJoinSquad = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!teamCodeInput.trim()) return;
+  const handleJoinSquadDirect = async (codeToJoin: string) => {
+    if (!codeToJoin.trim()) return;
     setTeamLoading(true);
     setTeamMsg(null);
 
@@ -168,7 +195,7 @@ export function PassPortPageClient({
         body: JSON.stringify({
           action: "join",
           ticketNumber: participant.ticketNumber,
-          teamCode: teamCodeInput.trim().toUpperCase(),
+          teamCode: codeToJoin.trim().toUpperCase(),
         }),
       });
       const data = await res.json();
@@ -177,13 +204,26 @@ export function PassPortPageClient({
       }
       setParticipant(data.participant);
       saveMyPassport(data.participant);
-      setTeamMsg({ type: "success", text: data.message || "Successfully joined squad!" });
+      setTeamMsg({ type: "success", text: data.message || `Successfully joined ${data.team?.name || codeToJoin}!` });
       setTeamCodeInput("");
+      setUrlInviteTeam(null);
+      // Synchronize to server immediately
+      fetch(`/api/hackathons/${slug}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participant: data.participant }),
+      }).catch(() => {});
     } catch (err: any) {
       setTeamMsg({ type: "error", text: err.message || "Could not join team." });
     } finally {
       setTeamLoading(false);
     }
+  };
+
+  const handleJoinSquad = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teamCodeInput.trim()) return;
+    await handleJoinSquadDirect(teamCodeInput);
   };
 
   const handleCreateSquad = async (e: React.FormEvent) => {
@@ -302,6 +342,28 @@ export function PassPortPageClient({
               </span>
             )}
           </div>
+
+          {/* Incoming Squad Invite Alert */}
+          {urlInviteTeam && participant.teamCode !== urlInviteTeam.code && (
+            <div className="p-4 bg-lime/20 border-2 border-ink rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 anim-pop">
+              <div className="space-y-1">
+                <div className="font-mono text-xs font-black text-brand-dark uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-purple" /> SQUAD INVITE DETECTED
+                </div>
+                <p className="text-xs text-ink font-medium">
+                  You have an invitation to join team <strong>&quot;{urlInviteTeam.name}&quot;</strong> ({urlInviteTeam.count}/4 members) with code <code>{urlInviteTeam.code}</code>.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={teamLoading}
+                onClick={() => handleJoinSquadDirect(urlInviteTeam.code)}
+                className="btn btn-sm btn-purple font-mono text-xs font-bold whitespace-nowrap shadow-pop-sm"
+              >
+                {teamLoading ? "JOINING..." : `JOIN "${urlInviteTeam.name.toUpperCase()}" ⚡`}
+              </button>
+            </div>
+          )}
 
           {teamMsg && (
             <div

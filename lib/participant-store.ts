@@ -281,6 +281,11 @@ export function addMemberToTeam(params: {
   participant.teamName = team.name;
   participant.teamCode = team.inviteCode;
   participant.isCaptain = !!(team.captainId && team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase());
+  participant.teammates = team.members.map((m) => ({
+    name: m.name,
+    roleTitle: m.roleTitle,
+    avatarUrl: m.avatarUrl,
+  }));
   persistParticipant(participant);
 
   // Sync teammates across all participants in this team
@@ -402,6 +407,7 @@ function syncTeamParticipants(team: HackathonTeam) {
   for (const p of participants) {
     if (p.teamCode && p.teamCode.toUpperCase() === team.inviteCode.toUpperCase()) {
       p.teamName = team.name;
+      p.teamId = team.id;
       p.teammates = squadRoster;
       changed = true;
     }

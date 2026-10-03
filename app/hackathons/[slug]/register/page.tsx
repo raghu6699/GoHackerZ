@@ -12,10 +12,18 @@ export const metadata: Metadata = {
 
 export default async function HackathonRegisterPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const teamParam = sp.team || sp.invite || sp.code || sp.join;
+  const nextParam = teamParam
+    ? `/hackathons/${slug}/register?team=${encodeURIComponent(String(teamParam))}`
+    : `/hackathons/${slug}/register`;
+
   const [user, hackathonData] = await Promise.all([
     getCurrentDbUser(),
     getHackathonBySlug(slug),
@@ -43,14 +51,14 @@ export default async function HackathonRegisterPage({
 
           <div className="flex flex-wrap gap-4 pt-2">
             <Link
-              href={`/signin?next=/hackathons/${slug}/register`}
+              href={`/signin?next=${encodeURIComponent(nextParam)}`}
               className="btn btn-purple btn-lg font-mono font-bold text-sm flex items-center gap-2"
             >
               <span>Sign In to Register</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href={`/signup?next=/hackathons/${slug}/register`}
+              href={`/signup?next=${encodeURIComponent(nextParam)}`}
               className="btn btn-lime text-[#1A1440] btn-lg font-mono font-bold text-sm"
             >
               <span>Create Free Account</span>
