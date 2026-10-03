@@ -304,9 +304,13 @@ import {
   addMemberToTeam,
   createNewTeam,
   leaveCurrentTeam,
+  syncTeamParticipants,
+  memoryStore,
 } from "./participant-store";
 
-// Persistent Global store (singleton across all Next.js serverless/SSR invocations and hot-reloads)
+
+// Note: memoryStore is imported from ./participant-store and shared via globalThis._ghMemStore
+// The hackathonStore below provides a disk-seeded initial state but is no longer the primary store.
 interface GlobalHackathonStore {
   participants: Map<string, HackathonParticipant>;
   teams: Map<string, HackathonTeam>;
@@ -344,9 +348,18 @@ if (!globalForHackathons.hackathonStore) {
         .map((p) => [p.submission!.id, p.submission!])
     ),
   };
+
+  // Seed memoryStore from disk on startup
+  for (const [k, v] of globalForHackathons.hackathonStore.participants) {
+    memoryStore.participants.set(k, v);
+  }
+  for (const [k, v] of globalForHackathons.hackathonStore.teams) {
+    memoryStore.teams.set(k, v);
+  }
 }
 
-const memoryStore = globalForHackathons.hackathonStore;
+const hackathonStore = globalForHackathons.hackathonStore!;
+
 
 // Generate clean unique ticket ID (e.g. GH-2026-A82F)
 export function generateTicketNumber(): string {
@@ -655,7 +668,7 @@ export async function submitProject(params: {
     upvotes: 1,
   };
 
-  memoryStore.submissions.set(subId, submission);
+  hackathonStore.submissions.set(subId, submission);
 
   if (participant) {
     participant.submission = submission;
@@ -667,7 +680,7 @@ export async function submitProject(params: {
 }
 
 export async function getAllSubmissions(hackathonId?: string): Promise<HackathonSubmission[]> {
-  const list = Array.from(memoryStore.submissions.values());
+  const list = Array.from(hackathonStore.submissions.values()) as HackathonSubmission[];
   if (hackathonId) {
     return list.filter((s) => s.hackathonId === hackathonId);
   }
