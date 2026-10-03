@@ -48,6 +48,44 @@ export function getUserParticipantsByEmail(email: string): HackathonParticipant[
 /**
  * Persist a participant to disk and database (creates or updates).
  */
+export async function persistParticipantToDb(participant: HackathonParticipant): Promise<void> {
+  if (!isDbAvailable() || !participant.ticketNumber || !participant.name) return;
+  try {
+    await prisma.hackathonParticipant.upsert({
+      where: { ticketNumber: participant.ticketNumber.trim().toUpperCase() },
+      update: {
+        name: participant.name.trim(),
+        email: participant.email?.trim() || "",
+        roleTitle: participant.roleTitle?.trim() || "Fullstack & AI Engineer",
+        bio: participant.bio?.trim() || null,
+        discordHandle: participant.discordHandle?.trim() || null,
+        twitterHandle: participant.twitterHandle?.trim() || null,
+        avatarUrl: participant.avatarUrl || null,
+        themeStyle: participant.themeStyle || "lime",
+        isCaptain: participant.isCaptain ?? false,
+        teamId: participant.teamId || null,
+      },
+      create: {
+        id: participant.id || `part-${Date.now()}`,
+        hackathonId: participant.hackathonId || "gh-shipathon-2026",
+        ticketNumber: participant.ticketNumber.trim().toUpperCase(),
+        name: participant.name.trim(),
+        email: participant.email?.trim() || "",
+        roleTitle: participant.roleTitle?.trim() || "Fullstack & AI Engineer",
+        bio: participant.bio?.trim() || null,
+        discordHandle: participant.discordHandle?.trim() || null,
+        twitterHandle: participant.twitterHandle?.trim() || null,
+        avatarUrl: participant.avatarUrl || null,
+        themeStyle: participant.themeStyle || "lime",
+        isCaptain: participant.isCaptain ?? false,
+        teamId: participant.teamId || null,
+      },
+    });
+  } catch (err) {
+    console.warn("[persistParticipantToDb] DB upsert error:", err);
+  }
+}
+
 export function persistParticipant(participant: HackathonParticipant): void {
   try {
     ensureDirectoryExists();
@@ -94,43 +132,8 @@ export function persistParticipant(participant: HackathonParticipant): void {
 
     fs.writeFileSync(PARTICIPANTS_FILE, JSON.stringify(current, null, 2), "utf-8");
 
-    // Async sync to Postgres Database via Prisma
-    if (isDbAvailable() && participant.ticketNumber && participant.name) {
-      prisma.hackathonParticipant
-        .upsert({
-          where: { ticketNumber: participant.ticketNumber.trim().toUpperCase() },
-          update: {
-            name: participant.name.trim(),
-            email: participant.email?.trim() || "",
-            roleTitle: participant.roleTitle?.trim() || "Fullstack & AI Engineer",
-            bio: participant.bio?.trim() || null,
-            discordHandle: participant.discordHandle?.trim() || null,
-            twitterHandle: participant.twitterHandle?.trim() || null,
-            avatarUrl: participant.avatarUrl || null,
-            themeStyle: participant.themeStyle || "lime",
-            isCaptain: participant.isCaptain ?? false,
-            teamId: participant.teamId || null,
-          },
-          create: {
-            id: participant.id || `part-${Date.now()}`,
-            hackathonId: participant.hackathonId || "gh-shipathon-2026",
-            ticketNumber: participant.ticketNumber.trim().toUpperCase(),
-            name: participant.name.trim(),
-            email: participant.email?.trim() || "",
-            roleTitle: participant.roleTitle?.trim() || "Fullstack & AI Engineer",
-            bio: participant.bio?.trim() || null,
-            discordHandle: participant.discordHandle?.trim() || null,
-            twitterHandle: participant.twitterHandle?.trim() || null,
-            avatarUrl: participant.avatarUrl || null,
-            themeStyle: participant.themeStyle || "lime",
-            isCaptain: participant.isCaptain ?? false,
-            teamId: participant.teamId || null,
-          },
-        })
-        .catch((err) => {
-          console.warn("Async DB participant upsert notice:", err?.message || err);
-        });
-    }
+    // Fire-and-forget sync to Postgres (use persistParticipantToDb() when you need to await)
+    persistParticipantToDb(participant).catch(() => {});
   } catch (error) {
     console.error("Failed to save participant to disk/DB:", error);
   }
@@ -345,18 +348,30 @@ export async function addMemberToTeam(params: {
     team.captainId && team.captainId.toUpperCase() === participant.ticketNumber.toUpperCase()
   );
 
-  // Sync to Postgres Database with await
+  // Sync to Postgres Database with await — use upsert so it works even if participant not yet in DB
   if (isDbAvailable() && participant.ticketNumber) {
     try {
-      await prisma.hackathonParticipant.update({
+      await prisma.hackathonParticipant.upsert({
         where: { ticketNumber: participant.ticketNumber.trim().toUpperCase() },
-        data: {
+        update: { teamId: team.id, isCaptain: participant.isCaptain },
+        create: {
+          id: participant.id || `part-${Date.now()}`,
+          hackathonId: participant.hackathonId || team.hackathonId,
+          ticketNumber: participant.ticketNumber.trim().toUpperCase(),
+          name: participant.name.trim(),
+          email: participant.email?.trim() || "",
+          roleTitle: participant.roleTitle?.trim() || "Fullstack & AI Engineer",
+          bio: participant.bio?.trim() || null,
+          discordHandle: participant.discordHandle?.trim() || null,
+          twitterHandle: participant.twitterHandle?.trim() || null,
+          avatarUrl: participant.avatarUrl || null,
+          themeStyle: participant.themeStyle || "lime",
+          isCaptain: participant.isCaptain ?? false,
           teamId: team.id,
-          isCaptain: participant.isCaptain,
         },
       });
 
-      // Refetch all active members directly from DB
+      // Refetch all active members directly from DB to get real-time roster
       const dbMembers = await prisma.hackathonParticipant.findMany({
         where: { teamId: team.id },
       });
@@ -449,12 +464,10 @@ export async function createNewTeam(params: {
   // Sync to Postgres Database with await
   if (isDbAvailable()) {
     try {
+      // 1. Upsert team row
       await prisma.hackathonTeam.upsert({
         where: { inviteCode: inviteCode.trim().toUpperCase() },
-        update: {
-          name: name.trim(),
-          tagline: newTeam.tagline || null,
-        },
+        update: { name: name.trim(), tagline: newTeam.tagline || null },
         create: {
           id: teamId,
           hackathonId: newTeam.hackathonId,
@@ -464,14 +477,27 @@ export async function createNewTeam(params: {
         },
       });
 
+      // 2. Upsert creator participant with teamId set — works even if not in DB yet
       if (creator.ticketNumber) {
-        await prisma.hackathonParticipant.update({
+        await prisma.hackathonParticipant.upsert({
           where: { ticketNumber: creator.ticketNumber.trim().toUpperCase() },
-          data: {
-            teamId: teamId,
+          update: { teamId: teamId, isCaptain: true },
+          create: {
+            id: creator.id || `part-${Date.now()}`,
+            hackathonId: creator.hackathonId || newTeam.hackathonId,
+            ticketNumber: creator.ticketNumber.trim().toUpperCase(),
+            name: creator.name.trim(),
+            email: creator.email?.trim() || "",
+            roleTitle: creator.roleTitle?.trim() || "Fullstack & AI Engineer",
+            bio: creator.bio?.trim() || null,
+            discordHandle: creator.discordHandle?.trim() || null,
+            twitterHandle: creator.twitterHandle?.trim() || null,
+            avatarUrl: creator.avatarUrl || null,
+            themeStyle: creator.themeStyle || "lime",
             isCaptain: true,
+            teamId: teamId,
           },
-        }).catch(() => {});
+        });
       }
     } catch (e) {
       console.warn("DB error saving new team:", e);

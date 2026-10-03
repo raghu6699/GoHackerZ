@@ -296,6 +296,7 @@ import { prisma, isDbAvailable } from "./prisma";
 import {
   loadPersistedParticipants,
   persistParticipant,
+  persistParticipantToDb,
   getPersistedParticipantByTicket,
   persistTeam,
   loadPersistedTeams,
@@ -580,7 +581,14 @@ export async function registerHacker(params: {
     createdAt: existing?.createdAt || new Date().toISOString(),
   };
 
-  // 1. Handle team formation first (this mutates `participant`)
+  // 1. Persist participant to DB FIRST (awaited) so team FK operations can reference it
+  //    This is critical: createNewTeam/addMemberToTeam upsert the participant's teamId,
+  //    which requires the participant row to exist (or they use upsert themselves).
+  persistParticipant(participant); // disk write (sync)
+  await persistParticipantToDb(participant); // DB write (awaited)
+  memoryStore.participants.set(ticketNumber, participant);
+
+  // 2. Handle team formation (mutates `participant` in-place with teamId/teamCode)
   if (params.teamOption === "create" && params.teamName?.trim()) {
     const teamRes = await createNewTeam({
       teamName: params.teamName.trim(),
@@ -589,7 +597,6 @@ export async function registerHacker(params: {
     });
     if (teamRes.success && teamRes.team) {
       memoryStore.teams.set(teamRes.team.inviteCode, teamRes.team);
-      // participant object was mutated in-place by createNewTeam
     }
   } else if (params.teamOption === "join" && params.teamInviteCode?.trim()) {
     const code = params.teamInviteCode.trim().toUpperCase();
@@ -599,13 +606,12 @@ export async function registerHacker(params: {
     });
     if (joinRes.success && joinRes.team) {
       memoryStore.teams.set(joinRes.team.inviteCode, joinRes.team);
-      // participant object was mutated in-place by addMemberToTeam
     } else if (!joinRes.success) {
       console.warn(`[registerHacker] Could not join team "${code}": ${joinRes.error}`);
     }
   }
 
-  // 2. Persist participant ONCE with all squad data integrated
+  // 3. Re-persist participant with final squad data (teamId/teamCode now set)
   persistParticipant(participant);
   memoryStore.participants.set(ticketNumber, participant);
 
