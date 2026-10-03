@@ -1,39 +1,27 @@
 import { ImageResponse } from "next/og";
-import { getParticipantByTicket } from "@/lib/hackathons";
 import { NextRequest } from "next/server";
-import fs from "fs";
-import path from "path";
+import { getParticipantByTicket } from "@/lib/hackathons";
+import { generateQrMatrix } from "@/lib/qr";
 
 export const runtime = "nodejs";
 
-// Theme accent colours (must match HackerPassport.tsx)
 const THEME_COLORS: Record<string, string> = {
-  lime:   "#a3e635",
+  lime: "#a3e635",
   purple: "#c084fc",
-  sky:    "#38bdf8",
-  pink:   "#f472b6",
-  amber:  "#fbbf24",
+  sky: "#38bdf8",
+  pink: "#f472b6",
+  amber: "#fbbf24",
 };
 
-function normaliseTheme(t?: string): string {
-  if (!t) return "lime";
-  const lower = t.toLowerCase().trim();
-  if (lower === "neon" || lower === "electric violet" || lower === "purple") return "purple";
-  if (lower === "matrix" || lower === "cyan" || lower === "sky") return "sky";
-  if (lower === "gold" || lower === "solar gold" || lower === "amber") return "amber";
-  if (lower === "pink" || lower === "magenta" || lower === "neon magenta") return "pink";
-  if (THEME_COLORS[lower]) return lower;
-  return "lime";
+function normaliseTheme(theme?: string): string {
+  if (!theme) return "lime";
+  const lower = theme.toLowerCase().trim();
+  if (["neon", "electric violet", "purple"].includes(lower)) return "purple";
+  if (["matrix", "cyan", "sky"].includes(lower)) return "sky";
+  if (["gold", "solar gold", "amber"].includes(lower)) return "amber";
+  if (["pink", "magenta", "neon magenta"].includes(lower)) return "pink";
+  return THEME_COLORS[lower] ? lower : "lime";
 }
-
-// Load logo once
-let logoDataUrl = "";
-try {
-  const p = path.join(process.cwd(), "public/logo/neon-terminal-logo-sm.png");
-  if (fs.existsSync(p)) {
-    logoDataUrl = `data:image/png;base64,${fs.readFileSync(p).toString("base64")}`;
-  }
-} catch {/* swallow */}
 
 export async function GET(
   req: NextRequest,
@@ -41,256 +29,123 @@ export async function GET(
 ) {
   const { ticketId, slug } = await params;
   const { searchParams } = new URL(req.url);
-  // Allow optional theme override via ?theme=purple
-  const themeOverride = searchParams.get("theme") || undefined;
-
   const participant = await getParticipantByTicket(ticketId);
-  if (!participant) {
-    return new Response("Ticket not found", { status: 404 });
-  }
+  if (!participant) return new Response("Ticket not found", { status: 404 });
 
-  const themeKey  = normaliseTheme(themeOverride || participant.themeStyle);
-  const accent    = THEME_COLORS[themeKey] ?? "#a3e635";
-  const name      = participant.name || "Verified Builder";
-  const role      = participant.roleTitle || "Builder";
-  const ticket    = participant.ticketNumber || ticketId;
-  const teamLabel = participant.teamName || "Solo Competitor";
-  const isCaptain = participant.isCaptain;
-  const hackTitle = "GoHackerz Global Shipathon 2026";
+  const accent = THEME_COLORS[normaliseTheme(searchParams.get("theme") || participant.themeStyle)];
+  const name = participant.name || "Verified Builder";
+  const role = participant.roleTitle || "Fullstack & AI Engineer";
+  const ticket = participant.ticketNumber || ticketId;
+  const team = participant.teamName
+    ? `${participant.teamName}${participant.teamCode ? ` [${participant.teamCode}]` : ""}`
+    : "Solo Competitor";
+  const initials = name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase();
+  const passportUrl = `${new URL(req.url).origin}/hackathons/${slug}/pass/${ticket}`;
+  const qr = generateQrMatrix(passportUrl);
+  let barcodeHash = 0;
+  for (const char of ticket) barcodeHash = (barcodeHash * 31 + char.charCodeAt(0)) % 100000;
+  const barcode = Array.from({ length: 44 }, (_, index) => {
+    const value = (barcodeHash * (index + 13)) % 10;
+    return { width: (value % 3) + 1.5, gap: (value % 2) + 1.5 };
+  });
 
-  const initials = name
-    .split(" ")
-    .map((w: string) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  // Boarding pass image — 940 × 420 px (same visual aspect ratio as the card)
   return new ImageResponse(
-    (
-      <div
-        style={{
-          display: "flex",
-          width: "940px",
-          height: "420px",
-          background: "#08090c",
-          borderRadius: "20px",
-          overflow: "hidden",
-          fontFamily: "sans-serif",
-          position: "relative",
-          border: `1.5px solid ${accent}44`,
-        }}
-      >
-        {/* Left glow */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: "340px",
-            height: "420px",
-            background: `radial-gradient(ellipse at 0% 50%, ${accent}28 0%, transparent 70%)`,
-            display: "flex",
-          }}
-        />
-
-        {/* ── LEFT PANEL ─────────────────────────────────── */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "32px 36px",
-            width: "340px",
-            flexShrink: 0,
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            {logoDataUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoDataUrl} alt="GoHackerz" width={120} height={28} style={{ objectFit: "contain" }} />
-            ) : (
-              <span style={{ color: accent, fontSize: "18px", fontWeight: 700, letterSpacing: "2px" }}>
-                GOHACKERZ
-              </span>
-            )}
-            <span style={{ color: "#ffffff55", fontSize: "11px", letterSpacing: "3px" }}>
-              HACKER PASSPORT — BOARDING PASS
-            </span>
-          </div>
-
-          {/* Avatar + Name */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div
-              style={{
-                width: "72px",
-                height: "72px",
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${accent}55, ${accent}22)`,
-                border: `2px solid ${accent}88`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "28px",
-                fontWeight: 800,
-                color: accent,
-              }}
-            >
-              {initials}
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <span style={{ color: "#ffffff", fontSize: "24px", fontWeight: 800, letterSpacing: "-0.5px" }}>
-                {name}
-              </span>
-              <span style={{ color: accent, fontSize: "12px", fontWeight: 600, letterSpacing: "1.5px" }}>
-                {role.toUpperCase()}
-              </span>
+    <div style={{ display: "flex", width: "1200px", height: "620px", color: "#fff", fontFamily: "sans-serif", background: "linear-gradient(145deg, #111218 0%, #171923 50%, #0d0e13 100%)", border: "1px solid #ffffff22", borderRadius: "28px", overflow: "hidden" }}>
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1, padding: "36px 40px", background: `radial-gradient(ellipse at 0% 50%, ${accent}18 0%, transparent 65%)` }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #ffffff22", paddingBottom: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "12px", background: accent, color: "#090d0b", fontSize: "24px", fontWeight: 900 }}>GH</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ color: "#ffffff88", fontSize: "11px", letterSpacing: "2px", fontWeight: 700 }}>GOHACKERZ AIRWAYS // SPACEPORT</span>
+              <span style={{ color: "#fff", fontSize: "21px", fontWeight: 900 }}>GLOBAL SHIPATHON 2026</span>
             </div>
           </div>
+          <span style={{ color: accent, border: `1px solid ${accent}66`, background: `${accent}18`, borderRadius: "20px", padding: "9px 13px", fontSize: "11px", fontWeight: 800 }}>FIRST CLASS BUILDER</span>
+        </div>
 
-          {/* Ticket number */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <span style={{ color: "#ffffff44", fontSize: "10px", letterSpacing: "2px" }}>TICKET</span>
-            <span
-              style={{
-                fontFamily: "monospace",
-                color: accent,
-                fontSize: "16px",
-                fontWeight: 700,
-                letterSpacing: "2px",
-                background: `${accent}15`,
-                padding: "4px 10px",
-                borderRadius: "6px",
-                border: `1px solid ${accent}40`,
-              }}
-            >
-              #{ticket}
-            </span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ color: "#ffffff66", fontSize: "11px", letterSpacing: "2px" }}>ORIGIN (DEV)</span>
+            <span style={{ color: "#fff", fontSize: "38px", fontWeight: 900 }}>LOCAL</span>
+            <span style={{ color: "#ffffff99", fontSize: "12px" }}>Localhost:3000</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", width: "220px" }}>
+            <span style={{ color: "#ffffff99", fontSize: "10px", letterSpacing: "2px" }}>PROD SHIP</span>
+            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+              <div style={{ height: "2px", flex: 1, background: "#ffffff44" }} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", margin: "0 8px", borderRadius: "50%", background: accent, color: "#090d0b", fontSize: "11px", fontWeight: 900 }}>GH</div>
+              <div style={{ height: "2px", flex: 1, background: "#ffffff44" }} />
+            </div>
+            <span style={{ color: "#ffffff66", fontSize: "9px", letterSpacing: "1px" }}>NON-STOP GLOBAL</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+            <span style={{ color: "#ffffff66", fontSize: "11px", letterSpacing: "2px" }}>DESTINATION (PROD)</span>
+            <span style={{ color: accent, fontSize: "38px", fontWeight: 900 }}>SHIP</span>
+            <span style={{ color: "#ffffff99", fontSize: "12px" }}>Production Cloud</span>
           </div>
         </div>
 
-        {/* Dashed divider */}
-        <div
-          style={{
-            width: "1px",
-            height: "340px",
-            alignSelf: "center",
-            background: `repeating-linear-gradient(to bottom, ${accent}55 0, ${accent}55 8px, transparent 8px, transparent 16px)`,
-            flexShrink: 0,
-            display: "flex",
-          }}
-        />
-
-        {/* ── RIGHT PANEL ─────────────────────────────────── */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "32px 36px",
-            flex: 1,
-          }}
-        >
-          {/* Event info */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ color: "#ffffff44", fontSize: "10px", letterSpacing: "2px" }}>EVENT</span>
-            <span style={{ color: "#ffffff", fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
-              {hackTitle}
-            </span>
-          </div>
-
-          {/* Squad info */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ color: "#ffffff44", fontSize: "10px", letterSpacing: "2px" }}>SQUAD</span>
-            <span style={{ color: "#ffffff", fontSize: "14px", fontWeight: 600 }}>
-              {teamLabel}
-            </span>
-            {isCaptain && (
-              <span
-                style={{
-                  color: accent,
-                  fontSize: "10px",
-                  letterSpacing: "2px",
-                  fontWeight: 700,
-                  background: `${accent}18`,
-                  padding: "2px 8px",
-                  borderRadius: "4px",
-                  border: `1px solid ${accent}44`,
-                  alignSelf: "flex-start",
-                }}
-              >
-                CAPTAIN
-              </span>
-            )}
-          </div>
-
-          {/* Bottom row */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-            {/* Status badge */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
-              }}
-            >
-              <span style={{ color: "#ffffff44", fontSize: "10px", letterSpacing: "2px" }}>STATUS</span>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  background: `${accent}18`,
-                  border: `1px solid ${accent}44`,
-                  borderRadius: "6px",
-                  padding: "5px 12px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: accent,
-                    flexShrink: 0,
-                  }}
-                />
-                <span style={{ color: accent, fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px" }}>
-                  CONFIRMED
-                </span>
-              </div>
+        <div style={{ display: "flex", flexWrap: "wrap", background: "#ffffff0d", border: "1px solid #ffffff22", borderRadius: "16px", padding: "12px 6px" }}>
+          {[
+            ["PASSENGER NAME", name.toUpperCase()], ["FLIGHT NO.", "GH-2026"], ["BOARDING GATE", "GATE B-42"], ["SEAT / TIER", "01A (PRIORITY)"],
+            ["SQUAD ALLIANCE", team], ["TRACK / ROLE", role], ["DATE & DEPARTURE", "12 OCT 2026"], ["STATUS", "BOARDING"],
+          ].map(([label, value], index) => (
+            <div key={label} style={{ display: "flex", flexDirection: "column", gap: "6px", width: "25%", padding: "9px 10px", borderRight: index % 4 === 3 ? "none" : "1px solid #ffffff12" }}>
+              <span style={{ color: "#ffffff66", fontSize: "8px", letterSpacing: "1px" }}>{label}</span>
+              <span style={{ color: label === "BOARDING GATE" ? accent : label === "STATUS" ? "#34d399" : "#fff", fontSize: "11px", fontWeight: 800, overflow: "hidden", whiteSpace: "nowrap" }}>{value}</span>
             </div>
+          ))}
+        </div>
 
-            {/* Watermark */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
-              <span style={{ color: "#ffffff22", fontSize: "9px", letterSpacing: "2px" }}>
-                BOARDING GATE 42
-              </span>
-              <span style={{ color: "#ffffff22", fontSize: "9px", letterSpacing: "2px" }}>
-                PRIORITY PASSENGER
-              </span>
-              <span
-                style={{
-                  fontFamily: "monospace",
-                  color: "#ffffff11",
-                  fontSize: "9px",
-                  letterSpacing: "1px",
-                }}
-              >
-                gohackerz.com
-              </span>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", borderTop: "1px solid #ffffff22", paddingTop: "14px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            <span style={{ color: "#ffffff66", fontSize: "8px", letterSpacing: "2px" }}>PASSENGER TICKET</span>
+            <span style={{ color: accent, fontFamily: "monospace", fontSize: "15px", fontWeight: 800 }}>#{ticket}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "5px" }}>
+            <div style={{ display: "flex", alignItems: "stretch", height: "34px" }}>
+              {barcode.map((bar, index) => <div key={index} style={{ width: `${bar.width}px`, marginRight: `${bar.gap}px`, background: "#ffffffdd" }} />)}
             </div>
+            <span style={{ color: "#ffffff77", fontSize: "8px", letterSpacing: "2px" }}>*{ticket}*</span>
           </div>
         </div>
       </div>
-    ),
+
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "360px", padding: "36px 28px", background: "#08090caa", borderLeft: "1px dashed #ffffff44" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={{ color: "#ffffff66", fontSize: "9px", letterSpacing: "2px" }}>PASSENGER STUB</span>
+          <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800 }}>FLIGHT GH-2026</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#ffffff0d", border: "1px solid #ffffff22", borderRadius: "12px", padding: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "10px", background: `${accent}22`, border: `1px solid ${accent}66`, color: accent, fontSize: "17px", fontWeight: 900 }}>{initials}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <span style={{ color: "#fff", fontSize: "13px", fontWeight: 800 }}>{name}</span>
+            <span style={{ color: "#ffffff99", fontSize: "9px" }}>{role} · #{ticket}</span>
+            <span style={{ color: "#34d399", fontSize: "8px", fontWeight: 800 }}>GATE VERIFIED</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", alignSelf: "center", padding: "11px", background: "#fff", borderRadius: "14px" }}>
+          {qr.map((row, rowIndex) => (
+            <div key={rowIndex} style={{ display: "flex", height: `${145 / qr.length}px` }}>
+              {row.map((dark, columnIndex) => <div key={columnIndex} style={{ width: `${145 / qr.length}px`, background: dark ? "#0d0e13" : "#fff" }} />)}
+            </div>
+          ))}
+          <span style={{ color: "#2c2f38", fontSize: "8px", fontWeight: 900, letterSpacing: "2px" }}>SCAN TO BOARD</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #ffffff22", paddingTop: "14px" }}>
+          {[["GATE", "B-42"], ["SEAT", "01A"], ["BOARD", "GRP 1"]].map(([label, value]) => (
+            <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
+              <span style={{ color: "#ffffff66", fontSize: "8px" }}>{label}</span>
+              <span style={{ color: label === "SEAT" ? accent : "#fff", fontSize: "12px", fontWeight: 900 }}>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>,
     {
-      width: 940,
-      height: 420,
+      width: 1200,
+      height: 620,
       headers: {
-        // Tell browser to download with this filename, not just display
         "Content-Disposition": `attachment; filename="GoHackerz-BoardingPass-${ticket}.png"`,
         "Cache-Control": "public, max-age=3600",
       },

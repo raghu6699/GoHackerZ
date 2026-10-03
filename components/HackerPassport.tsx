@@ -294,11 +294,18 @@ export function HackerPassport({
     }
 
     try {
-      // ── Render the exact on-screen card with html2canvas ──
-      // On iOS, html2canvas can hang indefinitely (WebKit canvas quirks).
-      // We race it against an 8-second timeout; on timeout we fall back
-      // to the server-side PNG URL in the already-open tab.
+      // Capture the live DOM on iOS so the export matches the displayed pass.
       const renderCanvas = async (): Promise<string> => {
+        if (isIOS) {
+          const { toPng } = await import("html-to-image");
+          return toPng(passRef.current!, {
+            pixelRatio: 2,
+            backgroundColor: "#08090c",
+            width: passRef.current!.scrollWidth,
+            height: passRef.current!.scrollHeight,
+          });
+        }
+
         const html2canvas = (await import("html2canvas")).default;
         const canvas = await html2canvas(passRef.current!, {
           scale: 2,
@@ -312,7 +319,7 @@ export function HackerPassport({
         return canvas.toDataURL("image/png");
       };
 
-      const timeoutMs = isIOS ? 8000 : 30000;
+      const timeoutMs = isIOS ? 15000 : 30000;
       const timeout = new Promise<null>((resolve) =>
         setTimeout(() => resolve(null), timeoutMs)
       );
@@ -323,7 +330,8 @@ export function HackerPassport({
         if (!iosTab || iosTab.closed) {
           // Tab was blocked — fallback: Web Share with server-side image or alert
           try {
-            const blob = await (await fetch(serverImageUrl)).blob();
+            const imageUrl = result || serverImageUrl;
+            const blob = await (await fetch(imageUrl)).blob();
             const file = new File([blob], `GoHackerz-BoardingPass-${activeTicketId}.png`, { type: "image/png" });
             if (navigator.canShare?.({ files: [file] })) {
               await navigator.share({ files: [file], title: "GoHackerz Boarding Pass" });
