@@ -242,7 +242,8 @@ export function getPersistedTeamByCode(code: string): HackathonTeam | null {
  */
 export function addMemberToTeam(params: {
   teamCode: string;
-  participantTicket: string;
+  participantTicket?: string;
+  participantObj?: HackathonParticipant;
 }): { success: boolean; team?: HackathonTeam; error?: string } {
   const code = params.teamCode.trim().toUpperCase();
   const team = getPersistedTeamByCode(code);
@@ -250,7 +251,10 @@ export function addMemberToTeam(params: {
     return { success: false, error: `Team with invite code "${code}" was not found.` };
   }
 
-  const participant = getPersistedParticipantByTicket(params.participantTicket);
+  let participant = params.participantObj;
+  if (!participant && params.participantTicket) {
+    participant = getPersistedParticipantByTicket(params.participantTicket) || undefined;
+  }
   if (!participant) {
     return { success: false, error: "Participant not found." };
   }
@@ -290,7 +294,8 @@ export function addMemberToTeam(params: {
  */
 export function createNewTeam(params: {
   teamName: string;
-  creatorTicket: string;
+  creatorTicket?: string;
+  creatorParticipant?: HackathonParticipant;
   hackathonId?: string;
 }): { success: boolean; team?: HackathonTeam; error?: string } {
   const name = params.teamName.trim();
@@ -298,7 +303,10 @@ export function createNewTeam(params: {
     return { success: false, error: "Team name is required." };
   }
 
-  const creator = getPersistedParticipantByTicket(params.creatorTicket);
+  let creator = params.creatorParticipant;
+  if (!creator && params.creatorTicket) {
+    creator = getPersistedParticipantByTicket(params.creatorTicket) || undefined;
+  }
   if (!creator) {
     return { success: false, error: "Creator participant not found." };
   }

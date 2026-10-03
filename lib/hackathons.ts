@@ -530,42 +530,28 @@ export async function registerHacker(params: {
     createdAt: existing?.createdAt || new Date().toISOString(),
   };
 
-  // 1. Save participant
-  persistParticipant(participant);
-  memoryStore.participants.set(ticketNumber, participant);
-
-  // 2. Handle team formation
+  // 1. Handle team formation first (this mutates `participant`)
   if (params.teamOption === "create" && params.teamName?.trim()) {
     const teamRes = createNewTeam({
       teamName: params.teamName.trim(),
-      creatorTicket: ticketNumber,
+      creatorParticipant: participant,
       hackathonId: params.hackathonId,
     });
     if (teamRes.success && teamRes.team) {
       memoryStore.teams.set(teamRes.team.inviteCode, teamRes.team);
-      const updated = getPersistedParticipantByTicket(ticketNumber);
-      if (updated) {
-        participant = updated;
-        memoryStore.participants.set(ticketNumber, updated);
-      }
     }
   } else if (params.teamOption === "join" && params.teamInviteCode?.trim()) {
     const code = params.teamInviteCode.trim().toUpperCase();
     const joinRes = addMemberToTeam({
       teamCode: code,
-      participantTicket: ticketNumber,
+      participantObj: participant,
     });
     if (joinRes.success && joinRes.team) {
       memoryStore.teams.set(joinRes.team.inviteCode, joinRes.team);
-      const updated = getPersistedParticipantByTicket(ticketNumber);
-      if (updated) {
-        participant = updated;
-        memoryStore.participants.set(ticketNumber, updated);
-      }
     }
   }
 
-  // Ensure freshest participant is persisted
+  // 2. Persist participant ONCE with all squad data integrated
   persistParticipant(participant);
   memoryStore.participants.set(ticketNumber, participant);
 
