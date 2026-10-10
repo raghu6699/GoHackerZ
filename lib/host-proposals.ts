@@ -79,8 +79,8 @@ async function ensureDbTable() {
     `);
     try {
       await prisma.$executeRawUnsafe(`
-        ALTER TABLE "HackathonHostProposal" ADD COLUMN IF NOT EXISTS "agenda" TEXT;
         ALTER TABLE "HackathonHostProposal" ADD COLUMN IF NOT EXISTS "eventFormat" TEXT;
+        ALTER TABLE "HackathonHostProposal" ADD COLUMN IF NOT EXISTS "agenda" TEXT;
       `);
     } catch {}
     _tableEnsured = true;
@@ -377,25 +377,28 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
   if (proposal.agenda?.trim()) {
     const rawAgendaLines = proposal.agenda
       .split(/\n+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 3);
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 3);
 
     if (rawAgendaLines.length > 0) {
-      schedule = rawAgendaLines.slice(0, 6).map((line, idx) => {
-        const parts = line.split(/[-:–—]+/).map((p) => p.trim());
+      schedule = rawAgendaLines.slice(0, 6).map((line: string, idx: number) => {
+        const colonIdx = line.indexOf(":");
+        const dashIdx = line.indexOf(" - ");
         let time = `Milestone ${idx + 1}`;
         let title = line;
-        let description = `Official event milestone for ${proposal.hackathonTitle}.`;
 
-        if (parts.length >= 2) {
-          time = parts[0];
-          title = parts.slice(1).join(" - ");
+        if (colonIdx > 0 && colonIdx < 30) {
+          time = line.slice(0, colonIdx).trim();
+          title = line.slice(colonIdx + 1).trim();
+        } else if (dashIdx > 0 && dashIdx < 30) {
+          time = line.slice(0, dashIdx).trim();
+          title = line.slice(dashIdx + 3).trim();
         }
 
         return {
           time,
-          title,
-          description,
+          title: title || line,
+          description: `Official event milestone for ${proposal.hackathonTitle}.`,
           status: (idx === 0 ? "active" : "upcoming") as "active" | "upcoming" | "completed",
         };
       });
