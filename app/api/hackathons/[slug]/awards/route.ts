@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { issueSpecialAward, getParticipantByTicket } from "@/lib/participant-store";
+import { getHackathonBySlug } from "@/lib/hackathons";
+import { getCurrentDbUser } from "@/lib/profile";
+import { canUserManageHackathon } from "@/lib/admin-auth";
 import type { CertificateType } from "@/lib/hackathons";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function POST(
   request: Request,
@@ -8,8 +14,25 @@ export async function POST(
 ) {
   const { slug } = await params;
   try {
+    const hackathon = await getHackathonBySlug(slug);
+    if (!hackathon) {
+      return NextResponse.json(
+        { success: false, error: "Hackathon not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
-    const { ticketNumber, type, awardTitle, rank, trackName } = body;
+    const { ticketNumber, type, awardTitle, rank, trackName, adminSecret, hostKey } = body;
+
+    const user = await getCurrentDbUser();
+    const isAuthorized = canUserManageHackathon(user, hackathon, adminSecret || hostKey);
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized organizer access." },
+        { status: 403 }
+      );
+    }
 
     if (!ticketNumber || !type || !awardTitle) {
       return NextResponse.json(

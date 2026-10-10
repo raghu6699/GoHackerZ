@@ -36,3 +36,27 @@ export function isUserAdmin(user?: {
   if (user.user_metadata?.role === "admin" || user.user_metadata?.role === "ADMIN") return true;
   return isAdminEmail(user.email);
 }
+
+export const isSuperAdmin = isUserAdmin;
+
+export function canUserManageHackathon(
+  user?: {
+    email?: string | null;
+    role?: string | null;
+    app_metadata?: any;
+    user_metadata?: any;
+  } | null,
+  hackathon?: {
+    hostEmail?: string | null;
+    hostKey?: string | null;
+  } | null,
+  providedKey?: string | null
+): boolean {
+  if (isUserAdmin(user)) return true;
+  if (providedKey && hackathon?.hostKey && providedKey.trim() === hackathon.hostKey.trim()) {
+    return true;
+  }
+  if (!user?.email || !hackathon?.hostEmail) return false;
+  return user.email.trim().toLowerCase() === hackathon.hostEmail.trim().toLowerCase();
+}
+

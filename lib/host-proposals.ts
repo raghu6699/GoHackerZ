@@ -426,12 +426,17 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
     ];
   }
 
+  const hostEmail = proposal.contactEmail.trim().toLowerCase();
+  const hostKey = `GH-HOST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
   const hackathon: HackathonData = {
     id: hackathonId,
     slug: slug,
     title: proposal.hackathonTitle,
     tagline: `Hosted by ${proposal.orgName}. Build, ship, and win cash grants & holographic credentials.`,
     description: `Welcome to ${proposal.hackathonTitle}, organized by ${proposal.orgName} on the official GoHackerz Arena. Form a squad, earn your 3D holographic Hacker Passport, and submit lightweight project links.`,
+    hostEmail,
+    hostKey,
     status: "ACTIVE",
     startDate,
     endDate,
@@ -501,6 +506,7 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
       contactEmail: proposal.contactEmail,
       hackathonTitle: hackathon.title,
       hackathonSlug: hackathon.slug,
+      hostKey: hackathon.hostKey,
     });
     const result = await sendEmail(approvalEmail);
     console.info(

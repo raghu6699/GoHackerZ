@@ -36,6 +36,8 @@ export type HackathonData = {
   title: string;
   tagline: string;
   description: string;
+  hostEmail?: string;
+  hostKey?: string;
   coverImage?: string;
   status: "UPCOMING" | "ACTIVE" | "JUDGING" | "COMPLETED";
   startDate: string;

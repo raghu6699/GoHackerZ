@@ -507,13 +507,16 @@ export function hostProposalApprovedEmail(params: {
   contactEmail: string;
   hackathonTitle: string;
   hackathonSlug: string;
+  hostKey?: string;
   hackathonUrl?: string;
   adminStudioUrl?: string;
 }): EmailMessage {
   const origin = process.env.NEXT_PUBLIC_APP_URL || "https://gohackerz.com";
   const hackathonUrl = params.hackathonUrl || `${origin}/hackathons/${params.hackathonSlug}`;
   const registerUrl = `${origin}/hackathons/${params.hackathonSlug}/register`;
-  const adminStudioUrl = params.adminStudioUrl || `${origin}/hackathons/${params.hackathonSlug}/admin`;
+  const adminStudioUrl =
+    params.adminStudioUrl ||
+    `${origin}/hackathons/${params.hackathonSlug}/admin${params.hostKey ? `?key=${params.hostKey}` : ""}`;
 
   const body = `
     <div style="background-color:#0A071B;border:2px solid #C6FF3D;border-radius:20px;padding:24px;color:#ffffff;margin:20px 0;box-shadow:0 10px 25px rgba(0,0,0,0.5);">

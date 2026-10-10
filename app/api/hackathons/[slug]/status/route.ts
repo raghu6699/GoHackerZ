@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { updateHackathonStatus, isDbAvailable } from "@/lib/participant-store";
 import { getHackathonBySlug } from "@/lib/hackathons";
+import { getCurrentDbUser } from "@/lib/profile";
+import { canUserManageHackathon } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -43,8 +45,25 @@ export async function POST(
 ) {
   const { slug } = await params;
   try {
+    const hackathon = await getHackathonBySlug(slug);
+    if (!hackathon) {
+      return NextResponse.json(
+        { success: false, error: "Hackathon not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
-    const { status, adminSecret } = body;
+    const { status, adminSecret, hostKey } = body;
+
+    const user = await getCurrentDbUser();
+    const isAuthorized = canUserManageHackathon(user, hackathon, adminSecret || hostKey);
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized organizer access." },
+        { status: 403 }
+      );
+    }
 
     const validStatuses = ["UPCOMING", "ACTIVE", "JUDGING", "COMPLETED"];
     if (!validStatuses.includes(status)) {

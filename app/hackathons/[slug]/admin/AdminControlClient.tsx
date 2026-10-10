@@ -37,6 +37,8 @@ interface AdminControlClientProps {
   hackathonTitle: string;
   participants: HackathonParticipant[];
   initialCertificates: HackathonCertificate[];
+  isSuperAdmin?: boolean;
+  hostEmail?: string;
 }
 
 export function AdminControlClient({
@@ -45,6 +47,8 @@ export function AdminControlClient({
   hackathonTitle,
   participants: initialParticipants,
   initialCertificates,
+  isSuperAdmin = true,
+  hostEmail,
 }: AdminControlClientProps) {
   const [status, setStatus] = useState(initialStatus);
   const [participants, setParticipants] = useState<HackathonParticipant[]>(initialParticipants);
@@ -71,16 +75,21 @@ export function AdminControlClient({
   const refreshAllData = async () => {
     setIsRefreshing(true);
     try {
-      const [pRes, cRes, sRes, hRes] = await Promise.all([
+      const fetches: Promise<Response | null>[] = [
         fetch(`/api/hackathons/${slug}/participants`),
         fetch(`/api/hackathons/${slug}/certificates`),
         fetch(`/api/hackathons/${slug}/status`),
-        fetch(`/api/hackathons/host-proposal`).catch(() => null),
-      ]);
+      ];
+      if (isSuperAdmin) {
+        fetches.push(fetch(`/api/hackathons/host-proposal`).catch(() => null));
+      }
 
-      const pData = await pRes.json();
-      const cData = await cRes.json();
-      const sData = await sRes.json();
+      const results = await Promise.all(fetches);
+      const [pRes, cRes, sRes, hRes] = results;
+
+      const pData = pRes ? await pRes.json() : { success: false };
+      const cData = cRes ? await cRes.json() : { success: false };
+      const sData = sRes ? await sRes.json() : { success: false };
       const hData = hRes ? await hRes.json().catch(() => null) : null;
 
       if (pData.success) setParticipants(pData.participants || []);
@@ -97,6 +106,7 @@ export function AdminControlClient({
   };
 
   useEffect(() => {
+    if (!isSuperAdmin) return;
     fetch(`/api/hackathons/host-proposal`)
       .then((r) => r.json())
       .then((d) => {
@@ -105,7 +115,7 @@ export function AdminControlClient({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [isSuperAdmin]);
 
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [launchSuccessInfo, setLaunchSuccessInfo] = useState<{
@@ -287,9 +297,18 @@ export function AdminControlClient({
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[#251F47]">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#C6FF3D]">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#C6FF3D]">
               <ShieldCheck className="w-4 h-4" />
-              <span>Admin Director & Awards Studio</span>
+              <span>
+                {isSuperAdmin
+                  ? "Global Platform Admin Studio"
+                  : "Event Organizer & Judging Studio"}
+              </span>
+              {!isSuperAdmin && hostEmail && (
+                <span className="px-2 py-0.5 rounded-md bg-[#1d1645] border border-purple/30 text-[11px] text-[#D4CEF5] font-normal lowercase tracking-normal">
+                  Host: {hostEmail}
+                </span>
+              )}
             </div>
             <h1 className="text-3xl font-bold mt-1 text-white tracking-tight">
               {hackathonTitle}
@@ -832,200 +851,202 @@ export function AdminControlClient({
           </div>
         </div>
 
-        {/* Section 5: Partner Host Applications & Hackathon Inquiries */}
-        <div id="host-proposals-section" className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#C6FF3D]" />
-                <h2 className="text-lg font-bold text-white">Partner Host Proposals & Applications</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#C6FF3D]/15 border border-[#C6FF3D]/30 text-[#C6FF3D] font-mono text-xs font-bold">
-                  {hostProposals.filter((p) => p.status === "PENDING").length} Pending Review
-                </span>
+        {/* Section 5: Partner Host Applications & Hackathon Inquiries (GoHackerz Super Admins Only) */}
+        {isSuperAdmin && (
+          <div id="host-proposals-section" className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-[#C6FF3D]" />
+                  <h2 className="text-lg font-bold text-white">Partner Host Proposals & Applications</h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#C6FF3D]/15 border border-[#C6FF3D]/30 text-[#C6FF3D] font-mono text-xs font-bold">
+                    {hostProposals.filter((p) => p.status === "PENDING").length} Pending Review
+                  </span>
+                </div>
+                <p className="text-xs text-[#8e88b8] mt-0.5">
+                  Proposals submitted via the public Host Hackathon portal. Notifications are automatically emailed to admin.
+                </p>
               </div>
-              <p className="text-xs text-[#8e88b8] mt-0.5">
-                Proposals submitted via the public Host Hackathon portal. Notifications are automatically emailed to admin.
-              </p>
             </div>
-          </div>
 
-          {/* Proposals Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#161233] text-[#8e88b8] uppercase font-mono text-[10px]">
-                <tr>
-                  <th className="py-3 px-4 rounded-l-xl">Ref / Date</th>
-                  <th className="py-3 px-4">Organization & Contact</th>
-                  <th className="py-3 px-4">Proposed Hackathon</th>
-                  <th className="py-3 px-4">Audience & Budget</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 rounded-r-xl text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1e1942]">
-                {hostProposals.length === 0 ? (
+            {/* Proposals Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#161233] text-[#8e88b8] uppercase font-mono text-[10px]">
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-[#8e88b8]">
-                      No partner host proposals submitted yet. Applications will appear here automatically when submitted.
-                    </td>
+                    <th className="py-3 px-4 rounded-l-xl">Ref / Date</th>
+                    <th className="py-3 px-4">Organization & Contact</th>
+                    <th className="py-3 px-4">Proposed Hackathon</th>
+                    <th className="py-3 px-4">Audience & Budget</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 rounded-r-xl text-right">Actions</th>
                   </tr>
-                ) : (
-                  hostProposals.map((prop) => (
-                    <tr key={prop.id} className="hover:bg-[#141030] transition-colors">
-                      <td className="py-3 px-4">
-                        <span className="font-mono text-[#C6FF3D] font-bold block">{prop.refNumber}</span>
-                        <span className="text-[10px] text-[#8e88b8]">
-                          {new Date(prop.createdAt).toLocaleDateString("en-GB")}
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-white">{prop.orgName}</div>
-                        <div className="text-[11px] text-[#a59fcf]">
-                          {prop.contactName} &lt;<a href={`mailto:${prop.contactEmail}`} className="text-[#C6FF3D] underline">{prop.contactEmail}</a>&gt;
-                        </div>
-                        {prop.contactHandle && (
-                          <div className="text-[10px] text-[#8e88b8]">Handle: {prop.contactHandle}</div>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-white">{prop.hackathonTitle}</div>
-                        {prop.targetDates && (
-                          <div className="text-[10px] text-[#8e88b8]">Timeline: {prop.targetDates}</div>
-                        )}
-                        {prop.tracksAndGoals && (
-                          <div className="text-[10px] text-[#ded8ff] max-w-xs truncate" title={prop.tracksAndGoals}>
-                            Tracks: {prop.tracksAndGoals}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <div className="text-white font-mono text-[11px]">
-                          👥 {prop.expectedParticipants || "100-300"}
-                        </div>
-                        <div className="text-[#C6FF3D] font-mono text-[11px]">
-                          💰 {prop.estimatedPrizePool || "TBD"}
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <select
-                          value={prop.status}
-                          onChange={(e) => handleUpdateProposalStatus(prop.id, e.target.value)}
-                          className={`px-2 py-1 rounded-lg font-mono text-[10px] font-bold outline-none border transition-colors ${
-                            prop.status === "PENDING"
-                              ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
-                              : prop.status === "APPROVED"
-                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                              : prop.status === "REVIEWED"
-                              ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
-                              : "bg-rose-500/20 text-rose-300 border-rose-500/30"
-                          }`}
-                        >
-                          <option value="PENDING" className="bg-[#141030] text-white">PENDING</option>
-                          <option value="REVIEWED" className="bg-[#141030] text-white">REVIEWED</option>
-                          <option value="APPROVED" className="bg-[#141030] text-white">APPROVED</option>
-                          <option value="DECLINED" className="bg-[#141030] text-white">DECLINED</option>
-                        </select>
-                      </td>
-
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                          {prop.status !== "APPROVED" ? (
-                            <button
-                              onClick={() => handleApproveAndLaunchProposal(prop)}
-                              disabled={approvingId === prop.id}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#C6FF3D] hover:bg-[#b5f028] text-[#0A071B] font-mono text-[10px] font-black transition-all shadow-sm"
-                              title="Approve proposal, create hackathon instance, and notify organizer"
-                            >
-                              <Zap className="w-3 h-3" />
-                              {approvingId === prop.id ? "Launching..." : "Launch Event 🚀"}
-                            </button>
-                          ) : (
-                            <Link
-                              href={`/hackathons/${prop.hackathonTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
-                              target="_blank"
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-[10px] font-bold hover:bg-emerald-500/30 transition-colors"
-                            >
-                              Live Arena ↗
-                            </Link>
-                          )}
-
-                          {/* Direct Web Gmail Composer */}
-                          <a
-                            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(prop.contactEmail)}&su=${encodeURIComponent(`Re: GoHackerz Hackathon Hosting Proposal [${prop.refNumber}]`)}&body=${encodeURIComponent(`Hi ${prop.contactName},\n\nThank you for reaching out regarding the ${prop.hackathonTitle} hosting proposal on GoHackerz [${prop.refNumber}].\n\nBest regards,\nGoHackerz Team`)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors"
-                            title="Compose reply in Gmail Web"
-                          >
-                            <Mail className="w-3 h-3" />
-                            Gmail
-                          </a>
-
-                          {/* 1-Click Copy Email */}
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(prop.contactEmail);
-                              setCopiedEmailId(prop.id);
-                              setTimeout(() => setCopiedEmailId(null), 2500);
-                            }}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a153b] hover:bg-[#251f52] text-[#a59fcf] hover:text-white font-mono text-[10px] transition-colors border border-white/5"
-                            title="Copy email address to clipboard"
-                          >
-                            {copiedEmailId === prop.id ? (
-                              <>
-                                <Check className="w-3 h-3 text-[#C6FF3D]" />
-                                <span className="text-[#C6FF3D] font-bold">Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-[10px]">📋</span>
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-[#1e1942]">
+                  {hostProposals.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-[#8e88b8]">
+                        No partner host proposals submitted yet. Applications will appear here automatically when submitted.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    hostProposals.map((prop) => (
+                      <tr key={prop.id} className="hover:bg-[#141030] transition-colors">
+                        <td className="py-3 px-4">
+                          <span className="font-mono text-[#C6FF3D] font-bold block">{prop.refNumber}</span>
+                          <span className="text-[10px] text-[#8e88b8]">
+                            {new Date(prop.createdAt).toLocaleDateString("en-GB")}
+                          </span>
+                        </td>
 
-          {/* Launch Success Callout */}
-          {launchSuccessInfo && (
-            <div className="mt-4 p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="font-mono text-xs font-bold text-emerald-300 block">
-                  🎉 Hackathon "{launchSuccessInfo.title}" Successfully Launched!
-                </span>
-                <span className="text-xs text-[#ded8ff]">
-                  Official approval and onboarding credentials dispatched for reference {launchSuccessInfo.refNumber}.
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/hackathons/${launchSuccessInfo.slug}`}
-                  target="_blank"
-                  className="px-3 py-1.5 rounded-lg bg-[#C6FF3D] text-[#0A071B] font-mono text-xs font-bold"
-                >
-                  View Arena ↗
-                </Link>
-                <Link
-                  href={`/hackathons/${launchSuccessInfo.slug}/admin`}
-                  target="_blank"
-                  className="px-3 py-1.5 rounded-lg bg-[#7C5CFF] text-white font-mono text-xs font-bold"
-                >
-                  Open Studio ↗
-                </Link>
-              </div>
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-white">{prop.orgName}</div>
+                          <div className="text-[11px] text-[#a59fcf]">
+                            {prop.contactName} &lt;<a href={`mailto:${prop.contactEmail}`} className="text-[#C6FF3D] underline">{prop.contactEmail}</a>&gt;
+                          </div>
+                          {prop.contactHandle && (
+                            <div className="text-[10px] text-[#8e88b8]">Handle: {prop.contactHandle}</div>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white">{prop.hackathonTitle}</div>
+                          {prop.targetDates && (
+                            <div className="text-[10px] text-[#8e88b8]">Timeline: {prop.targetDates}</div>
+                          )}
+                          {prop.tracksAndGoals && (
+                            <div className="text-[10px] text-[#ded8ff] max-w-xs truncate" title={prop.tracksAndGoals}>
+                              Tracks: {prop.tracksAndGoals}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <div className="text-white font-mono text-[11px]">
+                            👥 {prop.expectedParticipants || "100-300"}
+                          </div>
+                          <div className="text-[#C6FF3D] font-mono text-[11px]">
+                            💰 {prop.estimatedPrizePool || "TBD"}
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <select
+                            value={prop.status}
+                            onChange={(e) => handleUpdateProposalStatus(prop.id, e.target.value)}
+                            className={`px-2 py-1 rounded-lg font-mono text-[10px] font-bold outline-none border transition-colors ${
+                              prop.status === "PENDING"
+                                ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                                : prop.status === "APPROVED"
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                                : prop.status === "REVIEWED"
+                                ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                                : "bg-rose-500/20 text-rose-300 border-rose-500/30"
+                            }`}
+                          >
+                            <option value="PENDING" className="bg-[#141030] text-white">PENDING</option>
+                            <option value="REVIEWED" className="bg-[#141030] text-white">REVIEWED</option>
+                            <option value="APPROVED" className="bg-[#141030] text-white">APPROVED</option>
+                            <option value="DECLINED" className="bg-[#141030] text-white">DECLINED</option>
+                          </select>
+                        </td>
+
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {prop.status !== "APPROVED" ? (
+                              <button
+                                onClick={() => handleApproveAndLaunchProposal(prop)}
+                                disabled={approvingId === prop.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#C6FF3D] hover:bg-[#b5f028] text-[#0A071B] font-mono text-[10px] font-black transition-all shadow-sm"
+                                title="Approve proposal, create hackathon instance, and notify organizer"
+                              >
+                                <Zap className="w-3 h-3" />
+                                {approvingId === prop.id ? "Launching..." : "Launch Event 🚀"}
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/hackathons/${prop.hackathonTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
+                                target="_blank"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-[10px] font-bold hover:bg-emerald-500/30 transition-colors"
+                              >
+                                Live Arena ↗
+                              </Link>
+                            )}
+
+                            {/* Direct Web Gmail Composer */}
+                            <a
+                              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(prop.contactEmail)}&su=${encodeURIComponent(`Re: GoHackerz Hackathon Hosting Proposal [${prop.refNumber}]`)}&body=${encodeURIComponent(`Hi ${prop.contactName},\n\nThank you for reaching out regarding the ${prop.hackathonTitle} hosting proposal on GoHackerz [${prop.refNumber}].\n\nBest regards,\nGoHackerz Team`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors"
+                              title="Compose reply in Gmail Web"
+                            >
+                              <Mail className="w-3 h-3" />
+                              Gmail
+                            </a>
+
+                            {/* 1-Click Copy Email */}
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(prop.contactEmail);
+                                setCopiedEmailId(prop.id);
+                                setTimeout(() => setCopiedEmailId(null), 2500);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a153b] hover:bg-[#251f52] text-[#a59fcf] hover:text-white font-mono text-[10px] transition-colors border border-white/5"
+                              title="Copy email address to clipboard"
+                            >
+                              {copiedEmailId === prop.id ? (
+                                <>
+                                  <Check className="w-3 h-3 text-[#C6FF3D]" />
+                                  <span className="text-[#C6FF3D] font-bold">Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-[10px]">📋</span>
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+
+            {/* Launch Success Callout */}
+            {launchSuccessInfo && (
+              <div className="mt-4 p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <span className="font-mono text-xs font-bold text-emerald-300 block">
+                    🎉 Hackathon "{launchSuccessInfo.title}" Successfully Launched!
+                  </span>
+                  <span className="text-xs text-[#ded8ff]">
+                    Official approval and onboarding credentials dispatched for reference {launchSuccessInfo.refNumber}.
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/hackathons/${launchSuccessInfo.slug}`}
+                    target="_blank"
+                    className="px-3 py-1.5 rounded-lg bg-[#C6FF3D] text-[#0A071B] font-mono text-xs font-bold"
+                  >
+                    View Arena ↗
+                  </Link>
+                  <Link
+                    href={`/hackathons/${launchSuccessInfo.slug}/admin`}
+                    target="_blank"
+                    className="px-3 py-1.5 rounded-lg bg-[#7C5CFF] text-white font-mono text-xs font-bold"
+                  >
+                    Open Studio ↗
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
