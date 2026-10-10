@@ -1542,38 +1542,38 @@ export async function getCertificateByTicket(ticketNumber: string): Promise<Hack
   const fromMem = memoryStore.certificates.get(clean);
   if (fromMem) return fromMem;
 
-  // 2. Check disk
-  const fromDisk = loadPersistedCertificates().find((c) => c.ticketNumber.toUpperCase() === clean);
-  if (fromDisk) {
-    memoryStore.certificates.set(clean, fromDisk);
-    return fromDisk;
-  }
-
-  // 3. Check DB
+  // 2. Check DB directly
   if (isDbAvailable()) {
     try {
       await ensureTablesExist();
-      const participant = await prisma.hackathonParticipant.findUnique({
-        where: { ticketNumber: clean },
+      const fromDb = await prisma.hackathonCertificate.findFirst({
+        where: {
+          OR: [
+            { participant: { ticketNumber: clean } },
+            { certNumber: clean },
+            { participantId: clean },
+          ],
+        },
         include: {
-          certificates: { orderBy: { issuedAt: "desc" }, take: 1 },
+          participant: true,
           hackathon: true,
         },
+        orderBy: { issuedAt: "desc" },
       });
-      if (participant && participant.certificates && participant.certificates.length > 0) {
-        const fromDb = participant.certificates[0];
+
+      if (fromDb) {
         const cert: HackathonCertificate = {
           id: fromDb.id,
           certNumber: fromDb.certNumber,
-          hackathonId: participant.hackathon?.slug || participant.hackathonId,
-          participantId: participant.id,
-          ticketNumber: participant.ticketNumber,
+          hackathonId: fromDb.hackathon?.slug || fromDb.hackathonId,
+          participantId: fromDb.participantId,
+          ticketNumber: fromDb.participant?.ticketNumber || clean,
           userId: fromDb.userId || undefined,
           type: fromDb.type as CertificateType,
           title: fromDb.title,
           awardTitle: fromDb.awardTitle,
           recipientName: fromDb.recipientName,
-          roleTitle: participant.roleTitle || undefined,
+          roleTitle: fromDb.participant?.roleTitle || undefined,
           projectName: fromDb.projectName || undefined,
           teamName: fromDb.teamName || undefined,
           trackName: fromDb.trackName || undefined,
@@ -1582,11 +1582,21 @@ export async function getCertificateByTicket(ticketNumber: string): Promise<Hack
           verificationUrl: `/verify/${fromDb.certNumber}`,
         };
         memoryStore.certificates.set(clean, cert);
+        memoryStore.certificates.set(fromDb.certNumber.toUpperCase(), cert);
         return cert;
       }
     } catch (e) {
       console.warn("[getCertificateByTicket] DB fetch error:", e);
     }
+  }
+
+  // 3. Check disk
+  const fromDisk = loadPersistedCertificates().find(
+    (c) => c.ticketNumber.toUpperCase() === clean || c.certNumber.toUpperCase() === clean
+  );
+  if (fromDisk) {
+    memoryStore.certificates.set(clean, fromDisk);
+    return fromDisk;
   }
 
   return null;

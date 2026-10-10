@@ -442,6 +442,10 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
             },
           },
           submissions: true,
+          certificates: {
+            orderBy: { issuedAt: "desc" },
+            take: 1,
+          },
         },
       });
 
@@ -488,6 +492,29 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
           if (match) submission = match;
         }
 
+        let certificate: HackathonCertificate | undefined = undefined;
+        const rawCert = dbRow.certificates?.[0];
+        if (rawCert) {
+          certificate = {
+            id: rawCert.id,
+            certNumber: rawCert.certNumber,
+            hackathonId: dbRow.hackathonId,
+            participantId: dbRow.id,
+            ticketNumber: dbRow.ticketNumber,
+            type: rawCert.type as CertificateType,
+            title: rawCert.title,
+            awardTitle: rawCert.awardTitle,
+            recipientName: rawCert.recipientName,
+            roleTitle: dbRow.roleTitle,
+            projectName: rawCert.projectName || submission?.title || undefined,
+            teamName: rawCert.teamName || dbRow.team?.name || undefined,
+            trackName: rawCert.trackName || submission?.trackId || undefined,
+            rank: rawCert.rank || undefined,
+            issuedAt: rawCert.issuedAt.toISOString(),
+            verificationUrl: `/verify/${rawCert.certNumber}`,
+          };
+        }
+
         const participant: HackathonParticipant = {
           id: dbRow.id,
           hackathonId: dbRow.hackathonId,
@@ -510,6 +537,7 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
             avatarUrl: p.avatarUrl ?? undefined,
           })),
           submission,
+          certificate,
           createdAt: dbRow.createdAt.toISOString(),
         };
 

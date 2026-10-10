@@ -36,6 +36,10 @@ export function PassPortPageClient({
         .then((data) => {
           if (data.success && data.certificate) {
             setCertificate(data.certificate);
+            setParticipant((prev) => ({
+              ...prev,
+              certificate: data.certificate,
+            }));
           }
         })
         .catch(() => {});
@@ -97,6 +101,7 @@ export function PassPortPageClient({
             ? serverParticipant.teammates
             : undefined,
         submission: participant.submission || serverParticipant.submission || myPassport?.submission,
+        certificate: certificate || serverParticipant.certificate || myPassport?.certificate,
       };
 
       setParticipant(merged);
