@@ -476,5 +476,76 @@ export function hostProposalReceiptEmail(proposal: {
   };
 }
 
+/**
+ * 6. Organizer Approval & Launch: Hackathon Proposal Accepted
+ */
+export function hostProposalApprovedEmail(params: {
+  refNumber: string;
+  orgName: string;
+  contactName: string;
+  contactEmail: string;
+  hackathonTitle: string;
+  hackathonSlug: string;
+  hackathonUrl?: string;
+  adminStudioUrl?: string;
+}): EmailMessage {
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://gohackerz.com";
+  const hackathonUrl = params.hackathonUrl || `${origin}/hackathons/${params.hackathonSlug}`;
+  const registerUrl = `${origin}/hackathons/${params.hackathonSlug}/register`;
+  const adminStudioUrl = params.adminStudioUrl || `${origin}/hackathons/${params.hackathonSlug}/admin`;
+
+  const body = `
+    <div style="background-color:#0A071B;border:2px solid #C6FF3D;border-radius:20px;padding:24px;color:#ffffff;margin:20px 0;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+      <div style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:#C6FF3D;text-transform:uppercase;">🎉 APPLICATION APPROVED & PROVISIONED</span>
+        <span style="font-family:monospace;font-size:13px;font-weight:900;color:#C6FF3D;background:#1A1440;padding:2px 8px;border-radius:4px;border:1px solid rgba(198,255,61,0.4);">${params.refNumber}</span>
+      </div>
+
+      <h2 style="font-size:24px;margin:0 0 6px 0;color:#ffffff;font-weight:800;">Congratulations, ${params.contactName}!</h2>
+      <p style="font-size:14px;color:#D4CEF5;line-height:1.6;margin:0 0 18px 0;">
+        Your proposal for <strong>${params.hackathonTitle}</strong> (${params.orgName}) has been approved by the GoHackerz Event Committee. Your official event arena and director studio have been provisioned and are ready for launch!
+      </p>
+
+      <div style="background:#130E29;border-radius:14px;padding:18px;border:1px solid rgba(255,255,255,0.15);margin-bottom:20px;">
+        <div style="font-family:monospace;font-size:11px;color:#8B84AD;text-transform:uppercase;margin-bottom:10px;">PROVISIONED EVENT PORTALS:</div>
+        
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+            <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">PUBLIC ARENA:</td>
+            <td style="padding:8px 0;text-align:right;"><a href="${hackathonUrl}" style="color:#C6FF3D;font-weight:700;text-decoration:none;">${hackathonUrl} ↗</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+            <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">REGISTRATION LINK:</td>
+            <td style="padding:8px 0;text-align:right;"><a href="${registerUrl}" style="color:#C6FF3D;font-weight:700;text-decoration:none;">${registerUrl} ↗</a></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">DIRECTOR STUDIO:</td>
+            <td style="padding:8px 0;text-align:right;"><a href="${adminStudioUrl}" style="color:#7C5CFF;font-weight:700;text-decoration:none;">${adminStudioUrl} ↗</a></td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align:center;padding:8px 0 16px 0;">
+        <a href="${adminStudioUrl}" style="display:inline-block;background:#C6FF3D;color:#0A071B;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:900;font-size:14px;font-family:monospace;letter-spacing:0.5px;">OPEN DIRECTOR STUDIO →</a>
+      </div>
+
+      <div style="margin-top:16px;font-size:13px;line-height:1.6;color:#ded8ff;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
+        <h4 style="font-size:14px;color:#ffffff;margin:0 0 8px 0;">Next Onboarding Steps:</h4>
+        <ul style="padding-left:20px;margin:0 0 12px 0;color:#a59fcf;">
+          <li><strong>Share Registration:</strong> Distribute your registration link to your community to start minting 3D Holographic Passports.</li>
+          <li><strong>Manage Roster & Judging:</strong> Use the Director Studio to view registered builders, submissions, and issue winner credentials.</li>
+        </ul>
+        <p style="font-size:12px;color:#8B84AD;margin:0;">Need assistance or custom sponsor tracks? Reply directly to this email.</p>
+      </div>
+    </div>
+  `;
+
+  return {
+    to: params.contactEmail,
+    subject: `🚀 Approved: Your Hackathon "${params.hackathonTitle}" is Ready on GoHackerz! [Ref: ${params.refNumber}]`,
+    html: shell(`Congratulations! ${params.hackathonTitle} is Approved 🚀`, body),
+  };
+}
+
 
 

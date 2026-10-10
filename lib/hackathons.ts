@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 /**
  * GoHackerz Hackathons Domain Layer
  * Handles events, registrations, team formations, tickets, and lightweight link submissions.
@@ -412,6 +415,35 @@ export function generateTeamCode(teamName: string): string {
   return `${prefix}-${rand}`;
 }
 
+const HACKATHONS_FILE = path.join(process.cwd(), "data", "hackathons.json");
+
+export function loadPersistedCustomHackathons(): HackathonData[] {
+  try {
+    if (!fs.existsSync(HACKATHONS_FILE)) return [];
+    const raw = fs.readFileSync(HACKATHONS_FILE, "utf-8");
+    if (!raw.trim()) return [];
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn("[hackathons] Read custom hackathons error:", e);
+    return [];
+  }
+}
+
+export function savePersistedCustomHackathon(hackathon: HackathonData): void {
+  try {
+    const list = loadPersistedCustomHackathons();
+    const idx = list.findIndex((h) => h.id === hackathon.id || h.slug === hackathon.slug);
+    if (idx >= 0) {
+      list[idx] = hackathon;
+    } else {
+      list.push(hackathon);
+    }
+    fs.writeFileSync(HACKATHONS_FILE, JSON.stringify(list, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("[hackathons] Write custom hackathon error:", e);
+  }
+}
+
 export async function getHackathonBySlug(slug: string): Promise<HackathonData | null> {
   const cleanSlug = slug.replace(/^gh-/, "");
   let liveStatus = FLAGSHIP_HACKATHON.status;
@@ -435,14 +467,62 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
             { slug: "shipathon-2026" },
           ],
         },
-        select: { status: true, title: true, tagline: true, prizePool: true },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          tagline: true,
+          description: true,
+          status: true,
+          prizePool: true,
+          startDate: true,
+          endDate: true,
+          submissionDeadline: true,
+          tracks: true,
+          rules: true,
+          sponsors: true,
+          faqs: true,
+        },
       });
       if (dbH) {
         liveStatus = dbH.status as any;
+        if (dbH.slug !== "shipathon-2026" && dbH.slug !== FLAGSHIP_HACKATHON.slug) {
+          return {
+            id: dbH.id,
+            slug: dbH.slug,
+            title: dbH.title,
+            tagline: dbH.tagline,
+            description: dbH.description,
+            status: dbH.status as any,
+            startDate: dbH.startDate.toISOString(),
+            endDate: dbH.endDate.toISOString(),
+            submissionDeadline: dbH.submissionDeadline.toISOString(),
+            prizePool: dbH.prizePool,
+            participantCount: 0,
+            teamCount: 0,
+            tracks: Array.isArray(dbH.tracks) ? (dbH.tracks as any) : FLAGSHIP_HACKATHON.tracks,
+            schedule: FLAGSHIP_HACKATHON.schedule,
+            rules: Array.isArray(dbH.rules) ? (dbH.rules as any) : FLAGSHIP_HACKATHON.rules,
+            sponsors: Array.isArray(dbH.sponsors) ? (dbH.sponsors as any) : FLAGSHIP_HACKATHON.sponsors,
+            faqs: Array.isArray(dbH.faqs) ? (dbH.faqs as any) : FLAGSHIP_HACKATHON.faqs,
+          };
+        }
       }
     } catch (e) {
       console.warn("[getHackathonBySlug] DB status query notice:", e);
     }
+  }
+
+  // 3. Check custom disk hackathons
+  const customList = loadPersistedCustomHackathons();
+  const customMatch = customList.find(
+    (h) => h.slug === slug || h.slug === cleanSlug || h.id === slug
+  );
+  if (customMatch) {
+    return {
+      ...customMatch,
+      status: (getPersistedHackathonStatus(customMatch.slug) as any) || customMatch.status,
+    };
   }
 
   if (
@@ -465,8 +545,35 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
 }
 
 export async function getAllHackathons(): Promise<HackathonData[]> {
+  const map = new Map<string, HackathonData>();
+
+  // 1. Flagship
   const flagship = await getHackathonBySlug(FLAGSHIP_HACKATHON.slug);
-  return flagship ? [flagship] : [FLAGSHIP_HACKATHON];
+  if (flagship) map.set(flagship.slug, flagship);
+
+  // 2. Custom disk hackathons
+  const customList = loadPersistedCustomHackathons();
+  for (const h of customList) {
+    const full = await getHackathonBySlug(h.slug);
+    if (full) map.set(full.slug, full);
+  }
+
+  // 3. Database hackathons
+  if (isDbAvailable()) {
+    try {
+      const rows = await prisma.hackathon.findMany({ select: { slug: true } });
+      for (const r of rows) {
+        if (!map.has(r.slug)) {
+          const loaded = await getHackathonBySlug(r.slug);
+          if (loaded) map.set(loaded.slug, loaded);
+        }
+      }
+    } catch (e) {
+      console.warn("[getAllHackathons] DB fetch notice:", e);
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 export async function getParticipantByTicket(ticketNumber: string): Promise<HackathonParticipant | null> {

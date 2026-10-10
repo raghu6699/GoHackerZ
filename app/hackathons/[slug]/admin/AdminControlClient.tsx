@@ -106,6 +106,46 @@ export function AdminControlClient({
       .catch(() => {});
   }, []);
 
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [launchSuccessInfo, setLaunchSuccessInfo] = useState<{
+    slug: string;
+    title: string;
+    refNumber: string;
+  } | null>(null);
+
+  const handleApproveAndLaunchProposal = async (proposal: HostHackathonProposal) => {
+    const confirmLaunch = window.confirm(
+      `Approve proposal "${proposal.hackathonTitle}" for ${proposal.orgName}?\n\nThis will:\n1. Provision live hackathon arena (/hackathons/[slug])\n2. Set up director studio\n3. Automatically email launch credentials & links to ${proposal.contactEmail}`
+    );
+    if (!confirmLaunch) return;
+
+    setApprovingId(proposal.id);
+    try {
+      const res = await fetch("/api/hackathons/host-proposal/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalId: proposal.id }),
+      });
+      const data = await res.json();
+      if (data.success && data.hackathon) {
+        setLaunchSuccessInfo({
+          slug: data.hackathon.slug,
+          title: data.hackathon.title,
+          refNumber: proposal.refNumber,
+        });
+        setHostProposals((prev) =>
+          prev.map((p) => (p.id === proposal.id ? { ...p, status: "APPROVED" } : p))
+        );
+      } else {
+        alert(data.error || "Failed to approve and provision hackathon.");
+      }
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
   const handleUpdateProposalStatus = async (id: string, newStatus: string) => {
     try {
       const res = await fetch("/api/hackathons/host-proposal", {
@@ -891,13 +931,35 @@ export function AdminControlClient({
                       </td>
 
                       <td className="py-3 px-4 text-right">
-                        <a
-                          href={`mailto:${prop.contactEmail}?subject=Re:%20GoHackerz%20Hackathon%20Hosting%20Proposal%20[${prop.refNumber}]`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors"
-                        >
-                          <Mail className="w-3 h-3" />
-                          Email
-                        </a>
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          {prop.status !== "APPROVED" ? (
+                            <button
+                              onClick={() => handleApproveAndLaunchProposal(prop)}
+                              disabled={approvingId === prop.id}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#C6FF3D] hover:bg-[#b5f028] text-[#0A071B] font-mono text-[10px] font-black transition-all shadow-sm"
+                              title="Approve proposal, create hackathon instance, and notify organizer"
+                            >
+                              <Zap className="w-3 h-3" />
+                              {approvingId === prop.id ? "Launching..." : "Launch Event 🚀"}
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/hackathons/${prop.hackathonTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
+                              target="_blank"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono text-[10px] font-bold hover:bg-emerald-500/30 transition-colors"
+                            >
+                              Live Arena ↗
+                            </Link>
+                          )}
+
+                          <a
+                            href={`mailto:${prop.contactEmail}?subject=Re:%20GoHackerz%20Hackathon%20Hosting%20Proposal%20[${prop.refNumber}]`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors"
+                          >
+                            <Mail className="w-3 h-3" />
+                            Email
+                          </a>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -905,6 +967,36 @@ export function AdminControlClient({
               </tbody>
             </table>
           </div>
+
+          {/* Launch Success Callout */}
+          {launchSuccessInfo && (
+            <div className="mt-4 p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="font-mono text-xs font-bold text-emerald-300 block">
+                  🎉 Hackathon "{launchSuccessInfo.title}" Successfully Launched!
+                </span>
+                <span className="text-xs text-[#ded8ff]">
+                  Official approval and onboarding credentials dispatched for reference {launchSuccessInfo.refNumber}.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/hackathons/${launchSuccessInfo.slug}`}
+                  target="_blank"
+                  className="px-3 py-1.5 rounded-lg bg-[#C6FF3D] text-[#0A071B] font-mono text-xs font-bold"
+                >
+                  View Arena ↗
+                </Link>
+                <Link
+                  href={`/hackathons/${launchSuccessInfo.slug}/admin`}
+                  target="_blank"
+                  className="px-3 py-1.5 rounded-lg bg-[#7C5CFF] text-white font-mono text-xs font-bold"
+                >
+                  Open Studio ↗
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

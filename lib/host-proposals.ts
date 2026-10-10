@@ -1,6 +1,13 @@
 import fs from "fs";
 import path from "path";
 import { prisma, isDbAvailable } from "./prisma";
+import {
+  savePersistedCustomHackathon,
+  FLAGSHIP_HACKATHON,
+  type HackathonData,
+} from "./hackathons";
+import { sendEmail, hostProposalApprovedEmail } from "./mailer";
+import { persistHackathonStatus } from "./participant-store";
 
 export interface HostHackathonProposal {
   id: string;
@@ -245,4 +252,139 @@ export async function updateHostProposalStatus(
   }
 
   return found;
+}
+
+/**
+ * Convert an approved host proposal into an active, provisioned Hackathon on GoHackerz!
+ * Dispatches approval email to organizer with their live arena & admin studio links.
+ */
+export async function createHackathonFromProposal(proposalIdOrRef: string): Promise<{
+  hackathon: HackathonData;
+  proposal: HostHackathonProposal;
+}> {
+  const proposal = await updateHostProposalStatus(proposalIdOrRef, "APPROVED");
+  if (!proposal) {
+    throw new Error("Host proposal not found.");
+  }
+
+  // 1. Generate clean URL slug
+  let baseSlug = proposal.hackathonTitle
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!baseSlug) baseSlug = `hackathon-${Date.now()}`;
+  if (baseSlug === "shipathon-2026") baseSlug = `partner-${baseSlug}`;
+
+  const slug = baseSlug;
+  const hackathonId = `gh-${slug}`;
+
+  // 2. Parse tracks or default
+  const tracks = [
+    {
+      id: "ai-track",
+      title: "AI & Autonomous Systems",
+      prize: "Cash Grant + Cloud Credits",
+      description: "Build cutting-edge autonomous agents and AI-powered workflows.",
+      tags: ["AI", "Agents", "LangChain", "LLMs"],
+    },
+    {
+      id: "edge-track",
+      title: "Edge & High-Performance Web",
+      prize: "Cash Grant + Cloud Credits",
+      description: "Ultra-low latency web apps, realtime architectures, and local-first systems.",
+      tags: ["Edge", "Next.js", "Realtime", "TypeScript"],
+    },
+    {
+      id: "open-track",
+      title: "Open Innovation & Developer Tools",
+      prize: "Cash Grant + Cloud Credits",
+      description: "Build developer productivity tools, libraries, or open-source infrastructure.",
+      tags: ["DevTools", "OpenSource", "Infra"],
+    },
+  ];
+
+  const now = new Date();
+  const startDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
+  const endDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString();
+  const submissionDeadline = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString();
+
+  const hackathon: HackathonData = {
+    id: hackathonId,
+    slug: slug,
+    title: proposal.hackathonTitle,
+    tagline: `Hosted by ${proposal.orgName}. Build, ship, and win cash grants & holographic credentials.`,
+    description: `Welcome to ${proposal.hackathonTitle}, organized by ${proposal.orgName} on the official GoHackerz Arena. Form a squad, earn your 3D holographic Hacker Passport, and submit lightweight project links.`,
+    status: "ACTIVE",
+    startDate,
+    endDate,
+    submissionDeadline,
+    prizePool: proposal.estimatedPrizePool || "$10,000 Cash Grants",
+    participantCount: 0,
+    teamCount: 0,
+    tracks,
+    schedule: FLAGSHIP_HACKATHON.schedule,
+    rules: FLAGSHIP_HACKATHON.rules,
+    sponsors: [
+      {
+        name: proposal.orgName,
+        tier: "Title",
+        perk: "Title Host & Prize Grant",
+        logoText: `⚡ ${proposal.orgName}`,
+      },
+    ],
+    faqs: FLAGSHIP_HACKATHON.faqs,
+  };
+
+  // 3. Persist hackathon to disk & memory
+  savePersistedCustomHackathon(hackathon);
+  persistHackathonStatus(slug, "ACTIVE");
+
+  // 4. Persist to DB if available
+  if (isDbAvailable()) {
+    try {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "Hackathon" 
+         ("id", "slug", "title", "tagline", "description", "status", "startDate", "endDate", "submissionDeadline", "prizePool", "tracks", "rules", "sponsors", "faqs")
+         VALUES ($1, $2, $3, $4, $5, $6::"HackathonStatus", $7, $8, $9, $10, $11, $12, $13, $14)
+         ON CONFLICT ("slug") DO UPDATE SET "title" = $3, "tagline" = $4, "description" = $5, "status" = $6::"HackathonStatus"`,
+        hackathon.id,
+        hackathon.slug,
+        hackathon.title,
+        hackathon.tagline,
+        hackathon.description,
+        "ACTIVE",
+        new Date(startDate),
+        new Date(endDate),
+        new Date(submissionDeadline),
+        hackathon.prizePool,
+        JSON.stringify(hackathon.tracks),
+        JSON.stringify(hackathon.rules),
+        JSON.stringify(hackathon.sponsors),
+        JSON.stringify(hackathon.faqs)
+      );
+    } catch (e) {
+      console.warn("[createHackathonFromProposal] DB write notice:", e);
+    }
+  }
+
+  // 5. Send Approval & Launch email to organizer
+  try {
+    const approvalEmail = hostProposalApprovedEmail({
+      refNumber: proposal.refNumber,
+      orgName: proposal.orgName,
+      contactName: proposal.contactName,
+      contactEmail: proposal.contactEmail,
+      hackathonTitle: hackathon.title,
+      hackathonSlug: hackathon.slug,
+    });
+    const result = await sendEmail(approvalEmail);
+    console.info(
+      `[createHackathonFromProposal] Approval email sent to ${proposal.contactEmail}, delivered: ${result.delivered}`
+    );
+  } catch (mailErr) {
+    console.warn("[createHackathonFromProposal] Approval email warning:", mailErr);
+  }
+
+  return { hackathon, proposal };
 }
