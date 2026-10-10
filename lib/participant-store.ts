@@ -1699,8 +1699,9 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
         });
 
         // 2. If not found in DB, sync from disk or memory
+        let persistedPart: HackathonParticipant | null = null;
         if (!pDb) {
-          const persistedPart = getPersistedParticipantByTicket(cleanTicket);
+          persistedPart = getPersistedParticipantByTicket(cleanTicket);
           if (persistedPart) {
             await persistParticipantToDb(persistedPart);
             pDb = await prisma.hackathonParticipant.findUnique({
@@ -1713,6 +1714,10 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
         // 3. If still not found, upsert participant row directly in Postgres
         if (!pDb) {
           try {
+            const fallbackEmail =
+              persistedPart?.email?.trim().toLowerCase() ||
+              `${cleanTicket.toLowerCase()}@gohackerz.dev`;
+
             pDb = await prisma.hackathonParticipant.upsert({
               where: { ticketNumber: cleanTicket },
               update: {
@@ -1724,7 +1729,7 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
                 hackathonId: realHackathonId,
                 ticketNumber: cleanTicket,
                 name: submission.authorName || "Builder",
-                email: "",
+                email: fallbackEmail,
                 roleTitle: "Fullstack & AI Engineer",
                 themeStyle: "lime",
               },
