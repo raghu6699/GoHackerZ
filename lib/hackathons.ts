@@ -827,21 +827,34 @@ export async function getParticipantByEmail(
   hackathonId: string,
   email: string
 ): Promise<HackathonParticipant | null> {
-  if (!email) return null;
+  if (!email || !hackathonId) return null;
   const target = email.trim().toLowerCase();
+  const cleanSlug = hackathonId.trim().toLowerCase().replace(/^gh-/, "");
+  if (!cleanSlug) return null;
 
   // 1. Query Postgres Database FIRST when available (canonical source)
   if (isDbAvailable()) {
     try {
       const dbRow = await prisma.hackathonParticipant.findFirst({
         where: {
-          email: target,
+          email: { equals: target, mode: "insensitive" },
+          OR: [
+            { hackathonId: hackathonId },
+            { hackathonId: `gh-${cleanSlug}` },
+            { hackathonId: cleanSlug },
+            { hackathon: { slug: cleanSlug } },
+            { hackathon: { id: hackathonId } },
+          ],
         },
         include: {
           team: {
             include: { participants: true },
           },
           submissions: true,
+          certificates: {
+            orderBy: { issuedAt: "desc" },
+            take: 1,
+          },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -888,6 +901,29 @@ export async function getParticipantByEmail(
           if (match) submission = match;
         }
 
+        let certificate: HackathonCertificate | undefined = undefined;
+        const rawCert = dbRow.certificates?.[0];
+        if (rawCert) {
+          certificate = {
+            id: rawCert.id,
+            certNumber: rawCert.certNumber,
+            hackathonId: dbRow.hackathonId,
+            participantId: dbRow.id,
+            ticketNumber: dbRow.ticketNumber,
+            type: rawCert.type as CertificateType,
+            title: rawCert.title,
+            awardTitle: rawCert.awardTitle,
+            recipientName: rawCert.recipientName,
+            roleTitle: dbRow.roleTitle,
+            projectName: rawCert.projectName || submission?.title || undefined,
+            teamName: rawCert.teamName || dbRow.team?.name || undefined,
+            trackName: rawCert.trackName || submission?.trackId || undefined,
+            rank: rawCert.rank || undefined,
+            issuedAt: rawCert.issuedAt.toISOString(),
+            verificationUrl: `/verify/${rawCert.certNumber}`,
+          };
+        }
+
         const participant: HackathonParticipant = {
           id: dbRow.id,
           hackathonId: dbRow.hackathonId,
@@ -910,6 +946,7 @@ export async function getParticipantByEmail(
             avatarUrl: p.avatarUrl ?? undefined,
           })),
           submission,
+          certificate,
           createdAt: dbRow.createdAt.toISOString(),
         };
         persistParticipant(participant);
@@ -923,11 +960,11 @@ export async function getParticipantByEmail(
 
   // 2. Fallback: disk storage
   const persistedList = loadPersistedParticipants();
-  const found = persistedList.find(
-    (p) =>
-      (!hackathonId || p.hackathonId === hackathonId || p.hackathonId === "gh-shipathon-2026") &&
-      p.email.trim().toLowerCase() === target
-  );
+  const found = persistedList.find((p) => {
+    const pHack = (p.hackathonId || "").trim().toLowerCase().replace(/^gh-/, "");
+    const matchHack = pHack === cleanSlug || p.hackathonId === hackathonId || p.hackathonId === `gh-${cleanSlug}`;
+    return matchHack && p.email && p.email.trim().toLowerCase() === target;
+  });
   if (found) {
     if (found.teamCode) {
       const team = getPersistedTeamByCode(found.teamCode);
@@ -946,10 +983,9 @@ export async function getParticipantByEmail(
 
   // 3. Check memory store
   for (const p of memoryStore.participants.values()) {
-    if (
-      (!hackathonId || p.hackathonId === hackathonId || p.hackathonId === "gh-shipathon-2026") &&
-      p.email.trim().toLowerCase() === target
-    ) {
+    const pHack = (p.hackathonId || "").trim().toLowerCase().replace(/^gh-/, "");
+    const matchHack = pHack === cleanSlug || p.hackathonId === hackathonId || p.hackathonId === `gh-${cleanSlug}`;
+    if (matchHack && p.email && p.email.trim().toLowerCase() === target) {
       return p;
     }
   }

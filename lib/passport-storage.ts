@@ -6,36 +6,42 @@ const STORAGE_PREFIX = "gh_passport_";
 const ACTIVE_TICKET_KEY = "gh_active_ticket";
 const ACTIVE_EMAIL_KEY = "gh_active_email";
 
+export function cleanHackathonId(id?: string): string {
+  if (!id) return "";
+  return id.trim().toLowerCase().replace(/^gh-/, "");
+}
+
 /**
  * Returns a storage key scoped to both hackathonId AND the logged-in
- * user's email so that two different accounts on the same browser
- * never share passport data.
+ * user's email so that two different accounts or events never collide.
  */
 function buildStorageKey(hackathonId: string, email?: string): string {
+  const cleanId = cleanHackathonId(hackathonId);
   const safeEmail = (email || "").trim().toLowerCase().replace(/[^a-z0-9@._-]/g, "");
   if (safeEmail) {
-    return `${STORAGE_PREFIX}${hackathonId}__${safeEmail}`;
+    return `${STORAGE_PREFIX}${cleanId}__${safeEmail}`;
   }
-  // Legacy fallback — used when email is unknown (visitor view)
-  return `${STORAGE_PREFIX}${hackathonId}`;
+  return `${STORAGE_PREFIX}${cleanId}`;
 }
 
 export function saveMyPassport(participant: HackathonParticipant) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !participant) return;
 
   try {
-    const key = buildStorageKey(
-      participant.hackathonId || "default",
-      participant.email
-    );
+    const cleanId = cleanHackathonId(participant.hackathonId || "default");
+    if (!cleanId) return;
+    const key = buildStorageKey(cleanId, participant.email);
     localStorage.setItem(key, JSON.stringify(participant));
+    localStorage.setItem(`${ACTIVE_TICKET_KEY}_${cleanId}`, participant.ticketNumber);
     localStorage.setItem(ACTIVE_TICKET_KEY, participant.ticketNumber);
+
     // Persist the owning email so we can scope lookups correctly
     if (participant.email) {
       localStorage.setItem(ACTIVE_EMAIL_KEY, participant.email.trim().toLowerCase());
     }
 
     // Also store a long-lived cookie for server/client synchronization
+    document.cookie = `gh_active_ticket_${cleanId}=${participant.ticketNumber}; path=/; max-age=31536000; SameSite=Lax`;
     document.cookie = `gh_active_ticket=${participant.ticketNumber}; path=/; max-age=31536000; SameSite=Lax`;
     document.cookie = `gh_active_name=${encodeURIComponent(participant.name)}; path=/; max-age=31536000; SameSite=Lax`;
   } catch (e) {
@@ -44,44 +50,86 @@ export function saveMyPassport(participant: HackathonParticipant) {
 }
 
 export function getMyPassport(
-  hackathonId = "gh-shipathon-2026",
+  hackathonId: string,
   forEmail?: string
 ): HackathonParticipant | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !hackathonId) return null;
 
   try {
+    const cleanTarget = cleanHackathonId(hackathonId);
+    if (!cleanTarget) return null;
     const activeEmail = (forEmail || localStorage.getItem(ACTIVE_EMAIL_KEY) || "")
       .trim()
       .toLowerCase();
 
+    // 1. Check direct scoped key
     if (activeEmail) {
-      // Look up email-scoped key
-      const scopedKey = buildStorageKey(hackathonId, activeEmail);
+      const scopedKey = buildStorageKey(cleanTarget, activeEmail);
       const scopedRaw = localStorage.getItem(scopedKey);
       if (scopedRaw) {
         const parsed: HackathonParticipant = JSON.parse(scopedRaw);
-        if (parsed.email && parsed.email.trim().toLowerCase() === activeEmail) {
+        const parsedClean = cleanHackathonId(parsed.hackathonId);
+        if (
+          parsedClean === cleanTarget &&
+          parsed.email &&
+          parsed.email.trim().toLowerCase() === activeEmail
+        ) {
+          return parsed;
+        }
+      }
+
+      // Also check with gh- prefix
+      const scopedGhKey = `${STORAGE_PREFIX}gh-${cleanTarget}__${activeEmail}`;
+      const scopedGhRaw = localStorage.getItem(scopedGhKey);
+      if (scopedGhRaw) {
+        const parsed: HackathonParticipant = JSON.parse(scopedGhRaw);
+        const parsedClean = cleanHackathonId(parsed.hackathonId);
+        if (
+          parsedClean === cleanTarget &&
+          parsed.email &&
+          parsed.email.trim().toLowerCase() === activeEmail
+        ) {
           return parsed;
         }
       }
     }
 
-    // Fallback: check active ticket
-    const activeTicket = (localStorage.getItem(ACTIVE_TICKET_KEY) || "").trim().toUpperCase();
+    // 2. Check unscoped key for this specific hackathon
+    const unscopedKey = buildStorageKey(cleanTarget);
+    const unscopedRaw = localStorage.getItem(unscopedKey);
+    if (unscopedRaw) {
+      const parsed: HackathonParticipant = JSON.parse(unscopedRaw);
+      const parsedClean = cleanHackathonId(parsed.hackathonId);
+      if (parsedClean === cleanTarget) {
+        if (!activeEmail || !parsed.email || parsed.email.trim().toLowerCase() === activeEmail) {
+          return parsed;
+        }
+      }
+    }
 
-    // Check all storage keys for matching passport
+    // 3. Fallback: inspect only keys matching this target hackathon
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(STORAGE_PREFIX)) {
+      if (
+        k &&
+        (k.startsWith(`${STORAGE_PREFIX}${cleanTarget}__`) ||
+          k.startsWith(`${STORAGE_PREFIX}gh-${cleanTarget}__`) ||
+          k === `${STORAGE_PREFIX}${cleanTarget}` ||
+          k === `${STORAGE_PREFIX}gh-${cleanTarget}`)
+      ) {
         try {
           const raw = localStorage.getItem(k);
           if (raw) {
             const parsed: HackathonParticipant = JSON.parse(raw);
-            if (activeTicket && parsed.ticketNumber?.toUpperCase() === activeTicket) {
-              return parsed;
-            }
-            if (activeEmail && parsed.email?.trim().toLowerCase() === activeEmail) {
-              return parsed;
+            const parsedClean = cleanHackathonId(parsed.hackathonId);
+            if (parsedClean === cleanTarget) {
+              if (
+                !activeEmail ||
+                !parsed.email ||
+                parsed.email.trim().toLowerCase() === activeEmail
+              ) {
+                return parsed;
+              }
             }
           }
         } catch {}
@@ -94,18 +142,52 @@ export function getMyPassport(
   return null;
 }
 
-export function getActiveTicketNumber(hackathonId = "shipathon-2026", forEmail?: string): string | null {
-  if (typeof window === "undefined") return null;
+export function getAllMyPassports(forEmail?: string): HackathonParticipant[] {
+  if (typeof window === "undefined") return [];
+
+  const results: HackathonParticipant[] = [];
+  const seenTickets = new Set<string>();
 
   try {
     const activeEmail = (forEmail || localStorage.getItem(ACTIVE_EMAIL_KEY) || "")
       .trim()
       .toLowerCase();
 
-    const cleanHack = hackathonId.replace(/^gh-/, "");
-    const pass =
-      getMyPassport(cleanHack, activeEmail || undefined) ||
-      getMyPassport(`gh-${cleanHack}`, activeEmail || undefined);
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORAGE_PREFIX)) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            const parsed: HackathonParticipant = JSON.parse(raw);
+            if (parsed?.ticketNumber && !seenTickets.has(parsed.ticketNumber.toUpperCase())) {
+              if (!activeEmail || !parsed.email || parsed.email.trim().toLowerCase() === activeEmail) {
+                seenTickets.add(parsed.ticketNumber.toUpperCase());
+                results.push(parsed);
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+  } catch (e) {
+    console.error("Failed to list all passports from storage:", e);
+  }
+
+  return results;
+}
+
+export function getActiveTicketNumber(hackathonId: string, forEmail?: string): string | null {
+  if (typeof window === "undefined" || !hackathonId) return null;
+
+  try {
+    const activeEmail = (forEmail || localStorage.getItem(ACTIVE_EMAIL_KEY) || "")
+      .trim()
+      .toLowerCase();
+
+    const cleanHack = cleanHackathonId(hackathonId);
+    if (!cleanHack) return null;
+    const pass = getMyPassport(cleanHack, activeEmail || undefined);
 
     if (pass?.ticketNumber) {
       if (!activeEmail || !pass.email || pass.email.trim().toLowerCase() === activeEmail) {
@@ -133,8 +215,7 @@ export function clearMyPassport() {
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(STORAGE_PREFIX)) {
-        // Only remove this user's scoped key, or the legacy unscoped key
+      if (k && (k.startsWith(STORAGE_PREFIX) || k.startsWith(ACTIVE_TICKET_KEY))) {
         if (!activeEmail || k.includes("__" + activeEmail) || !k.includes("__")) {
           keysToRemove.push(k);
         }

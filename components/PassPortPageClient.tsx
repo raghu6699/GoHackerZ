@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
-import { getMyPassport, getActiveTicketNumber, saveMyPassport } from "@/lib/passport-storage";
+import { getMyPassport, getActiveTicketNumber, saveMyPassport, cleanHackathonId } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme, HackathonCertificate } from "@/lib/hackathons";
 import { Sparkles, ArrowRight, ShieldCheck, Loader2, RefreshCw, Trophy, Award, Printer, ExternalLink, CheckCircle, Code2 } from "lucide-react";
 
@@ -66,16 +66,17 @@ export function PassPortPageClient({
 
   useEffect(() => {
     // Use the actual hackathonId so keys are consistent across the app
-    const hackId = serverParticipant.hackathonId || "gh-shipathon-2026";
+    const hackId = serverParticipant.hackathonId || slug || "";
+    const cleanId = cleanHackathonId(hackId);
     const activeEmail = (localStorage.getItem("gh_active_email") || "").trim().toLowerCase();
-    const activeTicket = (localStorage.getItem("gh_active_ticket") || "").trim().toUpperCase();
-    const myPassport = getMyPassport(hackId, activeEmail || undefined);
+    const activeScopedTicket = cleanId ? (localStorage.getItem(`gh_active_ticket_${cleanId}`) || "").trim().toUpperCase() : "";
+    const myPassport = cleanId ? getMyPassport(cleanId, activeEmail || undefined) : null;
 
     // Ownership verification:
-    // 1. myPassport exists and matches the exact ticket ID OR active ticket matches
+    // 1. myPassport exists and matches the exact ticket ID OR active scoped ticket matches
     const isExactMatch =
       (!!myPassport && myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()) ||
-      activeTicket === ticketId.toUpperCase();
+      (activeScopedTicket && activeScopedTicket === ticketId.toUpperCase());
 
     if (isExactMatch) {
       setIsOwner(true);

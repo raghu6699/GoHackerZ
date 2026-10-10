@@ -141,9 +141,7 @@ export default function HackathonSubmitPage() {
       // Update local storage so passport immediately knows about the submission!
       const cleanTicket = ticketNumber.trim().toUpperCase();
       const activeEmail = (localStorage.getItem("gh_active_email") || "").trim().toLowerCase();
-      const existing =
-        getMyPassport(slug, activeEmail || undefined) ||
-        getMyPassport("gh-shipathon-2026", activeEmail || undefined);
+      const existing = getMyPassport(slug, activeEmail || undefined);
 
       if (existing) {
         existing.submission = data.submission;

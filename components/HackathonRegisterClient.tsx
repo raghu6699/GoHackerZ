@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
-import { saveMyPassport, getMyPassport } from "@/lib/passport-storage";
+import { saveMyPassport, getMyPassport, cleanHackathonId } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme, HackathonData } from "@/lib/hackathons";
 import { Sparkles, Users, User, ArrowRight, ShieldCheck, Check, AlertCircle, RefreshCw, UserPlus, Lock } from "lucide-react";
 
@@ -126,17 +126,24 @@ export function HackathonRegisterClient({
     }
   }, [searchParams, slug]);
 
-  // Check if this visitor already minted a passport in this browser for THIS email
+  // Check if this visitor already minted a passport in this browser for THIS email AND THIS hackathon
   useEffect(() => {
+    const currentClean = cleanHackathonId(slug || hackathon.id);
+
     if (initialParticipant) {
-      setRegisteredParticipant(initialParticipant);
-      saveMyPassport(initialParticipant);
-      return;
+      const initialClean = cleanHackathonId(initialParticipant.hackathonId);
+      if (initialClean === currentClean) {
+        setRegisteredParticipant(initialParticipant);
+        saveMyPassport(initialParticipant);
+        return;
+      }
     }
 
-    const existing = getMyPassport(hackathon.id || "gh-shipathon-2026", user.email);
+    const targetHackathonId = hackathon.id || slug;
+    const existing = getMyPassport(targetHackathonId, user.email);
     if (
       existing &&
+      cleanHackathonId(existing.hackathonId) === currentClean &&
       existing.email &&
       existing.email.trim().toLowerCase() === user.email.trim().toLowerCase()
     ) {
@@ -144,7 +151,7 @@ export function HackathonRegisterClient({
     } else {
       setRegisteredParticipant(null);
     }
-  }, [hackathon.id, user.email, initialParticipant]);
+  }, [hackathon.id, slug, user.email, initialParticipant]);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();

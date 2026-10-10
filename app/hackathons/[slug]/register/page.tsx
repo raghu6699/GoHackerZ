@@ -32,7 +32,13 @@ export default async function HackathonRegisterPage({
     getHackathonBySlug(slug),
   ]);
 
-  const hackathon = hackathonData || FLAGSHIP_HACKATHON;
+  const isFlagshipSlug = slug === FLAGSHIP_HACKATHON.slug || slug === "shipathon-2026" || slug === "gh-shipathon-2026";
+  const hackathon = hackathonData || (isFlagshipSlug ? FLAGSHIP_HACKATHON : {
+    ...FLAGSHIP_HACKATHON,
+    id: slug.startsWith("gh-") ? slug : `gh-${slug}`,
+    slug: slug.replace(/^gh-/, ""),
+    title: slug.replace(/^gh-/, "").split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
+  });
 
   if (!user) {
     return (

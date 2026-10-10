@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { getMyPassport, getActiveTicketNumber } from "@/lib/passport-storage";
+import { getMyPassport, getActiveTicketNumber, cleanHackathonId } from "@/lib/passport-storage";
 import { createClient } from "@/lib/supabase-browser";
 import type { HackathonParticipant } from "@/lib/hackathons";
 import { Ticket, CheckCircle2 } from "lucide-react";
@@ -35,26 +35,36 @@ export function MyPassportBanner({
         return;
       }
 
-      const saved = getMyPassport(hackathonId, currentEmail);
+      const targetHackId = hackathonId || slug;
+      const cleanTarget = cleanHackathonId(targetHackId);
+      const saved = cleanTarget ? getMyPassport(cleanTarget, currentEmail) : null;
 
-      if (saved && saved.email && saved.email.trim().toLowerCase() === currentEmail) {
+      if (
+        saved &&
+        cleanHackathonId(saved.hackathonId) === cleanTarget &&
+        saved.email &&
+        saved.email.trim().toLowerCase() === currentEmail
+      ) {
         setPassport(saved);
         setTicketNum(saved.ticketNumber);
+
+        // Check server sync in background for latest submission
+        fetch(`/api/hackathons/${slug}/pass/${saved.ticketNumber}`)
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.success && d.participant) {
+              setPassport(d.participant);
+              setTicketNum(d.participant.ticketNumber);
+            } else if (d.differentHackathon || !d.success) {
+              setPassport(null);
+              setTicketNum(null);
+            }
+          })
+          .catch(() => {});
       } else {
         setPassport(null);
         setTicketNum(null);
       }
-
-      // Check server sync in background for latest submission
-      fetch(`/api/hackathons/${slug}/pass/${saved?.ticketNumber || ""}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.success && d.participant) {
-            setPassport(d.participant);
-            setTicketNum(d.participant.ticketNumber);
-          }
-        })
-        .catch(() => {});
     });
   }, [hackathonId, slug]);
 

@@ -16,28 +16,30 @@ export default async function HackerPassportRedirectPage() {
 
   const cleanEmail = user.email.trim().toLowerCase();
 
-  // 1. Check disk store
-  const fromDisk = getUserParticipantsByEmail(cleanEmail);
-  if (fromDisk.length > 0) {
-    const p = fromDisk[0];
-    const hackSlug = (p.hackathonId || "shipathon-2026").replace(/^gh-/, "");
-    redirect(`/hackathons/${hackSlug}/pass/${p.ticketNumber}`);
-  }
-
-  // 2. Check Postgres DB if available
+  // 1. Check Postgres DB if available (most canonical)
   if (isDbAvailable()) {
     try {
       const pDb = await prisma.hackathonParticipant.findFirst({
         where: { email: { equals: cleanEmail, mode: "insensitive" } },
         include: { hackathon: true },
+        orderBy: { createdAt: "desc" },
       });
       if (pDb) {
-        const hackSlug = pDb.hackathon?.slug || "shipathon-2026";
+        const hackSlug = pDb.hackathon?.slug || (pDb.hackathonId || "shipathon-2026").replace(/^gh-/, "");
         redirect(`/hackathons/${hackSlug}/pass/${pDb.ticketNumber}`);
       }
     } catch (e) {
       console.warn("[HackerPassportRedirect] DB lookup notice:", e);
     }
+  }
+
+  // 2. Check disk store
+  const fromDisk = getUserParticipantsByEmail(cleanEmail);
+  if (fromDisk.length > 0) {
+    const sorted = [...fromDisk].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    const p = sorted[0];
+    const hackSlug = (p.hackathonId || "shipathon-2026").replace(/^gh-/, "");
+    redirect(`/hackathons/${hackSlug}/pass/${p.ticketNumber}`);
   }
 
   // 3. Fallback to latest flagship registration if none found
