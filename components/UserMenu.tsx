@@ -92,6 +92,8 @@ export function NavAuth() {
   }
 
   const items = [
+    { href: "/hackathons/shipathon-2026/admin", label: "Hackathon Admin Studio", emoji: "🏆" },
+    { href: "/hackathons", label: "Hacker Passports & Arena", emoji: "🎟️" },
     { href: "/profile", label: "Edit profile", emoji: "👤" },
     { href: "/profile?tab=posts", label: "Your posts", emoji: "📝" },
     { href: "/profile?tab=saved", label: "Saved articles", emoji: "★" },
