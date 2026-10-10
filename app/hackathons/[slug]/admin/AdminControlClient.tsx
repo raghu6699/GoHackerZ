@@ -50,6 +50,7 @@ export function AdminControlClient({
   const [participants, setParticipants] = useState<HackathonParticipant[]>(initialParticipants);
   const [certificates, setCertificates] = useState<HackathonCertificate[]>(initialCertificates);
   const [hostProposals, setHostProposals] = useState<HostHackathonProposal[]>([]);
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -952,13 +953,40 @@ export function AdminControlClient({
                             </Link>
                           )}
 
+                          {/* Direct Web Gmail Composer */}
                           <a
-                            href={`mailto:${prop.contactEmail}?subject=Re:%20GoHackerz%20Hackathon%20Hosting%20Proposal%20[${prop.refNumber}]`}
+                            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(prop.contactEmail)}&su=${encodeURIComponent(`Re: GoHackerz Hackathon Hosting Proposal [${prop.refNumber}]`)}&body=${encodeURIComponent(`Hi ${prop.contactName},\n\nThank you for reaching out regarding the ${prop.hackathonTitle} hosting proposal on GoHackerz [${prop.refNumber}].\n\nBest regards,\nGoHackerz Team`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors"
+                            title="Compose reply in Gmail Web"
                           >
                             <Mail className="w-3 h-3" />
-                            Email
+                            Gmail
                           </a>
+
+                          {/* 1-Click Copy Email */}
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(prop.contactEmail);
+                              setCopiedEmailId(prop.id);
+                              setTimeout(() => setCopiedEmailId(null), 2500);
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a153b] hover:bg-[#251f52] text-[#a59fcf] hover:text-white font-mono text-[10px] transition-colors border border-white/5"
+                            title="Copy email address to clipboard"
+                          >
+                            {copiedEmailId === prop.id ? (
+                              <>
+                                <Check className="w-3 h-3 text-[#C6FF3D]" />
+                                <span className="text-[#C6FF3D] font-bold">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-[10px]">📋</span>
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>

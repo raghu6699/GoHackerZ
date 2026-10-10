@@ -279,30 +279,56 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
   const slug = baseSlug;
   const hackathonId = `gh-${slug}`;
 
-  // 2. Parse tracks or default
-  const tracks = [
+  // 2. Parse tracks from proposal input or provide rich structured tracks
+  let tracks = [
     {
       id: "ai-track",
       title: "AI & Autonomous Systems",
-      prize: "Cash Grant + Cloud Credits",
+      prize: proposal.estimatedPrizePool ? `${proposal.estimatedPrizePool} (AI Division)` : "Cash Grant + Cloud Credits",
       description: "Build cutting-edge autonomous agents and AI-powered workflows.",
       tags: ["AI", "Agents", "LangChain", "LLMs"],
     },
     {
       id: "edge-track",
       title: "Edge & High-Performance Web",
-      prize: "Cash Grant + Cloud Credits",
+      prize: proposal.estimatedPrizePool ? `${proposal.estimatedPrizePool} (Web Division)` : "Cash Grant + Cloud Credits",
       description: "Ultra-low latency web apps, realtime architectures, and local-first systems.",
       tags: ["Edge", "Next.js", "Realtime", "TypeScript"],
     },
     {
       id: "open-track",
       title: "Open Innovation & Developer Tools",
-      prize: "Cash Grant + Cloud Credits",
+      prize: proposal.estimatedPrizePool ? `${proposal.estimatedPrizePool} (Open Division)` : "Cash Grant + Cloud Credits",
       description: "Build developer productivity tools, libraries, or open-source infrastructure.",
       tags: ["DevTools", "OpenSource", "Infra"],
     },
   ];
+
+  if (proposal.tracksAndGoals?.trim()) {
+    const rawLines = proposal.tracksAndGoals
+      .split(/[,\n;]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 2);
+
+    if (rawLines.length > 0) {
+      tracks = rawLines.slice(0, 4).map((line, idx) => {
+        const cleanTitle = line.replace(/^[0-9.-]+\s*/, "").trim();
+        const trackId =
+          cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+          `track-${idx + 1}`;
+        const firstWord = cleanTitle.split(" ")[0] || "Innovation";
+        return {
+          id: trackId,
+          title: cleanTitle.length > 45 ? cleanTitle.slice(0, 45) + "..." : cleanTitle,
+          prize: proposal.estimatedPrizePool
+            ? `Top Prize · ${proposal.estimatedPrizePool}`
+            : "Cash Grant + Cloud Credits",
+          description: `Build innovative, production-grade solutions for ${cleanTitle}.`,
+          tags: [firstWord, "GoHackerz", proposal.orgName.split(" ")[0]],
+        };
+      });
+    }
+  }
 
   const now = new Date();
   const startDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
