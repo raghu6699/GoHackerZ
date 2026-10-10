@@ -404,6 +404,19 @@ export function getPersistedParticipantByTicket(ticketNumber: string): Hackathon
     }
   }
 
+  // Resolve submission from persisted submissions if not yet attached
+  if (!participant.submission) {
+    const subs = loadPersistedSubmissions();
+    const sub = subs.find(
+      (s) =>
+        s.ticketNumber?.toUpperCase() === clean ||
+        (participant.teamName && s.teamName && s.teamName.toLowerCase() === participant.teamName.toLowerCase())
+    );
+    if (sub) {
+      participant.submission = sub;
+    }
+  }
+
   return participant;
 }
 
@@ -547,6 +560,21 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
   for (const p of memoryStore.participants.values()) {
     if (!map.has(p.ticketNumber.toUpperCase())) {
       map.set(p.ticketNumber.toUpperCase(), p);
+    }
+  }
+
+  // 4. Ensure all participants have their submission mapped if one exists
+  const allSubs = loadPersistedSubmissions();
+  for (const p of map.values()) {
+    if (!p.submission) {
+      const match = allSubs.find(
+        (s) =>
+          s.ticketNumber?.toUpperCase() === p.ticketNumber.toUpperCase() ||
+          (p.teamName && s.teamName && s.teamName.toLowerCase() === p.teamName.toLowerCase())
+      );
+      if (match) {
+        p.submission = match;
+      }
     }
   }
 
@@ -1621,7 +1649,26 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
     }
   }
 
-  // 3. Save to Postgres DB
+  // Also sync with all matching participants on disk
+  try {
+    const allParts = loadPersistedParticipants();
+    let updatedAny = false;
+    for (const p of allParts) {
+      if (
+        (submission.ticketNumber && p.ticketNumber.toUpperCase() === submission.ticketNumber.toUpperCase()) ||
+        (submission.teamName && p.teamName && p.teamName.toLowerCase() === submission.teamName.toLowerCase())
+      ) {
+        p.submission = submission;
+        updatedAny = true;
+        memoryStore.participants.set(p.ticketNumber.toUpperCase(), p);
+      }
+    }
+    if (updatedAny) {
+      fs.writeFileSync(PARTICIPANTS_FILE, JSON.stringify(allParts, null, 2), "utf-8");
+    }
+  } catch {}
+
+  // 3. Save to Postgres DB safely (checking existing rows to prevent unique constraint violations)
   if (isDbAvailable()) {
     try {
       await ensureTablesExist();
@@ -1641,37 +1688,53 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
       }
 
       if (participantDbId) {
-        await prisma.hackathonSubmission.upsert({
-          where: { id: submission.id },
-          update: {
-            title: submission.title,
-            tagline: submission.tagline,
-            description: submission.description,
-            repoUrl: submission.repoUrl,
-            demoUrl: submission.demoUrl || null,
-            pitchDeckUrl: submission.pitchDeckUrl || null,
-            videoUrl: submission.videoUrl || null,
-            gammaUrl: submission.gammaUrl || null,
-            techStack: submission.techStack || [],
-            trackId: submission.trackId || null,
-          },
-          create: {
-            id: submission.id,
-            hackathonId: realHackathonId,
-            participantId: participantDbId,
-            teamId: teamDbId,
-            title: submission.title,
-            tagline: submission.tagline,
-            description: submission.description,
-            repoUrl: submission.repoUrl,
-            demoUrl: submission.demoUrl || null,
-            pitchDeckUrl: submission.pitchDeckUrl || null,
-            videoUrl: submission.videoUrl || null,
-            gammaUrl: submission.gammaUrl || null,
-            techStack: submission.techStack || [],
-            trackId: submission.trackId || null,
+        // Check if a submission already exists by id, teamId, or participantId
+        const existingSub = await prisma.hackathonSubmission.findFirst({
+          where: {
+            OR: [
+              { id: submission.id },
+              ...(teamDbId ? [{ teamId: teamDbId }] : []),
+              { participantId: participantDbId },
+            ],
           },
         });
+
+        if (existingSub) {
+          await prisma.hackathonSubmission.update({
+            where: { id: existingSub.id },
+            data: {
+              title: submission.title,
+              tagline: submission.tagline,
+              description: submission.description,
+              repoUrl: submission.repoUrl,
+              demoUrl: submission.demoUrl || null,
+              pitchDeckUrl: submission.pitchDeckUrl || null,
+              videoUrl: submission.videoUrl || null,
+              gammaUrl: submission.gammaUrl || null,
+              techStack: submission.techStack || [],
+              trackId: submission.trackId || null,
+            },
+          });
+        } else {
+          await prisma.hackathonSubmission.create({
+            data: {
+              id: submission.id,
+              hackathonId: realHackathonId,
+              participantId: participantDbId,
+              teamId: teamDbId,
+              title: submission.title,
+              tagline: submission.tagline,
+              description: submission.description,
+              repoUrl: submission.repoUrl,
+              demoUrl: submission.demoUrl || null,
+              pitchDeckUrl: submission.pitchDeckUrl || null,
+              videoUrl: submission.videoUrl || null,
+              gammaUrl: submission.gammaUrl || null,
+              techStack: submission.techStack || [],
+              trackId: submission.trackId || null,
+            },
+          });
+        }
       }
     } catch (e) {
       console.warn("[persistSubmission] DB write error:", e);

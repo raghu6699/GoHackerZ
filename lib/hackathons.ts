@@ -446,6 +446,48 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
       });
 
       if (dbRow) {
+        // Resolve submission from DB relation or team submission or disk
+        let submission: HackathonSubmission | undefined = undefined;
+        let rawSub = dbRow.submissions?.[0];
+        if (!rawSub && dbRow.teamId) {
+          try {
+            rawSub = await prisma.hackathonSubmission.findFirst({
+              where: { teamId: dbRow.teamId },
+              orderBy: { createdAt: "desc" },
+            }) as any;
+          } catch {}
+        }
+
+        if (rawSub) {
+          submission = {
+            id: rawSub.id,
+            hackathonId: dbRow.hackathonId,
+            ticketNumber: dbRow.ticketNumber,
+            teamName: dbRow.team?.name ?? undefined,
+            trackId: rawSub.trackId || "general",
+            title: rawSub.title,
+            tagline: rawSub.tagline,
+            description: rawSub.description,
+            repoUrl: rawSub.repoUrl,
+            demoUrl: rawSub.demoUrl || undefined,
+            pitchDeckUrl: rawSub.pitchDeckUrl || undefined,
+            videoUrl: rawSub.videoUrl || undefined,
+            gammaUrl: rawSub.gammaUrl || undefined,
+            techStack: (rawSub.techStack as string[]) || [],
+            authorName: dbRow.name,
+            createdAt: rawSub.createdAt.toISOString(),
+            upvotes: 1,
+          };
+        } else {
+          const diskSubs = loadPersistedSubmissions();
+          const match = diskSubs.find(
+            (s) =>
+              s.ticketNumber?.toUpperCase() === clean ||
+              (dbRow.team?.name && s.teamName && s.teamName.toLowerCase() === dbRow.team.name.toLowerCase())
+          );
+          if (match) submission = match;
+        }
+
         const participant: HackathonParticipant = {
           id: dbRow.id,
           hackathonId: dbRow.hackathonId,
@@ -467,6 +509,7 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
             roleTitle: p.roleTitle,
             avatarUrl: p.avatarUrl ?? undefined,
           })),
+          submission,
           createdAt: dbRow.createdAt.toISOString(),
         };
 
@@ -483,16 +526,39 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
   // 2. Fallback to persistent disk storage
   const persisted = getPersistedParticipantByTicket(clean);
   if (persisted) {
+    if (!persisted.submission) {
+      const diskSubs = loadPersistedSubmissions();
+      const match = diskSubs.find(
+        (s) =>
+          s.ticketNumber?.toUpperCase() === clean ||
+          (persisted.teamName && s.teamName && s.teamName.toLowerCase() === persisted.teamName.toLowerCase())
+      );
+      if (match) persisted.submission = match;
+    }
     memoryStore.participants.set(clean, persisted);
     return persisted;
   }
 
   // 3. Fallback to memory store if not yet flushed
   const direct = memoryStore.participants.get(clean);
-  if (direct) return direct;
+  if (direct) {
+    if (!direct.submission) {
+      const diskSubs = loadPersistedSubmissions();
+      const match = diskSubs.find((s) => s.ticketNumber?.toUpperCase() === clean);
+      if (match) direct.submission = match;
+    }
+    return direct;
+  }
 
   for (const [key, val] of memoryStore.participants.entries()) {
-    if (key.toUpperCase() === clean) return val;
+    if (key.toUpperCase() === clean) {
+      if (!val.submission) {
+        const diskSubs = loadPersistedSubmissions();
+        const match = diskSubs.find((s) => s.ticketNumber?.toUpperCase() === clean);
+        if (match) val.submission = match;
+      }
+      return val;
+    }
   }
 
   return null;
@@ -522,6 +588,47 @@ export async function getParticipantByEmail(
       });
 
       if (dbRow) {
+        let submission: HackathonSubmission | undefined = undefined;
+        let rawSub = dbRow.submissions?.[0];
+        if (!rawSub && dbRow.teamId) {
+          try {
+            rawSub = await prisma.hackathonSubmission.findFirst({
+              where: { teamId: dbRow.teamId },
+              orderBy: { createdAt: "desc" },
+            }) as any;
+          } catch {}
+        }
+
+        if (rawSub) {
+          submission = {
+            id: rawSub.id,
+            hackathonId: dbRow.hackathonId,
+            ticketNumber: dbRow.ticketNumber,
+            teamName: dbRow.team?.name ?? undefined,
+            trackId: rawSub.trackId || "general",
+            title: rawSub.title,
+            tagline: rawSub.tagline,
+            description: rawSub.description,
+            repoUrl: rawSub.repoUrl,
+            demoUrl: rawSub.demoUrl || undefined,
+            pitchDeckUrl: rawSub.pitchDeckUrl || undefined,
+            videoUrl: rawSub.videoUrl || undefined,
+            gammaUrl: rawSub.gammaUrl || undefined,
+            techStack: (rawSub.techStack as string[]) || [],
+            authorName: dbRow.name,
+            createdAt: rawSub.createdAt.toISOString(),
+            upvotes: 1,
+          };
+        } else {
+          const diskSubs = loadPersistedSubmissions();
+          const match = diskSubs.find(
+            (s) =>
+              s.ticketNumber?.toUpperCase() === dbRow.ticketNumber.toUpperCase() ||
+              (dbRow.team?.name && s.teamName && s.teamName.toLowerCase() === dbRow.team.name.toLowerCase())
+          );
+          if (match) submission = match;
+        }
+
         const participant: HackathonParticipant = {
           id: dbRow.id,
           hackathonId: dbRow.hackathonId,
@@ -543,6 +650,7 @@ export async function getParticipantByEmail(
             roleTitle: p.roleTitle,
             avatarUrl: p.avatarUrl ?? undefined,
           })),
+          submission,
           createdAt: dbRow.createdAt.toISOString(),
         };
         persistParticipant(participant);

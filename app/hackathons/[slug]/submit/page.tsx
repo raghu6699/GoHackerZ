@@ -103,15 +103,33 @@ export default function HackathonSubmitPage() {
       }
 
       // Update local storage so passport immediately knows about the submission!
-      const existing = getMyPassport(slug) || getMyPassport("gh-shipathon-2026");
+      const cleanTicket = ticketNumber.trim().toUpperCase();
+      const activeEmail = (localStorage.getItem("gh_active_email") || "").trim().toLowerCase();
+      const existing =
+        getMyPassport(slug, activeEmail || undefined) ||
+        getMyPassport("gh-shipathon-2026", activeEmail || undefined);
+
       if (existing) {
         existing.submission = data.submission;
         saveMyPassport(existing);
+      } else {
+        saveMyPassport({
+          id: `part-${cleanTicket.toLowerCase()}`,
+          hackathonId: slug,
+          ticketNumber: cleanTicket,
+          name: data.submission.authorName || "Builder",
+          email: activeEmail,
+          roleTitle: "Fullstack & AI Engineer",
+          themeStyle: "lime",
+          isCaptain: false,
+          submission: data.submission,
+          createdAt: new Date().toISOString(),
+        });
       }
 
       setSuccess(true);
       setTimeout(() => {
-        router.push(`/hackathons/${slug}/pass/${ticketNumber.trim().toUpperCase()}`);
+        router.push(`/hackathons/${slug}/pass/${cleanTicket}`);
       }, 1200);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");

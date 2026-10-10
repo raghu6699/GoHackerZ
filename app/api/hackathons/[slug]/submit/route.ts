@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { submitProject, getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
+import { submitProject, getHackathonBySlug, getAllSubmissions, getParticipantByTicket } from "@/lib/hackathons";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function POST(
   req: Request,
@@ -60,7 +63,7 @@ export async function POST(
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
@@ -70,8 +73,36 @@ export async function GET(
       return NextResponse.json({ error: "Hackathon not found" }, { status: 404 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const ticketParam = searchParams.get("ticket");
+
     const submissions = await getAllSubmissions(hackathon.id);
-    return NextResponse.json({ submissions });
+
+    if (ticketParam) {
+      const clean = ticketParam.trim().toUpperCase();
+      const direct = submissions.find((s) => s.ticketNumber?.toUpperCase() === clean);
+      if (direct) {
+        return NextResponse.json({ success: true, submission: direct, submissions });
+      }
+
+      // Check if ticket is in a team that submitted
+      const participant = await getParticipantByTicket(clean);
+      if (participant?.submission) {
+        return NextResponse.json({ success: true, submission: participant.submission, submissions });
+      }
+      if (participant?.teamName) {
+        const teamMatch = submissions.find(
+          (s) => s.teamName && s.teamName.toLowerCase() === participant.teamName!.toLowerCase()
+        );
+        if (teamMatch) {
+          return NextResponse.json({ success: true, submission: teamMatch, submissions });
+        }
+      }
+
+      return NextResponse.json({ success: true, submission: null, submissions });
+    }
+
+    return NextResponse.json({ success: true, submissions });
   } catch (error) {
     console.error("Get submissions error:", error);
     return NextResponse.json({ error: "Failed to fetch submissions" }, { status: 500 });

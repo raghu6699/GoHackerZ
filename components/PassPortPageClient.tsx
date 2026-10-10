@@ -42,6 +42,24 @@ export function PassPortPageClient({
     }
   }, [ticketId]);
 
+  // Live query submission for this ticket
+  useEffect(() => {
+    if (ticketId && slug) {
+      fetch(`/api/hackathons/${slug}/submit?ticket=${ticketId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.success && data.submission) {
+            setParticipant((prev) => {
+              const updated = { ...prev, submission: data.submission };
+              saveMyPassport(updated);
+              return updated;
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [ticketId, slug]);
+
   useEffect(() => {
     // Use the actual hackathonId so keys are consistent across the app
     const hackId = serverParticipant.hackathonId || "gh-shipathon-2026";
@@ -81,7 +99,7 @@ export function PassPortPageClient({
             : (serverParticipant.teammates && serverParticipant.teammates.length > 0)
             ? serverParticipant.teammates
             : undefined,
-        submission: myPassport?.submission || serverParticipant.submission,
+        submission: serverParticipant.submission || myPassport?.submission,
       };
 
       setParticipant(merged);
@@ -728,9 +746,19 @@ export function PassPortPageClient({
             <span className="font-mono text-xs font-black text-lime bg-brand-dark px-2.5 py-1 rounded">
               🚀 PROJECT SUBMISSION
             </span>
-            <span className="font-mono text-xs text-muted">
-              {new Date(participant.submission.createdAt).toLocaleDateString()}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted">
+                {new Date(participant.submission.createdAt).toLocaleDateString()}
+              </span>
+              {isOwner && (
+                <Link
+                  href={`/hackathons/${slug}/submit?ticket=${participant.ticketNumber}`}
+                  className="font-mono text-xs font-bold text-purple hover:underline"
+                >
+                  Edit Project →
+                </Link>
+              )}
+            </div>
           </div>
 
           <div>
