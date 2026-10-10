@@ -173,7 +173,7 @@ export function CertificateCard({
       {/* The Authentic Certificate Frame */}
       <div className="certificate-shell w-full max-w-4xl">
         <article
-          className={`relative isolation-isolate w-full overflow-hidden p-[4.4%_5.2%] bg-white text-[#1A1440] shadow-2xl rounded-sm aspect-[1.414/1] print:aspect-auto print:shadow-none print:w-full print:m-0 print:p-8 ${
+          className={`relative isolation-isolate w-full overflow-hidden p-5 sm:p-[4.4%_5.2%] bg-white text-[#1A1440] shadow-2xl rounded-sm min-h-[500px] sm:min-h-0 sm:aspect-[1.414/1] print:aspect-auto print:min-h-0 print:shadow-none print:w-full print:m-0 print:p-8 ${
             isWinner ? "border-2 border-[#5B3EE8]" : "border border-[#D7D3EA]"
           }`}
           style={{
@@ -181,21 +181,21 @@ export function CertificateCard({
           }}
         >
           {/* Outer & Inner Thin Rules */}
-          <div className="absolute inset-[16px] border border-[#7C5CFF] pointer-events-none opacity-80" />
-          <div className="absolute inset-[22px] border border-[#D7D3EA] pointer-events-none opacity-90" />
+          <div className="absolute inset-[10px] sm:inset-[16px] border border-[#7C5CFF] pointer-events-none opacity-80" />
+          <div className="absolute inset-[14px] sm:inset-[22px] border border-[#D7D3EA] pointer-events-none opacity-90" />
 
           {/* Corner Ornaments */}
-          <span className="absolute top-[16px] left-[16px] w-[32px] h-[32px] border-t-2 border-l-2 border-[#7C5CFF]" />
-          <span className="absolute top-[16px] right-[16px] w-[32px] h-[32px] border-t-2 border-r-2 border-[#7C5CFF]" />
-          <span className="absolute bottom-[16px] left-[16px] w-[32px] h-[32px] border-b-2 border-l-2 border-[#7C5CFF]" />
-          <span className="absolute bottom-[16px] right-[16px] w-[32px] h-[32px] border-b-2 border-r-2 border-[#7C5CFF]" />
+          <span className="absolute top-[10px] sm:top-[16px] left-[10px] sm:left-[16px] w-[20px] sm:w-[32px] h-[20px] sm:h-[32px] border-t-2 border-l-2 border-[#7C5CFF]" />
+          <span className="absolute top-[10px] sm:top-[16px] right-[10px] sm:right-[16px] w-[20px] sm:w-[32px] h-[20px] sm:h-[32px] border-t-2 border-r-2 border-[#7C5CFF]" />
+          <span className="absolute bottom-[10px] sm:bottom-[16px] left-[10px] sm:left-[16px] w-[20px] sm:w-[32px] h-[20px] sm:h-[32px] border-b-2 border-l-2 border-[#7C5CFF]" />
+          <span className="absolute bottom-[10px] sm:bottom-[16px] right-[10px] sm:right-[16px] w-[20px] sm:w-[32px] h-[20px] sm:h-[32px] border-b-2 border-r-2 border-[#7C5CFF]" />
 
-          <div className="flex h-full flex-col items-center justify-between text-center relative z-10">
+          <div className="flex h-full flex-col items-center justify-between text-center relative z-10 gap-4 sm:gap-2">
             {/* Top Brand & Metadata Bar */}
-            <div className="flex w-full items-center justify-between">
-              <div className="flex items-center gap-2.5 text-left">
+            <div className="flex w-full items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-2.5 text-left">
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-serif text-lg font-bold border ${
+                  className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-serif text-sm sm:text-lg font-bold border shrink-0 ${
                     isFirstPlace
                       ? "bg-amber-400 text-black border-amber-600 shadow-md"
                       : isWinner
@@ -206,98 +206,99 @@ export function CertificateCard({
                   {isFirstPlace ? "🏆" : "GH"}
                 </div>
                 <div>
-                  <div className="text-[12px] font-bold tracking-tight text-[#1A1440]">
+                  <div className="text-[11px] sm:text-[12px] font-bold tracking-tight text-[#1A1440] leading-none">
                     GoHackerz
                   </div>
-                  <div className="text-[8px] font-semibold tracking-widest text-[#5B3EE8] uppercase">
+                  <div className="text-[7px] sm:text-[8px] font-semibold tracking-widest text-[#5B3EE8] uppercase mt-0.5">
                     Build · Ship · Share
                   </div>
                 </div>
               </div>
 
-              <div className="text-right font-mono text-[9px] text-[#4A4473]">
-                <span>OFFICIAL CREDENTIAL ID</span>
-                <strong className="block text-[10px] font-bold text-[#1A1440]">
+              <div className="text-right font-mono text-[8px] sm:text-[9px] text-[#4A4473]">
+                <span className="hidden xs:inline">OFFICIAL CREDENTIAL ID</span>
+                <span className="xs:hidden">ID</span>
+                <strong className="block text-[9px] sm:text-[10px] font-bold text-[#1A1440]">
                   {certificate.certNumber}
                 </strong>
               </div>
             </div>
 
             {/* Main Certificate Typography */}
-            <div className="w-full my-auto py-2">
-              <p className="text-[10px] font-mono font-bold tracking-widest uppercase text-[#7C5CFF] mb-1">
+            <div className="w-full my-auto py-1 sm:py-2">
+              <p className="text-[9px] sm:text-[10px] font-mono font-bold tracking-widest uppercase text-[#7C5CFF] mb-1">
                 {kicker}
               </p>
 
               <h1
-                className="text-3xl sm:text-4xl md:text-5xl font-normal text-[#1A1440] tracking-tight leading-tight"
+                className="text-2xl sm:text-4xl md:text-5xl font-normal text-[#1A1440] tracking-tight leading-tight"
                 style={{ fontFamily: '"Source Serif 4", Georgia, serif' }}
               >
                 {titleHeading}
               </h1>
 
-              <div className="flex items-center justify-center gap-3 my-2 text-[#7C5CFF]">
-                <div className="w-12 h-px bg-[#7C5CFF]/40" />
-                <span className="text-xs">✦</span>
-                <div className="w-12 h-px bg-[#7C5CFF]/40" />
+              <div className="flex items-center justify-center gap-2 sm:gap-3 my-1.5 sm:my-2 text-[#7C5CFF]">
+                <div className="w-8 sm:w-12 h-px bg-[#7C5CFF]/40" />
+                <span className="text-[10px] sm:text-xs">✦</span>
+                <div className="w-8 sm:w-12 h-px bg-[#7C5CFF]/40" />
               </div>
 
               <p
-                className="text-2xl sm:text-3xl md:text-4xl italic font-normal text-[#1A1440] my-1"
+                className="text-xl sm:text-3xl md:text-4xl italic font-normal text-[#1A1440] my-1"
                 style={{ fontFamily: '"Source Serif 4", Georgia, serif' }}
               >
                 {certificate.recipientName}
               </p>
 
               {certificate.teamName && (
-                <p className="text-xs font-medium text-[#7C5CFF] tracking-wide">
+                <p className="text-[11px] sm:text-xs font-medium text-[#7C5CFF] tracking-wide mt-0.5">
                   Squad: <span className="font-bold">{certificate.teamName}</span>
                 </p>
               )}
 
-              <p className="max-w-xl mx-auto text-xs sm:text-sm text-[#4A4473] leading-relaxed mt-2">
+              <p className="max-w-xl mx-auto text-xs sm:text-sm text-[#4A4473] leading-relaxed mt-1.5 sm:mt-2 px-1">
                 is awarded this certificate in recognition of their active participation and contribution to
-                <strong className="block text-[#1A1440] font-bold mt-0.5">
+                <strong className="block text-[#1A1440] font-bold mt-0.5 text-xs sm:text-sm">
                   {certificate.title}
                 </strong>
               </p>
 
               {distinctionText && (
-                <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-[#5B3EE8]/10 text-[#5B3EE8] text-[11px] font-bold tracking-wider uppercase border border-[#5B3EE8]/30">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#5B3EE8]/10 text-[#5B3EE8] text-[10px] sm:text-[11px] font-bold tracking-wider uppercase border border-[#5B3EE8]/30">
+                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   {distinctionText}
                 </div>
               )}
             </div>
 
             {/* Bottom Bar: Signatures, QR Code & Date */}
-            <div className="flex w-full items-end justify-between px-2 pt-1 border-t border-[#D7D3EA]/60">
+            <div className="flex w-full items-end justify-between px-1 sm:px-2 pt-2 sm:pt-1 border-t border-[#D7D3EA]/60 gap-2">
               {/* Director Signature */}
-              <div className="w-28 sm:w-36 text-center flex flex-col items-center justify-end">
+              <div className="w-24 sm:w-36 text-center flex flex-col items-center justify-end">
                 <img
                   src="/logo/header-logo.png"
                   alt="GoHackerz"
-                  className="h-6 sm:h-7 w-auto object-contain mix-blend-multiply mb-0.5"
+                  className="h-5 sm:h-7 w-auto object-contain mix-blend-multiply mb-0.5"
                 />
-                <div className="w-full h-px bg-[#1A1440] my-1" />
-                <div className="text-[8px] font-semibold uppercase tracking-wider text-[#4A4473]">
+                <div className="w-full h-px bg-[#1A1440] my-0.5 sm:my-1" />
+                <div className="text-[7px] sm:text-[8px] font-semibold uppercase tracking-wider text-[#4A4473] leading-tight">
                   Hackathon Director
                 </div>
               </div>
 
               {/* Center Seal & Date */}
-              <div className="text-center text-[9px] text-[#4A4473] leading-tight">
+              <div className="text-center text-[8px] sm:text-[9px] text-[#4A4473] leading-tight px-1">
                 <div>Issued on</div>
-                <strong className="text-[#1A1440] text-[10px]">{formattedDate}</strong>
-                <div className="text-[8px] text-[#7C5CFF] font-medium truncate max-w-[140px]">{certificate.title || "GoHackerz Arena"}</div>
+                <strong className="text-[#1A1440] text-[9px] sm:text-[10px] block">{formattedDate}</strong>
+                <div className="text-[7px] sm:text-[8px] text-[#7C5CFF] font-medium truncate max-w-[90px] sm:max-w-[140px]">{certificate.title || "GoHackerz Arena"}</div>
               </div>
 
               {/* QR Verification Code */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="p-1 bg-white border border-[#D7D3EA] rounded shadow-xs">
-                  <QRCodeSVG value={verifyUrl} size={44} level="M" />
+              <div className="flex flex-col items-center gap-0.5 sm:gap-1 shrink-0">
+                <div className="p-0.5 sm:p-1 bg-white border border-[#D7D3EA] rounded shadow-xs">
+                  <QRCodeSVG value={verifyUrl} size={36} className="sm:w-[44px] sm:h-[44px]" level="M" />
                 </div>
-                <div className="text-[7px] font-mono tracking-tight text-[#4A4473]">
+                <div className="text-[6px] sm:text-[7px] font-mono tracking-tight text-[#4A4473]">
                   SCAN TO VERIFY
                 </div>
               </div>
@@ -305,7 +306,7 @@ export function CertificateCard({
           </div>
 
           {/* Tamper Seal watermark */}
-          <div className="absolute right-[32px] bottom-[28px] text-[7px] font-mono text-[#4A4473]/60 tracking-wider pointer-events-none print:hidden">
+          <div className="hidden sm:block absolute right-[32px] bottom-[28px] text-[7px] font-mono text-[#4A4473]/60 tracking-wider pointer-events-none print:hidden">
             SECURE VERIFIABLE HASH · GOHACKERZ ORG
           </div>
         </article>
