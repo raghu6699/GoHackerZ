@@ -131,15 +131,15 @@ export async function ensureTablesExist(): Promise<void> {
       );
 
       DO $$ BEGIN
-        -- If techStack column in HackathonSubmission was jsonb or text, convert to text[]
+        -- If techStack column in HackathonSubmission is not text array, safely drop and re-add as TEXT[]
         IF EXISTS (
           SELECT 1 FROM information_schema.columns 
-          WHERE table_name = 'HackathonSubmission' 
-          AND column_name = 'techStack' 
-          AND data_type = 'jsonb'
+          WHERE lower(table_name) = 'hackathonsubmission' 
+          AND lower(column_name) = 'techstack' 
+          AND data_type != 'ARRAY'
         ) THEN
-          ALTER TABLE "HackathonSubmission" ALTER COLUMN "techStack" TYPE TEXT[] 
-          USING ARRAY(SELECT jsonb_array_elements_text("techStack"));
+          ALTER TABLE "HackathonSubmission" DROP COLUMN "techStack";
+          ALTER TABLE "HackathonSubmission" ADD COLUMN "techStack" TEXT[] NOT NULL DEFAULT '{}';
         END IF;
       EXCEPTION WHEN OTHERS THEN NULL;
       END $$;
@@ -1873,6 +1873,7 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
           });
 
           if (existingSub) {
+            submission.id = existingSub.id;
             await prisma.hackathonSubmission.update({
               where: { id: existingSub.id },
               data: {

@@ -57,8 +57,14 @@ export async function POST(
     let dbSaved = false;
     let dbError: string | null = null;
     try {
-      const dbRow = await prisma.hackathonSubmission.findUnique({
-        where: { id: submission.id },
+      const cleanTicket = ticketNumber.trim().toUpperCase();
+      const dbRow = await prisma.hackathonSubmission.findFirst({
+        where: {
+          OR: [
+            { id: submission.id },
+            { participant: { ticketNumber: cleanTicket } },
+          ],
+        },
       });
       dbSaved = Boolean(dbRow);
     } catch (e: any) {
