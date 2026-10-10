@@ -15,6 +15,7 @@ const DATA_DIR = path.join(process.cwd(), "data");
 const PARTICIPANTS_FILE = path.join(DATA_DIR, "participants.json");
 const TEAMS_FILE = path.join(DATA_DIR, "teams.json");
 const CERTIFICATES_FILE = path.join(DATA_DIR, "certificates.json");
+const SUBMISSIONS_FILE = path.join(DATA_DIR, "submissions.json");
 
 // Fallback hackathon ID used when DB is not seeded
 const FALLBACK_HACKATHON_ID = "gh-shipathon-2026";
@@ -281,6 +282,18 @@ function writeToDisk(participant: HackathonParticipant): void {
           participant.teammates && participant.teammates.length > 0
             ? participant.teammates
             : existing.teammates,
+        submission:
+          participant.submission !== undefined
+            ? participant.submission
+            : existing.submission,
+        certificate:
+          participant.certificate !== undefined
+            ? participant.certificate
+            : existing.certificate,
+        badges:
+          participant.badges && participant.badges.length > 0
+            ? participant.badges
+            : existing.badges,
         themeStyle:
           participant.themeStyle && participant.themeStyle !== "lime"
             ? participant.themeStyle
@@ -1539,4 +1552,133 @@ export async function updateHackathonStatus(
 
   return { status: newStatus, autoIssuedCount };
 }
+
+// ── Submissions Store ──────────────────────────────────────────
+
+/**
+ * Load all persisted submissions from disk.
+ */
+export function loadPersistedSubmissions(): HackathonSubmission[] {
+  try {
+    ensureDirectoryExists();
+    if (!fs.existsSync(SUBMISSIONS_FILE)) return [];
+    const raw = fs.readFileSync(SUBMISSIONS_FILE, "utf-8");
+    if (!raw.trim()) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Persist a project submission to disk JSON, in-memory cache, and Postgres DB.
+ * Automatically synchronizes submission across all teammates in a squad!
+ */
+export async function persistSubmission(submission: HackathonSubmission): Promise<HackathonSubmission> {
+  // 1. Save to disk submissions list
+  try {
+    ensureDirectoryExists();
+    const list = loadPersistedSubmissions();
+    const idx = list.findIndex(
+      (s) =>
+        s.id === submission.id ||
+        (s.ticketNumber &&
+          submission.ticketNumber &&
+          s.ticketNumber.toUpperCase() === submission.ticketNumber.toUpperCase())
+    );
+    if (idx >= 0) {
+      list[idx] = submission;
+    } else {
+      list.push(submission);
+    }
+    fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(list, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("[persistSubmission] Disk write error:", e);
+  }
+
+  // 2. Update participant on disk & memory
+  if (submission.ticketNumber) {
+    const participant = getPersistedParticipantByTicket(submission.ticketNumber);
+    if (participant) {
+      participant.submission = submission;
+      writeToDisk(participant);
+      memoryStore.participants.set(participant.ticketNumber.toUpperCase(), participant);
+
+      // If in team squad, sync to all squad members!
+      if (participant.teamCode) {
+        const team = getPersistedTeamByCode(participant.teamCode);
+        if (team) {
+          for (const member of team.members) {
+            const mPart = getPersistedParticipantByTicket(member.ticketNumber);
+            if (mPart) {
+              mPart.submission = submission;
+              writeToDisk(mPart);
+              memoryStore.participants.set(mPart.ticketNumber.toUpperCase(), mPart);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Save to Postgres DB
+  if (isDbAvailable()) {
+    try {
+      await ensureTablesExist();
+      const realHackathonId = await getHackathonDbId(submission.hackathonId);
+      let participantDbId: string | null = null;
+      let teamDbId: string | null = null;
+
+      if (submission.ticketNumber) {
+        const pDb = await prisma.hackathonParticipant.findUnique({
+          where: { ticketNumber: submission.ticketNumber.trim().toUpperCase() },
+          select: { id: true, teamId: true },
+        });
+        if (pDb) {
+          participantDbId = pDb.id;
+          teamDbId = pDb.teamId;
+        }
+      }
+
+      if (participantDbId) {
+        await prisma.hackathonSubmission.upsert({
+          where: { id: submission.id },
+          update: {
+            title: submission.title,
+            tagline: submission.tagline,
+            description: submission.description,
+            repoUrl: submission.repoUrl,
+            demoUrl: submission.demoUrl || null,
+            pitchDeckUrl: submission.pitchDeckUrl || null,
+            videoUrl: submission.videoUrl || null,
+            gammaUrl: submission.gammaUrl || null,
+            techStack: submission.techStack || [],
+            trackId: submission.trackId || null,
+          },
+          create: {
+            id: submission.id,
+            hackathonId: realHackathonId,
+            participantId: participantDbId,
+            teamId: teamDbId,
+            title: submission.title,
+            tagline: submission.tagline,
+            description: submission.description,
+            repoUrl: submission.repoUrl,
+            demoUrl: submission.demoUrl || null,
+            pitchDeckUrl: submission.pitchDeckUrl || null,
+            videoUrl: submission.videoUrl || null,
+            gammaUrl: submission.gammaUrl || null,
+            techStack: submission.techStack || [],
+            trackId: submission.trackId || null,
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("[persistSubmission] DB write error:", e);
+    }
+  }
+
+  return submission;
+}
+
 

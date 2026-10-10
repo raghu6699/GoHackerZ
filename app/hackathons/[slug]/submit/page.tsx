@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { getActiveTicketNumber } from "@/lib/passport-storage";
-import { Code, ExternalLink, Sparkles, Check, AlertCircle, ArrowRight, Video, Presentation } from "lucide-react";
+import { getActiveTicketNumber, getMyPassport, saveMyPassport } from "@/lib/passport-storage";
+import { Code, ExternalLink, Sparkles, Check, AlertCircle, ArrowRight, Video, Presentation, CheckCircle2 } from "lucide-react";
 
 export default function HackathonSubmitPage() {
   const params = useParams();
@@ -28,13 +28,36 @@ export default function HackathonSubmitPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isEditingExisting, setIsEditingExisting] = useState(false);
 
   useEffect(() => {
-    if (!ticketNumber) {
-      const active = getActiveTicketNumber();
-      if (active) setTicketNumber(active);
+    const t = ticketNumber || initialTicket || getActiveTicketNumber();
+    if (t) {
+      setTicketNumber(t);
+      // Fetch fresh participant details to prefill if already submitted
+      fetch(`/api/hackathons/${slug}/pass/${t}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.participant?.submission) {
+            const s = d.participant.submission;
+            setIsEditingExisting(true);
+            setTitle(s.title || "");
+            setTagline(s.tagline || "");
+            setDescription(s.description || "");
+            setRepoUrl(s.repoUrl || "");
+            setDemoUrl(s.demoUrl || "");
+            setPitchDeckUrl(s.pitchDeckUrl || "");
+            setVideoUrl(s.videoUrl || "");
+            setGammaUrl(s.gammaUrl || "");
+            if (s.trackId) setTrackId(s.trackId);
+            if (s.techStack && s.techStack.length > 0) {
+              setTechStackInput(s.techStack.join(", "));
+            }
+          }
+        })
+        .catch(() => {});
     }
-  }, [ticketNumber]);
+  }, [ticketNumber, initialTicket, slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,10 +102,17 @@ export default function HackathonSubmitPage() {
         throw new Error(data.error || "Failed to submit project.");
       }
 
+      // Update local storage so passport immediately knows about the submission!
+      const existing = getMyPassport(slug) || getMyPassport("gh-shipathon-2026");
+      if (existing) {
+        existing.submission = data.submission;
+        saveMyPassport(existing);
+      }
+
       setSuccess(true);
       setTimeout(() => {
         router.push(`/hackathons/${slug}/pass/${ticketNumber.trim().toUpperCase()}`);
-      }, 1500);
+      }, 1200);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {

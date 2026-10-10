@@ -335,6 +335,8 @@ import {
   createNewTeam,
   leaveCurrentTeam,
   syncTeamParticipants,
+  persistSubmission,
+  loadPersistedSubmissions,
   memoryStore,
 } from "./participant-store";
 
@@ -705,19 +707,57 @@ export async function submitProject(params: {
 
   hackathonStore.submissions.set(subId, submission);
 
-  if (participant) {
-    participant.submission = submission;
-    memoryStore.participants.set(participant.ticketNumber, participant);
-    persistParticipant(participant);
-  }
+  // Persist submission to Postgres DB, disk, memory, and sync to squad teammates
+  await persistSubmission(submission);
 
   return submission;
 }
 
 export async function getAllSubmissions(hackathonId?: string): Promise<HackathonSubmission[]> {
-  const list = Array.from(hackathonStore.submissions.values()) as HackathonSubmission[];
+  const diskList = loadPersistedSubmissions();
+  const map = new Map<string, HackathonSubmission>();
+
+  for (const s of diskList) {
+    map.set(s.id, s);
+  }
+
+  // Check DB
+  if (isDbAvailable()) {
+    try {
+      const dbSubs = await prisma.hackathonSubmission.findMany({
+        include: { participant: true, team: true },
+        orderBy: { createdAt: "desc" },
+      });
+      for (const s of dbSubs) {
+        map.set(s.id, {
+          id: s.id,
+          hackathonId: s.hackathonId,
+          ticketNumber: s.participant?.ticketNumber,
+          teamName: s.team?.name || undefined,
+          trackId: s.trackId || "general",
+          title: s.title,
+          tagline: s.tagline,
+          description: s.description,
+          repoUrl: s.repoUrl,
+          demoUrl: s.demoUrl || undefined,
+          pitchDeckUrl: s.pitchDeckUrl || undefined,
+          videoUrl: s.videoUrl || undefined,
+          gammaUrl: s.gammaUrl || undefined,
+          techStack: (s.techStack as string[]) || [],
+          authorName: s.participant?.name || "Builder",
+          createdAt: s.createdAt.toISOString(),
+          upvotes: 1,
+        });
+      }
+    } catch (e) {
+      console.warn("[getAllSubmissions] DB query error:", e);
+    }
+  }
+
+  const list = Array.from(map.values());
   if (hackathonId) {
-    return list.filter((s) => s.hackathonId === hackathonId);
+    const clean = hackathonId.replace(/^gh-/, "");
+    return list.filter((s) => s.hackathonId === hackathonId || s.hackathonId === clean || s.hackathonId === `gh-${clean}`);
   }
   return list;
 }

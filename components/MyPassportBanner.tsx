@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getMyPassport, getActiveTicketNumber } from "@/lib/passport-storage";
 import { createClient } from "@/lib/supabase-browser";
 import type { HackathonParticipant } from "@/lib/hackathons";
-import { Ticket } from "lucide-react";
+import { Ticket, CheckCircle2 } from "lucide-react";
 
 interface MyPassportBannerProps {
   slug?: string;
@@ -44,10 +44,23 @@ export function MyPassportBanner({
         setPassport(null);
         setTicketNum(null);
       }
+
+      // Check server sync in background for latest submission
+      fetch(`/api/hackathons/${slug}/pass/${saved?.ticketNumber || ""}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.participant) {
+            setPassport(d.participant);
+            setTicketNum(d.participant.ticketNumber);
+          }
+        })
+        .catch(() => {});
     });
-  }, [hackathonId]);
+  }, [hackathonId, slug]);
 
   if (!ticketNum || !passport) return null;
+
+  const hasSubmission = !!passport.submission;
 
   return (
     <div
@@ -65,6 +78,11 @@ export function MyPassportBanner({
             <span className="font-mono text-xs font-bold text-white/70">
               TICKET #{ticketNum}
             </span>
+            {hasSubmission && (
+              <span className="font-mono text-[10px] bg-emerald-500 text-white font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> PROJECT SUBMITTED
+              </span>
+            )}
           </div>
           <h4 className="font-bold text-sm sm:text-base text-white mt-0.5">
             {passport?.name
@@ -74,19 +92,29 @@ export function MyPassportBanner({
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 shrink-0">
+      <div className="flex items-center gap-2.5 shrink-0 flex-wrap justify-center">
         <Link
           href={`/hackathons/${slug}/pass/${ticketNum}`}
           className="btn btn-sm btn-lime text-brand-dark font-mono text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm hover:scale-105 transition-all"
         >
           VIEW MY PASSPORT 🎫
         </Link>
-        <Link
-          href={`/hackathons/${slug}/submit?ticket=${ticketNum}`}
-          className="btn btn-sm bg-purple text-white hover:bg-purple-dark font-mono text-xs font-bold px-3.5 py-2 rounded-xl border border-white/20 transition-all"
-        >
-          SUBMIT PROJECT 🚀
-        </Link>
+        {hasSubmission ? (
+          <Link
+            href={`/hackathons/${slug}/submit?ticket=${ticketNum}`}
+            className="btn btn-sm bg-[#161233] text-[#C6FF3D] hover:bg-[#201b47] font-mono text-xs font-bold px-3.5 py-2 rounded-xl border border-[#7C5CFF]/40 transition-all flex items-center gap-1"
+          >
+            <span>EDIT SUBMISSION</span>
+            <span className="text-[10px]">✎</span>
+          </Link>
+        ) : (
+          <Link
+            href={`/hackathons/${slug}/submit?ticket=${ticketNum}`}
+            className="btn btn-sm bg-purple text-white hover:bg-purple-dark font-mono text-xs font-bold px-3.5 py-2 rounded-xl border border-white/20 transition-all"
+          >
+            SUBMIT PROJECT 🚀
+          </Link>
+        )}
       </div>
     </div>
   );
