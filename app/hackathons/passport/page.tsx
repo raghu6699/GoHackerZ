@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentDbUser } from "@/lib/profile";
 import { getUserParticipantsByEmail, loadPersistedParticipants } from "@/lib/participant-store";
 import { prisma, isDbAvailable } from "@/lib/prisma";
+import { PassportRedirectClient } from "@/components/PassportRedirectClient";
 
 export const metadata = {
   title: "Redirecting to Hacker Passport | GoHackerz",
@@ -42,6 +43,6 @@ export default async function HackerPassportRedirectPage() {
     redirect(`/hackathons/${hackSlug}/pass/${p.ticketNumber}`);
   }
 
-  // 3. Fallback to latest flagship registration if none found
-  redirect("/hackathons/shipathon-2026/register?notice=claim_passport");
+  // 3. Fallback to client-side localStorage and portfolio resolver
+  return <PassportRedirectClient userEmail={cleanEmail} />;
 }

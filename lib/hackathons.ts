@@ -1291,7 +1291,17 @@ export async function getUserHackathonHistory(email: string): Promise<{ hackatho
   const allHackathons = await getAllHackathons();
 
   for (const participant of userMap.values()) {
-    const hackathon = allHackathons.find((h) => h.id === participant.hackathonId) || FLAGSHIP_HACKATHON;
+    const cleanId = (participant.hackathonId || "").trim().toLowerCase().replace(/^gh-/, "");
+    const hackathon = allHackathons.find(
+      (h) =>
+        (h.id && h.id.replace(/^gh-/, "").toLowerCase() === cleanId) ||
+        (h.slug && h.slug.replace(/^gh-/, "").toLowerCase() === cleanId)
+    ) || {
+      ...FLAGSHIP_HACKATHON,
+      id: participant.hackathonId || `gh-${cleanId}`,
+      slug: cleanId || "shipathon-2026",
+      title: cleanId ? cleanId.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : FLAGSHIP_HACKATHON.title,
+    };
     results.push({ hackathon, participant });
   }
 

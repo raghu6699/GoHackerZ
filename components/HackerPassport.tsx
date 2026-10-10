@@ -205,6 +205,22 @@ export function HackerPassport({
   const activeSlug = slug || participant.hackathonId || "gh-shipathon-2026";
   const activeTicketId = ticketId || participant.ticketNumber || "GH-2026-X89B";
 
+  const cleanEventSlug = (activeSlug || "").replace(/^gh-/, "");
+  const dynamicFlightNo = `GH-${cleanEventSlug ? cleanEventSlug.toUpperCase().slice(0, 8) : "2026"}`;
+  const dynamicEventTitle = hackathonTitle || (cleanEventSlug ? cleanEventSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "Global Shipathon 2026");
+
+  const departureDate = useMemo(() => {
+    if (participant.createdAt) {
+      try {
+        const d = new Date(participant.createdAt);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+        }
+      } catch {}
+    }
+    return "12 OCT 2026";
+  }, [participant.createdAt]);
+
   const passportUrl = useMemo(() => {
     const origin =
       typeof window !== "undefined" ? window.location.origin : "https://gohackerz.com";
@@ -461,7 +477,7 @@ export function HackerPassport({
                     GOHACKERZ AIRWAYS // SPACEPORT
                   </span>
                   <span className="font-mono text-sm sm:text-base font-extrabold text-white tracking-wide">
-                    GLOBAL SHIPATHON 2026
+                    {dynamicEventTitle.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -547,7 +563,7 @@ export function HackerPassport({
                   FLIGHT NO.
                 </span>
                 <span className="font-mono text-xs sm:text-sm font-bold text-white block">
-                  GH-2026
+                  {dynamicFlightNo}
                 </span>
               </div>
 
@@ -594,7 +610,7 @@ export function HackerPassport({
                   DATE & DEPARTURE
                 </span>
                 <span className="font-mono text-xs font-bold text-white/90 block">
-                  12 OCT 2026
+                  {departureDate}
                 </span>
               </div>
 
@@ -672,7 +688,7 @@ export function HackerPassport({
                   PASSENGER STUB
                 </span>
                 <span className="font-mono text-xs font-black text-white">
-                  FLIGHT GH-2026
+                  FLIGHT {dynamicFlightNo}
                 </span>
               </div>
               <Ticket className="w-4 h-4 text-white/50" />

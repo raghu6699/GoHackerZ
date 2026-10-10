@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { getParticipantByTicket } from "@/lib/hackathons";
+import { getParticipantByTicket, getHackathonBySlug } from "@/lib/hackathons";
 import { generateQrMatrix } from "@/lib/qr";
 
 export const runtime = "nodejs";
@@ -29,8 +29,25 @@ export async function GET(
 ) {
   const { ticketId, slug } = await params;
   const { searchParams } = new URL(req.url);
-  const participant = await getParticipantByTicket(ticketId);
+  const [participant, hackathon] = await Promise.all([
+    getParticipantByTicket(ticketId),
+    getHackathonBySlug(slug),
+  ]);
   if (!participant) return new Response("Ticket not found", { status: 404 });
+
+  const cleanSlug = slug.replace(/^gh-/, "");
+  const eventTitle = hackathon?.title || (cleanSlug ? cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "GoHackerz Hackathon");
+  const flightNo = `GH-${cleanSlug ? cleanSlug.toUpperCase().slice(0, 8) : "2026"}`;
+  
+  let formattedDate = "12 OCT 2026";
+  if (participant.createdAt) {
+    try {
+      const d = new Date(participant.createdAt);
+      if (!isNaN(d.getTime())) {
+        formattedDate = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+      }
+    } catch {}
+  }
 
   const accent = THEME_COLORS[normaliseTheme(searchParams.get("theme") || participant.themeStyle)];
   const name = participant.name || "Verified Builder";
@@ -57,7 +74,7 @@ export async function GET(
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "12px", background: accent, color: "#090d0b", fontSize: "24px", fontWeight: 900 }}>GH</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ color: "#ffffff88", fontSize: "11px", letterSpacing: "2px", fontWeight: 700 }}>GOHACKERZ AIRWAYS // SPACEPORT</span>
-              <span style={{ color: "#fff", fontSize: "21px", fontWeight: 900 }}>GLOBAL SHIPATHON 2026</span>
+              <span style={{ color: "#fff", fontSize: "21px", fontWeight: 900 }}>{eventTitle.toUpperCase()}</span>
             </div>
           </div>
           <span style={{ color: accent, border: `1px solid ${accent}66`, background: `${accent}18`, borderRadius: "20px", padding: "9px 13px", fontSize: "11px", fontWeight: 800 }}>FIRST CLASS BUILDER</span>
@@ -87,8 +104,8 @@ export async function GET(
 
         <div style={{ display: "flex", flexWrap: "wrap", background: "#ffffff0d", border: "1px solid #ffffff22", borderRadius: "16px", padding: "12px 6px" }}>
           {[
-            ["PASSENGER NAME", name.toUpperCase()], ["FLIGHT NO.", "GH-2026"], ["BOARDING GATE", "GATE B-42"], ["SEAT / TIER", "01A (PRIORITY)"],
-            ["SQUAD ALLIANCE", team], ["TRACK / ROLE", role], ["DATE & DEPARTURE", "12 OCT 2026"], ["STATUS", "BOARDING"],
+            ["PASSENGER NAME", name.toUpperCase()], ["FLIGHT NO.", flightNo], ["BOARDING GATE", "GATE B-42"], ["SEAT / TIER", "01A (PRIORITY)"],
+            ["SQUAD ALLIANCE", team], ["TRACK / ROLE", role], ["DATE & DEPARTURE", formattedDate], ["STATUS", "BOARDING"],
           ].map(([label, value], index) => (
             <div key={label} style={{ display: "flex", flexDirection: "column", gap: "6px", width: "25%", padding: "9px 10px", borderRight: index % 4 === 3 ? "none" : "1px solid #ffffff12" }}>
               <span style={{ color: "#ffffff66", fontSize: "8px", letterSpacing: "1px" }}>{label}</span>
