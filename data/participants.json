@@ -18,7 +18,8 @@
     "teammates": [
       {
         "name": "Alex Vance",
-        "roleTitle": "Systems Architect"
+        "roleTitle": "Lead Systems Architect",
+        "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
       },
       {
         "name": "Sarah Chen",
@@ -54,7 +55,30 @@
       "createdAt": "2026-10-11T16:20:00Z",
       "upvotes": 48
     },
-    "createdAt": "2026-09-28T12:00:00Z"
+    "createdAt": "2026-09-28T12:00:00Z",
+    "certificate": {
+      "id": "cert-1791606150509-7C5E",
+      "certNumber": "GH-2026-GOLD-7C5E",
+      "hackathonId": "gh-shipathon-2026",
+      "participantId": "part-01",
+      "ticketNumber": "GH-2026-X89B",
+      "userId": "part-01",
+      "type": "WINNER_FIRST",
+      "title": "GoHackerz Global Shipathon 2026",
+      "awardTitle": "1st Place · Grand Champion",
+      "recipientName": "Alex Vance",
+      "roleTitle": "Lead Systems Architect",
+      "projectName": "PulseFlow AI: Autonomous PR Review Swarm",
+      "teamName": "Team Void Runners",
+      "trackName": "Autonomous AI Agents",
+      "rank": 1,
+      "issuedAt": "2026-10-10T04:22:30.509Z",
+      "verificationUrl": "/verify/GH-2026-GOLD-7C5E"
+    },
+    "badges": [
+      "PARTICIPATION_2026",
+      "GRAND_CHAMPION_2026"
+    ]
   },
   {
     "id": "part-02",
@@ -104,7 +128,29 @@
       "createdAt": "2026-10-11T18:45:00Z",
       "upvotes": 35
     },
-    "createdAt": "2026-09-28T14:30:00Z"
+    "createdAt": "2026-09-28T14:30:00Z",
+    "certificate": {
+      "id": "cert-1791606150492-CF08",
+      "certNumber": "GH-2026-PART-CF08",
+      "hackathonId": "gh-shipathon-2026",
+      "participantId": "part-02",
+      "ticketNumber": "GH-2026-N309",
+      "userId": "part-02",
+      "type": "PARTICIPATION",
+      "title": "GoHackerz Global Shipathon 2026",
+      "awardTitle": "Certificate of Participation",
+      "recipientName": "Elena Rostova",
+      "roleTitle": "Fullstack AI Engineer",
+      "projectName": "EdgeWhisper: Zero-Server On-Device Voice Intelligence",
+      "teamName": "Neural Forge",
+      "trackName": "edge-systems",
+      "issuedAt": "2026-10-10T04:22:30.492Z",
+      "verificationUrl": "/verify/GH-2026-PART-CF08"
+    },
+    "badges": [
+      "PARTICIPATION_2026"
+    ],
+    "teamId": "team-forge"
   },
   {
     "id": "part-1790905082319",
@@ -118,7 +164,25 @@
     "twitterHandle": "HJ",
     "themeStyle": "lime",
     "isCaptain": false,
-    "createdAt": "2026-10-02T01:38:02.319Z"
+    "createdAt": "2026-10-02T01:38:02.319Z",
+    "certificate": {
+      "id": "cert-1791606150497-7E75",
+      "certNumber": "GH-2026-PART-7E75",
+      "hackathonId": "gh-shipathon-2026",
+      "participantId": "part-1790905082319",
+      "ticketNumber": "GH-2026-JKYM",
+      "userId": "part-1790905082319",
+      "type": "PARTICIPATION",
+      "title": "GoHackerz Global Shipathon 2026",
+      "awardTitle": "Certificate of Participation",
+      "recipientName": "UDAY",
+      "roleTitle": "Fullstack & AI Engineer",
+      "issuedAt": "2026-10-10T04:22:30.497Z",
+      "verificationUrl": "/verify/GH-2026-PART-7E75"
+    },
+    "badges": [
+      "PARTICIPATION_2026"
+    ]
   },
   {
     "id": "part-1790905381352",
@@ -132,6 +196,24 @@
     "twitterHandle": "JJH",
     "themeStyle": "lime",
     "isCaptain": false,
-    "createdAt": "2026-10-02T01:43:01.352Z"
+    "createdAt": "2026-10-02T01:43:01.352Z",
+    "certificate": {
+      "id": "cert-1791606150503-AFAB",
+      "certNumber": "GH-2026-PART-AFAB",
+      "hackathonId": "gh-shipathon-2026",
+      "participantId": "part-1790905381352",
+      "ticketNumber": "GH-2026-AP3F",
+      "userId": "part-1790905381352",
+      "type": "PARTICIPATION",
+      "title": "GoHackerz Global Shipathon 2026",
+      "awardTitle": "Certificate of Participation",
+      "recipientName": "Y",
+      "roleTitle": "Fullstack & AI Engineer",
+      "issuedAt": "2026-10-10T04:22:30.503Z",
+      "verificationUrl": "/verify/GH-2026-PART-AFAB"
+    },
+    "badges": [
+      "PARTICIPATION_2026"
+    ]
   }
 ]

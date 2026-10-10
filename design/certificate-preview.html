@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoHackerz Certificate Design Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #ffffff;
+        --ink: #1A1440;
+        --muted: #4A4473;
+        --rule: #D7D3EA;
+        --accent: #7C5CFF;
+        --accent-deep: #5B3EE8;
+        --seal-bg: #C6FF3D;
+        --seal-ink: #1A1440;
+        --sans: "Space Grotesk", system-ui, sans-serif;
+        --serif: "Source Serif 4", Georgia, serif;
+        --mono: "JetBrains Mono", ui-monospace, monospace;
+        --script: "Caveat", cursive;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 34px 22px 48px;
+        color: var(--ink);
+        font-family: var(--sans);
+        background-color: #EEF1FF;
+        background-image: radial-gradient(#c9c0f5 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+
+      .preview-shell { width: min(1120px, 100%); margin: 0 auto; }
+
+      .toolbar {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        margin: 0 0 16px;
+      }
+
+      .toolbar-copy { display: grid; gap: 4px; }
+      .eyebrow { color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+      .toolbar h1 { margin: 0; font-size: 17px; line-height: 1.25; font-weight: 600; }
+      .controls { display: flex; align-items: end; gap: 9px; }
+      .field { display: grid; gap: 5px; }
+      .field label { color: #52635a; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+      select, input, .print-button {
+        height: 38px;
+        border: 1px solid #c8c2e2;
+        border-radius: 4px;
+        background: #ffffff;
+        color: var(--ink);
+        font: 500 12px var(--sans);
+      }
+      select { min-width: 190px; padding: 0 32px 0 11px; }
+      input { width: 170px; padding: 0 11px; }
+      .print-button { display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; cursor: pointer; font-weight: 700; }
+      .print-button:hover { background: #fff; border-color: var(--ink); }
+      .print-button svg { width: 15px; height: 15px; }
+
+      .certificate {
+        position: relative;
+        isolation: isolate;
+        width: 100%;
+        aspect-ratio: 1.414 / 1;
+        overflow: hidden;
+        padding: 4.4% 5.2%;
+        background: var(--paper);
+        box-shadow: 0 22px 58px #27372c2b, 0 3px 10px #27372c1a;
+        color: var(--ink);
+      }
+
+      .certificate::before, .certificate::after { position: absolute; z-index: -1; content: ""; pointer-events: none; }
+      .certificate::before { inset: 18px; border: 1px solid var(--accent); }
+      .certificate::after { inset: 24px; border: 1px solid #D7D3EA; }
+      .corner { position: absolute; z-index: 1; width: 37px; height: 37px; color: var(--accent); }
+      .corner::before, .corner::after { position: absolute; content: ""; background: currentColor; }
+      .corner::before { width: 1px; height: 100%; }
+      .corner::after { width: 100%; height: 1px; }
+      .corner.tl { top: 18px; left: 18px; }
+      .corner.tr { top: 18px; right: 18px; transform: rotate(90deg); }
+      .corner.br { right: 18px; bottom: 18px; transform: rotate(180deg); }
+      .corner.bl { bottom: 18px; left: 18px; transform: rotate(270deg); }
+
+      .certificate-inner {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        text-align: center;
+      }
+
+      .topline, .bottomline { display: flex; width: 100%; align-items: center; justify-content: space-between; }
+      .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); text-align: left; }
+      .brand-mark {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid var(--ink);
+        border-radius: 50%;
+        background: var(--seal-bg);
+        color: var(--seal-ink);
+        font-family: var(--serif);
+        font-size: 17px;
+        line-height: 1;
+      }
+      .brand-name { font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+      .brand-caption { display: block; margin-top: 2px; color: var(--muted); font-size: 8px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; }
+      .cert-number { color: var(--muted); font: 500 8px var(--mono); letter-spacing: .04em; }
+      .cert-number strong { display: block; margin-top: 3px; color: var(--ink); font: 700 9px var(--mono); }
+
+      .main-copy { width: 100%; margin: auto 0; padding: 10px 0 2px; }
+      .kicker { margin: 0 0 8px; color: var(--accent); font: 700 9px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+      .title { margin: 0; color: var(--ink); font: 400 clamp(38px, 5.4vw, 68px)/.98 var(--serif); }
+      .ornament { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 15px auto 11px; color: var(--accent); }
+      .ornament::before, .ornament::after { width: 60px; height: 1px; content: ""; background: var(--accent); }
+      .ornament span { font-size: 10px; }
+      .recipient { margin: 0; color: var(--ink); font: italic 400 clamp(35px, 4.5vw, 58px)/1.02 var(--serif); }
+      .statement { max-width: 660px; margin: 14px auto 0; color: var(--muted); font: 400 clamp(12px, 1.3vw, 15px)/1.65 var(--sans); }
+      .event-name { display: block; margin-top: 5px; color: var(--ink); font-weight: 700; }
+      .distinction { display: none; margin: 12px auto 0; color: var(--accent); font: 600 10px var(--sans); letter-spacing: .12em; text-transform: uppercase; }
+
+      .bottomline { align-items: end; padding: 0 2.5% 1.3%; }
+      .signature { width: 25%; min-width: 120px; text-align: center; }
+      .signature-logo { display: block; width: min(100%, 124px); height: 27px; margin: 0 auto 3px; object-fit: contain; mix-blend-mode: multiply; }
+      .signature-space { height: 27px; }
+      .signature-rule { width: 100%; height: 1px; margin: 4px 0 6px; background: var(--ink); }
+      .signature-title { color: var(--muted); font-size: 8px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+      .issued { padding-bottom: 3px; color: var(--muted); font-size: 9px; line-height: 1.5; text-align: center; }
+      .issued strong { color: var(--ink); font-weight: 700; }
+      .verification { position: absolute; right: 5.5%; bottom: 4.8%; color: #79867c; font-size: 7px; letter-spacing: .04em; }
+
+      .certificate[data-kind="winner"], .certificate[data-kind="runner"] { --accent: #5B3EE8; }
+      .certificate[data-kind="judge"], .certificate[data-kind="panel"] { --accent: #28769B; }
+      .certificate[data-kind="winner"] .distinction, .certificate[data-kind="runner"] .distinction { display: block; }
+
+      @media (max-width: 700px) {
+        body { padding: 20px 12px 32px; }
+        .toolbar { align-items: stretch; flex-direction: column; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; }
+        .field:first-child { grid-column: 1 / -1; }
+        select, input { width: 100%; min-width: 0; }
+        .print-button { justify-content: center; }
+        .certificate { min-height: 510px; aspect-ratio: auto; padding: 38px 30px; }
+        .certificate::before { inset: 12px; }
+        .certificate::after { inset: 17px; }
+        .corner { width: 27px; height: 27px; }
+        .corner.tl { top: 12px; left: 12px; }
+        .corner.tr { top: 12px; right: 12px; }
+        .corner.br { right: 12px; bottom: 12px; }
+        .corner.bl { bottom: 12px; left: 12px; }
+        .certificate-inner { min-height: 430px; }
+        .title { font-size: clamp(40px, 11vw, 58px); }
+        .recipient { font-size: clamp(36px, 10vw, 52px); overflow-wrap: anywhere; }
+        .statement { max-width: 440px; font-size: 12px; }
+        .bottomline { gap: 12px; padding: 0 0 16px; }
+        .signature { min-width: 0; width: 30%; }
+        .signature-logo { height: 20px; }
+        .signature-title { font-size: 6px; }
+        .issued { font-size: 8px; }
+        .verification { right: 8%; bottom: 4%; font-size: 6px; }
+      }
+
+      @page { size: A4 landscape; margin: 0; }
+      @media print {
+        body { min-height: 0; padding: 0; background: #fff; }
+        .toolbar { display: none; }
+        .preview-shell { width: 297mm; height: 210mm; }
+        .certificate { width: 297mm; height: 210mm; aspect-ratio: auto; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="preview-shell">
+      <header class="toolbar">
+        <div class="toolbar-copy">
+          <span class="eyebrow">Certificate · Design Preview</span>
+          <h1>GoHackerz Global Shipathon 2026</h1>
+        </div>
+        <div class="controls">
+          <div class="field">
+            <label for="certificate-kind">Recognition</label>
+            <select id="certificate-kind">
+              <option value="participation">Participation</option>
+              <option value="winner">Winner · First place</option>
+              <option value="runner">Runner-up · Second place</option>
+              <option value="judge">Hackathon judge</option>
+              <option value="panel">Panel member</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="recipient-name">Recipient preview</label>
+            <input id="recipient-name" value="Maya Chen" maxlength="48" />
+          </div>
+          <button class="print-button" type="button" onclick="window.print()" aria-label="Print or save certificate as PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/><path d="M17 11h.01"/></svg>
+            Print / PDF
+          </button>
+        </div>
+      </header>
+
+      <article class="certificate" data-kind="participation" aria-label="Certificate preview">
+        <span class="corner tl" aria-hidden="true"></span>
+        <span class="corner tr" aria-hidden="true"></span>
+        <span class="corner br" aria-hidden="true"></span>
+        <span class="corner bl" aria-hidden="true"></span>
+        <div class="certificate-inner">
+          <div class="topline">
+            <div class="brand">
+              <span class="brand-mark" aria-hidden="true">GH</span>
+              <span><span class="brand-name">GoHackerz</span><span class="brand-caption">Build · Ship · Share</span></span>
+            </div>
+            <div class="cert-number">SAMPLE CERTIFICATE ID<strong>GH26-7K4P-92MX</strong></div>
+          </div>
+
+          <section class="main-copy">
+            <p class="kicker" id="certificate-kicker">GoHackerz · Global Shipathon 2026</p>
+            <h2 class="title" id="certificate-title">Certificate of<br />Participation</h2>
+            <div class="ornament" aria-hidden="true"><span>✦</span></div>
+            <p class="recipient" id="certificate-recipient">Maya Chen</p>
+            <p class="statement" id="certificate-statement">
+              is awarded this certificate in recognition of their participation in
+              <span class="event-name">GoHackerz Global Shipathon 2026</span>
+            </p>
+            <p class="distinction" id="certificate-distinction">First Place · AI Agents Track</p>
+          </section>
+
+          <div class="bottomline">
+            <div class="signature">
+              <img class="signature-logo" src="../public/logo/header-logo.png" alt="GoHackerz" />
+              <div class="signature-rule"></div>
+              <div class="signature-title">Hackathon Director</div>
+            </div>
+            <div class="issued">Awarded <strong>12 October 2026</strong><br />Global Shipathon</div>
+            <div class="signature">
+              <div class="signature-space" aria-hidden="true"></div>
+              <div class="signature-rule"></div>
+              <div class="signature-title" id="second-signature-title">Jury Chair</div>
+            </div>
+          </div>
+        </div>
+        <div class="verification">DESIGN PREVIEW · SAMPLE ONLY · NOT YET ISSUED</div>
+      </article>
+    </main>
+
+    <script>
+      const certificateContent = {
+        participation: {
+          title: "Certificate of<br />Participation",
+          kicker: "GoHackerz · Global Shipathon 2026",
+          statement: "is awarded this certificate in recognition of their participation in",
+          distinction: "",
+          secondSigner: "Jury Chair",
+        },
+        winner: {
+          title: "Certificate of<br />Achievement",
+          kicker: "GoHackerz · Award of Excellence",
+          statement: "is awarded this certificate in recognition of outstanding achievement at",
+          distinction: "First Place · AI Agents Track",
+          secondSigner: "Jury Chair",
+        },
+        runner: {
+          title: "Certificate of<br />Achievement",
+          kicker: "GoHackerz · Award of Excellence",
+          statement: "is awarded this certificate in recognition of exceptional achievement at",
+          distinction: "Second Place · AI Agents Track",
+          secondSigner: "Jury Chair",
+        },
+        judge: {
+          title: "Certificate of<br />Appreciation",
+          kicker: "GoHackerz · With Gratitude",
+          statement: "is awarded this certificate in appreciation of their service as a judge at",
+          distinction: "",
+          secondSigner: "Organising Committee",
+        },
+        panel: {
+          title: "Certificate of<br />Appreciation",
+          kicker: "GoHackerz · With Gratitude",
+          statement: "is awarded this certificate in appreciation of their contribution as a panel member at",
+          distinction: "",
+          secondSigner: "Organising Committee",
+        },
+      };
+
+      const certificate = document.querySelector(".certificate");
+      const kindInput = document.querySelector("#certificate-kind");
+      const nameInput = document.querySelector("#recipient-name");
+
+      function updatePreview() {
+        const content = certificateContent[kindInput.value];
+        certificate.dataset.kind = kindInput.value;
+        document.querySelector("#certificate-title").innerHTML = content.title;
+        document.querySelector("#certificate-kicker").textContent = content.kicker;
+        document.querySelector("#certificate-statement").innerHTML = `${content.statement}<span class="event-name">GoHackerz Global Shipathon 2026</span>`;
+        document.querySelector("#certificate-distinction").textContent = content.distinction;
+        document.querySelector("#second-signature-title").textContent = content.secondSigner;
+        document.querySelector("#certificate-recipient").textContent = nameInput.value.trim() || "Recipient Name";
+      }
+
+      kindInput.addEventListener("change", updatePreview);
+      nameInput.addEventListener("input", updatePreview);
+    </script>
+  </body>
+</html>

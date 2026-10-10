@@ -1,11 +1,20 @@
 import fs from "fs";
 import path from "path";
 import { prisma, isDbAvailable } from "./prisma";
-import type { HackathonParticipant, HackathonTeam, HackathonSubmission, HackathonTheme } from "./hackathons";
+export { isDbAvailable };
+import type {
+  HackathonParticipant,
+  HackathonTeam,
+  HackathonSubmission,
+  HackathonTheme,
+  HackathonCertificate,
+  CertificateType,
+} from "./hackathons";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PARTICIPANTS_FILE = path.join(DATA_DIR, "participants.json");
 const TEAMS_FILE = path.join(DATA_DIR, "teams.json");
+const CERTIFICATES_FILE = path.join(DATA_DIR, "certificates.json");
 
 // Fallback hackathon ID used when DB is not seeded
 const FALLBACK_HACKATHON_ID = "gh-shipathon-2026";
@@ -26,12 +35,14 @@ export const memoryStore =
     _ghMemStore?: {
       participants: Map<string, HackathonParticipant>;
       teams: Map<string, HackathonTeam>;
+      certificates: Map<string, HackathonCertificate>;
     };
   })._ghMemStore ||
   (() => {
     const store = {
       participants: new Map<string, HackathonParticipant>(),
       teams: new Map<string, HackathonTeam>(),
+      certificates: new Map<string, HackathonCertificate>(),
     };
     (
       globalThis as unknown as {
@@ -117,6 +128,29 @@ export async function ensureTablesExist(): Promise<void> {
         "upvotes" INTEGER NOT NULL DEFAULT 0,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      DO $$ BEGIN
+        CREATE TYPE "CertificateType" AS ENUM ('PARTICIPATION', 'WINNER_FIRST', 'WINNER_SECOND', 'WINNER_THIRD', 'TRACK_WINNER', 'HONORABLE_MENTION');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+
+      CREATE TABLE IF NOT EXISTS "HackathonCertificate" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "certNumber" TEXT NOT NULL UNIQUE,
+        "hackathonId" TEXT NOT NULL,
+        "participantId" TEXT NOT NULL,
+        "userId" TEXT,
+        "type" "CertificateType" NOT NULL DEFAULT 'PARTICIPATION',
+        "title" TEXT NOT NULL,
+        "awardTitle" TEXT NOT NULL,
+        "recipientName" TEXT NOT NULL,
+        "projectName" TEXT,
+        "teamName" TEXT,
+        "trackName" TEXT,
+        "rank" INTEGER,
+        "issuedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
     _tablesEnsured = true;
@@ -358,6 +392,47 @@ export function getPersistedParticipantByTicket(ticketNumber: string): Hackathon
   }
 
   return participant;
+}
+
+export const getParticipantByTicket = getPersistedParticipantByTicket;
+
+/**
+ * Get all registered participants for a given hackathon.
+ */
+export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): Promise<HackathonParticipant[]> {
+  const diskList = loadPersistedParticipants();
+  if (diskList.length > 0) return diskList;
+
+  if (isDbAvailable()) {
+    try {
+      await ensureTablesExist();
+      const realHackathonId = await getHackathonDbId(hackathonIdOrSlug);
+      const dbParts = await prisma.hackathonParticipant.findMany({
+        where: { hackathonId: realHackathonId },
+        include: { submissions: true, certificates: true },
+      });
+      return dbParts.map((p) => ({
+        id: p.id,
+        hackathonId: p.hackathonId,
+        ticketNumber: p.ticketNumber,
+        name: p.name,
+        email: p.email,
+        roleTitle: p.roleTitle,
+        bio: p.bio || undefined,
+        discordHandle: p.discordHandle || undefined,
+        twitterHandle: p.twitterHandle || undefined,
+        avatarUrl: p.avatarUrl || undefined,
+        themeStyle: (p.themeStyle || "lime") as any,
+        isCaptain: p.isCaptain,
+        teamId: p.teamId || undefined,
+        createdAt: p.createdAt.toISOString(),
+      }));
+    } catch (e) {
+      console.warn("[getParticipantsForHackathon] DB query error:", e);
+    }
+  }
+
+  return diskList;
 }
 
 /**
@@ -966,3 +1041,397 @@ export function syncTeamParticipants(team: HackathonTeam) {
     console.warn("[syncTeamParticipants] error:", e);
   }
 }
+
+// ── Certificates Store ──────────────────────────────────────────
+
+/**
+ * Load all persisted certificates from disk.
+ */
+export function loadPersistedCertificates(): HackathonCertificate[] {
+  try {
+    ensureDirectoryExists();
+    if (!fs.existsSync(CERTIFICATES_FILE)) return [];
+    const data = fs.readFileSync(CERTIFICATES_FILE, "utf-8");
+    if (!data.trim()) return [];
+    return JSON.parse(data);
+  } catch (e) {
+    console.warn("[loadPersistedCertificates] Error:", e);
+    return [];
+  }
+}
+
+/**
+ * Persist a certificate to memory, disk JSON, and Prisma DB.
+ */
+export async function persistCertificate(cert: HackathonCertificate): Promise<HackathonCertificate> {
+  // 1. Update in-memory map
+  memoryStore.certificates.set(cert.certNumber.toUpperCase(), cert);
+  memoryStore.certificates.set(cert.ticketNumber.toUpperCase(), cert);
+
+  // 2. Persist to disk JSON
+  try {
+    ensureDirectoryExists();
+    const list = loadPersistedCertificates();
+    const idx = list.findIndex(
+      (c) =>
+        c.certNumber.toUpperCase() === cert.certNumber.toUpperCase() ||
+        c.ticketNumber.toUpperCase() === cert.ticketNumber.toUpperCase()
+    );
+    if (idx >= 0) {
+      list[idx] = cert;
+    } else {
+      list.push(cert);
+    }
+    fs.writeFileSync(CERTIFICATES_FILE, JSON.stringify(list, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("[persistCertificate] Disk write error:", e);
+  }
+
+  // 3. Persist to Prisma DB
+  if (isDbAvailable()) {
+    try {
+      await ensureTablesExist();
+      const realHackathonId = await getHackathonDbId(cert.hackathonId);
+      await prisma.hackathonCertificate.upsert({
+        where: { certNumber: cert.certNumber },
+        update: {
+          type: cert.type as any,
+          title: cert.title,
+          awardTitle: cert.awardTitle,
+          recipientName: cert.recipientName,
+          projectName: cert.projectName || null,
+          teamName: cert.teamName || null,
+          trackName: cert.trackName || null,
+          rank: cert.rank || null,
+          issuedAt: new Date(cert.issuedAt),
+        },
+        create: {
+          certNumber: cert.certNumber,
+          hackathonId: realHackathonId,
+          participantId: cert.participantId,
+          userId: cert.userId || null,
+          type: cert.type as any,
+          title: cert.title,
+          awardTitle: cert.awardTitle,
+          recipientName: cert.recipientName,
+          projectName: cert.projectName || null,
+          teamName: cert.teamName || null,
+          trackName: cert.trackName || null,
+          rank: cert.rank || null,
+          issuedAt: new Date(cert.issuedAt),
+        },
+      });
+    } catch (e) {
+      console.warn("[persistCertificate] DB write error:", e);
+    }
+  }
+
+  return cert;
+}
+
+/**
+ * Retrieve a certificate by its unique certNumber (e.g. "GH-2026-PART-8F92").
+ */
+export async function getCertificateByNumber(certNumber: string): Promise<HackathonCertificate | null> {
+  const clean = certNumber.trim().toUpperCase();
+  // 1. Check memory
+  const fromMem = memoryStore.certificates.get(clean);
+  if (fromMem) return fromMem;
+
+  // 2. Check disk
+  const fromDisk = loadPersistedCertificates().find((c) => c.certNumber.toUpperCase() === clean);
+  if (fromDisk) {
+    memoryStore.certificates.set(clean, fromDisk);
+    return fromDisk;
+  }
+
+  // 3. Check DB
+  if (isDbAvailable()) {
+    try {
+      await ensureTablesExist();
+      const fromDb = await prisma.hackathonCertificate.findUnique({
+        where: { certNumber: clean },
+        include: { participant: true, hackathon: true },
+      });
+      if (fromDb) {
+        const cert: HackathonCertificate = {
+          id: fromDb.id,
+          certNumber: fromDb.certNumber,
+          hackathonId: fromDb.hackathon?.slug || fromDb.hackathonId,
+          participantId: fromDb.participantId,
+          ticketNumber: fromDb.participant?.ticketNumber || "",
+          userId: fromDb.userId || undefined,
+          type: fromDb.type as CertificateType,
+          title: fromDb.title,
+          awardTitle: fromDb.awardTitle,
+          recipientName: fromDb.recipientName,
+          roleTitle: fromDb.participant?.roleTitle || undefined,
+          projectName: fromDb.projectName || undefined,
+          teamName: fromDb.teamName || undefined,
+          trackName: fromDb.trackName || undefined,
+          rank: fromDb.rank || undefined,
+          issuedAt: fromDb.issuedAt.toISOString(),
+          verificationUrl: `/verify/${fromDb.certNumber}`,
+        };
+        memoryStore.certificates.set(clean, cert);
+        return cert;
+      }
+    } catch (e) {
+      console.warn("[getCertificateByNumber] DB fetch error:", e);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Retrieve a certificate for a participant by ticket number.
+ */
+export async function getCertificateByTicket(ticketNumber: string): Promise<HackathonCertificate | null> {
+  const clean = ticketNumber.trim().toUpperCase();
+  // 1. Check memory
+  const fromMem = memoryStore.certificates.get(clean);
+  if (fromMem) return fromMem;
+
+  // 2. Check disk
+  const fromDisk = loadPersistedCertificates().find((c) => c.ticketNumber.toUpperCase() === clean);
+  if (fromDisk) {
+    memoryStore.certificates.set(clean, fromDisk);
+    return fromDisk;
+  }
+
+  // 3. Check DB
+  if (isDbAvailable()) {
+    try {
+      await ensureTablesExist();
+      const participant = await prisma.hackathonParticipant.findUnique({
+        where: { ticketNumber: clean },
+        include: {
+          certificates: { orderBy: { issuedAt: "desc" }, take: 1 },
+          hackathon: true,
+        },
+      });
+      if (participant && participant.certificates && participant.certificates.length > 0) {
+        const fromDb = participant.certificates[0];
+        const cert: HackathonCertificate = {
+          id: fromDb.id,
+          certNumber: fromDb.certNumber,
+          hackathonId: participant.hackathon?.slug || participant.hackathonId,
+          participantId: participant.id,
+          ticketNumber: participant.ticketNumber,
+          userId: fromDb.userId || undefined,
+          type: fromDb.type as CertificateType,
+          title: fromDb.title,
+          awardTitle: fromDb.awardTitle,
+          recipientName: fromDb.recipientName,
+          roleTitle: participant.roleTitle || undefined,
+          projectName: fromDb.projectName || undefined,
+          teamName: fromDb.teamName || undefined,
+          trackName: fromDb.trackName || undefined,
+          rank: fromDb.rank || undefined,
+          issuedAt: fromDb.issuedAt.toISOString(),
+          verificationUrl: `/verify/${fromDb.certNumber}`,
+        };
+        memoryStore.certificates.set(clean, cert);
+        return cert;
+      }
+    } catch (e) {
+      console.warn("[getCertificateByTicket] DB fetch error:", e);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get all certificates issued for a hackathon.
+ */
+export async function getCertificatesForHackathon(hackathonIdOrSlug: string): Promise<HackathonCertificate[]> {
+  const diskList = loadPersistedCertificates();
+  if (diskList.length > 0) return diskList;
+
+  if (isDbAvailable()) {
+    try {
+      await ensureTablesExist();
+      const realHackathonId = await getHackathonDbId(hackathonIdOrSlug);
+      const dbCerts = await prisma.hackathonCertificate.findMany({
+        where: { hackathonId: realHackathonId },
+        include: { participant: true, hackathon: true },
+        orderBy: { issuedAt: "desc" },
+      });
+      return dbCerts.map((c) => ({
+        id: c.id,
+        certNumber: c.certNumber,
+        hackathonId: c.hackathon?.slug || c.hackathonId,
+        participantId: c.participantId,
+        ticketNumber: c.participant?.ticketNumber || "",
+        userId: c.userId || undefined,
+        type: c.type as CertificateType,
+        title: c.title,
+        awardTitle: c.awardTitle,
+        recipientName: c.recipientName,
+        roleTitle: c.participant?.roleTitle || undefined,
+        projectName: c.projectName || undefined,
+        teamName: c.teamName || undefined,
+        trackName: c.trackName || undefined,
+        rank: c.rank || undefined,
+        issuedAt: c.issuedAt.toISOString(),
+        verificationUrl: `/verify/${c.certNumber}`,
+      }));
+    } catch (e) {
+      console.warn("[getCertificatesForHackathon] DB error:", e);
+    }
+  }
+
+  return diskList;
+}
+
+/**
+ * Auto-generate Participation Certificates for all registered participants of a hackathon.
+ * Runs with ZERO manual admin intervention when a hackathon is closed/completed.
+ */
+export async function autoGenerateParticipationCertificates(
+  hackathonIdOrSlug: string
+): Promise<{ generated: number; total: number }> {
+  const participants = await getParticipantsForHackathon(hackathonIdOrSlug);
+  let generated = 0;
+
+  for (const p of participants) {
+    const existing = await getCertificateByTicket(p.ticketNumber);
+    if (existing) continue;
+
+    // Generate unique verifiable certificate number
+    const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
+    const certNumber = `GH-2026-PART-${randomHex}`;
+
+    const cert: HackathonCertificate = {
+      id: `cert-${Date.now()}-${randomHex}`,
+      certNumber,
+      hackathonId: p.hackathonId || "shipathon-2026",
+      participantId: p.id,
+      ticketNumber: p.ticketNumber,
+      userId: p.id,
+      type: "PARTICIPATION",
+      title: "GoHackerz Global Shipathon 2026",
+      awardTitle: "Certificate of Participation",
+      recipientName: p.name || "GoHackerz Builder",
+      roleTitle: p.roleTitle || "Builder",
+      projectName: p.submission?.title || undefined,
+      teamName: p.teamName || undefined,
+      trackName: p.submission?.trackId || undefined,
+      issuedAt: new Date().toISOString(),
+      verificationUrl: `/verify/${certNumber}`,
+    };
+
+    await persistCertificate(cert);
+    p.certificate = cert;
+    p.badges = Array.from(new Set([...(p.badges || []), "PARTICIPATION_2026"]));
+    persistParticipant(p);
+    generated++;
+  }
+
+  return { generated, total: participants.length };
+}
+
+/**
+ * Admin Action: Issue or upgrade a special award certificate (1st place, 2nd, 3rd, track winner).
+ */
+export async function issueSpecialAward(params: {
+  hackathonIdOrSlug: string;
+  ticketNumber: string;
+  type: CertificateType;
+  awardTitle: string;
+  rank?: number;
+  trackName?: string;
+}): Promise<HackathonCertificate> {
+  const participant = await getParticipantByTicket(params.ticketNumber);
+  if (!participant) {
+    throw new Error(`Participant with ticket ${params.ticketNumber} not found.`);
+  }
+
+  const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
+  const typeCode =
+    params.type === "WINNER_FIRST"
+      ? "GOLD"
+      : params.type === "WINNER_SECOND"
+      ? "SILVER"
+      : params.type === "WINNER_THIRD"
+      ? "BRONZE"
+      : params.type === "TRACK_WINNER"
+      ? "TRACK"
+      : "HONOR";
+
+  const certNumber = `GH-2026-${typeCode}-${randomHex}`;
+
+  const cert: HackathonCertificate = {
+    id: `cert-${Date.now()}-${randomHex}`,
+    certNumber,
+    hackathonId: participant.hackathonId || params.hackathonIdOrSlug,
+    participantId: participant.id,
+    ticketNumber: participant.ticketNumber,
+    userId: participant.id,
+    type: params.type,
+    title: "GoHackerz Global Shipathon 2026",
+    awardTitle: params.awardTitle,
+    recipientName: participant.name || "GoHackerz Winner",
+    roleTitle: participant.roleTitle || "Lead Builder",
+    projectName: participant.submission?.title || undefined,
+    teamName: participant.teamName || undefined,
+    trackName: params.trackName || participant.submission?.trackId || undefined,
+    rank: params.rank,
+    issuedAt: new Date().toISOString(),
+    verificationUrl: `/verify/${certNumber}`,
+  };
+
+  await persistCertificate(cert);
+
+  // Update participant passport badges
+  const newBadge =
+    params.type === "WINNER_FIRST"
+      ? "GRAND_CHAMPION_2026"
+      : params.type === "WINNER_SECOND"
+      ? "FIRST_RUNNER_UP_2026"
+      : params.type === "WINNER_THIRD"
+      ? "SECOND_RUNNER_UP_2026"
+      : params.type === "TRACK_WINNER"
+      ? `TRACK_WINNER_${(params.trackName || "").toUpperCase().replace(/\s+/g, "_")}`
+      : "HONORABLE_MENTION_2026";
+
+  participant.certificate = cert;
+  participant.badges = Array.from(new Set([...(participant.badges || []), newBadge, "PARTICIPATION_2026"]));
+  persistParticipant(participant);
+
+  return cert;
+}
+
+/**
+ * Admin Action: Update Hackathon Status (UPCOMING -> ACTIVE -> JUDGING -> COMPLETED).
+ * Automatically triggers participation certificate generation when marked COMPLETED!
+ */
+export async function updateHackathonStatus(
+  hackathonIdOrSlug: string,
+  newStatus: "UPCOMING" | "ACTIVE" | "JUDGING" | "COMPLETED"
+): Promise<{ status: string; autoIssuedCount?: number }> {
+  let autoIssuedCount = 0;
+
+  if (isDbAvailable()) {
+    try {
+      await ensureTablesExist();
+      const realHackathonId = await getHackathonDbId(hackathonIdOrSlug);
+      await prisma.hackathon.update({
+        where: { id: realHackathonId },
+        data: { status: newStatus as any },
+      });
+    } catch (e) {
+      console.warn("[updateHackathonStatus] DB update error:", e);
+    }
+  }
+
+  if (newStatus === "COMPLETED") {
+    const result = await autoGenerateParticipationCertificates(hackathonIdOrSlug);
+    autoIssuedCount = result.generated;
+  }
+
+  return { status: newStatus, autoIssuedCount };
+}
+

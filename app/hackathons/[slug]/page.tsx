@@ -52,17 +52,44 @@ export default async function HackathonDetailPage({
         <MyPassportBanner slug={hackathon.slug} hackathonId={hackathon.id} />
 
         {/* Breadcrumb & Status */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Link
             href="/hackathons"
             className="font-mono text-xs font-bold text-muted hover:text-purple transition-colors flex items-center gap-1.5"
           >
             ← BACK TO HACKATHONS
           </Link>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E11D48] text-white font-mono text-xs font-black rounded-full shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-            LIVE SPRINT ACTIVE
-          </span>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/hackathons/${hackathon.slug}/admin`}
+              className="px-3 py-1 bg-[#1A1440] text-[#C6FF3D] border border-[#7C5CFF]/40 font-mono text-xs font-bold rounded-full hover:bg-[#251f52] transition-colors flex items-center gap-1.5"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              ADMIN STUDIO
+            </Link>
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 font-mono text-xs font-black rounded-full shadow-sm ${
+                hackathon.status === "ACTIVE"
+                  ? "bg-[#E11D48] text-white"
+                  : hackathon.status === "JUDGING"
+                  ? "bg-amber-500 text-black"
+                  : hackathon.status === "COMPLETED"
+                  ? "bg-purple text-white"
+                  : "bg-blue-600 text-white"
+              }`}
+            >
+              {hackathon.status === "ACTIVE" && (
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+              )}
+              {hackathon.status === "ACTIVE"
+                ? "LIVE SPRINT ACTIVE"
+                : hackathon.status === "JUDGING"
+                ? "JUDGING IN PROGRESS"
+                : hackathon.status === "COMPLETED"
+                ? "🏆 HACKATHON COMPLETED"
+                : "UPCOMING EVENT"}
+            </span>
+          </div>
         </div>
 
         {/* Hero Banner */}

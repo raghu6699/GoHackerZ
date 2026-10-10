@@ -66,6 +66,8 @@ export type HackathonParticipant = {
   teamCode?: string;
   teammates?: { name: string; roleTitle: string; avatarUrl?: string }[];
   submission?: HackathonSubmission;
+  certificate?: HackathonCertificate;
+  badges?: string[];
   createdAt: string;
 };
 
@@ -98,6 +100,34 @@ export type HackathonSubmission = {
   authorName: string;
   createdAt: string;
   upvotes?: number;
+};
+
+export type CertificateType =
+  | "PARTICIPATION"
+  | "WINNER_FIRST"
+  | "WINNER_SECOND"
+  | "WINNER_THIRD"
+  | "TRACK_WINNER"
+  | "HONORABLE_MENTION";
+
+export type HackathonCertificate = {
+  id: string;
+  certNumber: string;
+  hackathonId: string;
+  participantId: string;
+  ticketNumber: string;
+  userId?: string;
+  type: CertificateType;
+  title: string;
+  awardTitle: string;
+  recipientName: string;
+  roleTitle?: string;
+  projectName?: string;
+  teamName?: string;
+  trackName?: string;
+  rank?: number;
+  issuedAt: string;
+  verificationUrl?: string;
 };
 
 // Flagship Inaugural Hackathon

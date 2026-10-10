@@ -45,6 +45,7 @@ model User {
   followers Follow[] @relation("following")
   following Follow[] @relation("follower")
   commentLikes CommentLike[]
+  certificates HackathonCertificate[]
 }
 
 model Topic {
@@ -261,6 +262,7 @@ model Hackathon {
   teams        HackathonTeam[]
   participants HackathonParticipant[]
   submissions  HackathonSubmission[]
+  certificates HackathonCertificate[]
 
   @@index([status])
 }
@@ -297,9 +299,10 @@ model HackathonParticipant {
   isCaptain     Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  hackathon   Hackathon             @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
-  team        HackathonTeam?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  submissions HackathonSubmission[]
+  hackathon    Hackathon             @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  team         HackathonTeam?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  submissions  HackathonSubmission[]
+  certificates HackathonCertificate[]
 
   @@unique([hackathonId, email])
   @@index([hackathonId])
@@ -330,4 +333,40 @@ model HackathonSubmission {
 
   @@index([hackathonId])
 }
+
+enum CertificateType {
+  PARTICIPATION
+  WINNER_FIRST
+  WINNER_SECOND
+  WINNER_THIRD
+  TRACK_WINNER
+  HONORABLE_MENTION
+}
+
+model HackathonCertificate {
+  id              String          @id @default(cuid())
+  certNumber      String          @unique // e.g. "GH-2026-PART-8F92" or "GH-2026-GOLD-1049"
+  hackathonId     String
+  participantId   String
+  userId          String?
+  type            CertificateType @default(PARTICIPATION)
+  title           String          // e.g. "GoHackerz Shipathon 2026"
+  awardTitle      String          // e.g. "Certificate of Participation" or "1st Place Grand Champion"
+  recipientName   String
+  projectName     String?
+  teamName        String?
+  trackName       String?
+  rank            Int?            // 1, 2, 3 etc.
+  issuedAt        DateTime        @default(now())
+
+  hackathon       Hackathon            @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  participant     HackathonParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([certNumber])
+  @@index([hackathonId])
+  @@index([participantId])
+  @@index([userId])
+}
+
 

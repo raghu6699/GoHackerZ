@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
 import { getMyPassport, getActiveTicketNumber, saveMyPassport } from "@/lib/passport-storage";
-import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
-import { Sparkles, ArrowRight, ShieldCheck, Loader2, RefreshCw } from "lucide-react";
+import type { HackathonParticipant, HackathonTheme, HackathonCertificate } from "@/lib/hackathons";
+import { Sparkles, ArrowRight, ShieldCheck, Loader2, RefreshCw, Trophy, Award, Printer, ExternalLink, CheckCircle } from "lucide-react";
 
 interface PassPortPageClientProps {
   serverParticipant: HackathonParticipant;
@@ -25,6 +25,22 @@ export function PassPortPageClient({
   const [isOwner, setIsOwner] = useState(false);
   const [resolved, setResolved] = useState(false);
   const [isRefreshingRoster, setIsRefreshingRoster] = useState(false);
+  const [certificate, setCertificate] = useState<HackathonCertificate | null>(
+    serverParticipant.certificate || null
+  );
+
+  useEffect(() => {
+    if (ticketId) {
+      fetch(`/api/certificates/${ticketId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.certificate) {
+            setCertificate(data.certificate);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [ticketId]);
 
   useEffect(() => {
     // Use the actual hackathonId so keys are consistent across the app
@@ -361,6 +377,119 @@ export function PassPortPageClient({
         ticketId={ticketId}
         onThemeChange={handleThemeChange}
       />
+
+      {/* Official Verifiable Certificate & Trophy Vault Section */}
+      <div className="bg-card border-2 border-ink shadow-pop-lg rounded-3xl p-6 sm:p-8 space-y-5 max-w-[620px] mx-auto">
+        <div className="flex items-center justify-between border-b border-ink/10 pb-4">
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-purple" />
+            <h3 className="font-mono text-sm font-black text-ink uppercase tracking-wider">
+              OFFICIAL HACKER CREDENTIAL & VISA
+            </h3>
+          </div>
+          {certificate ? (
+            <span
+              className={`font-mono text-xs font-black px-2.5 py-1 rounded flex items-center gap-1 ${
+                certificate.type === "WINNER_FIRST"
+                  ? "bg-amber-400 text-black shadow-sm"
+                  : certificate.type.startsWith("WINNER")
+                  ? "bg-purple text-white shadow-sm"
+                  : "bg-brand-dark text-lime"
+              }`}
+            >
+              {certificate.type === "WINNER_FIRST" ? (
+                <>
+                  <Trophy className="w-3.5 h-3.5" /> 1ST PLACE WINNER
+                </>
+              ) : certificate.type === "WINNER_SECOND" ? (
+                <>
+                  <Trophy className="w-3.5 h-3.5" /> 2ND PLACE
+                </>
+              ) : certificate.type === "WINNER_THIRD" ? (
+                <>
+                  <Trophy className="w-3.5 h-3.5" /> 3RD PLACE
+                </>
+              ) : certificate.type === "TRACK_WINNER" ? (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" /> TRACK CHAMPION
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-3.5 h-3.5 text-lime" /> VERIFIED PARTICIPANT
+                </>
+              )}
+            </span>
+          ) : (
+            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-muted/20 text-muted">
+              PENDING JUDGING
+            </span>
+          )}
+        </div>
+
+        {certificate ? (
+          <div className="space-y-4">
+            <div className="bg-bg border-2 border-ink/15 rounded-2xl p-4 flex items-start justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-mono text-muted uppercase tracking-wider block">
+                  AWARD DISTINCTION
+                </span>
+                <h4 className="font-bold text-base sm:text-lg text-ink mt-0.5">
+                  {certificate.awardTitle}
+                </h4>
+                <p className="text-xs text-body mt-1">
+                  Issued to <strong>{certificate.recipientName}</strong> for active participation in{" "}
+                  <strong>{certificate.title}</strong>.
+                </p>
+                <div className="mt-2 font-mono text-[11px] text-purple flex items-center gap-2">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Credential ID: <strong>{certificate.certNumber}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Link
+                href={`/verify/${certificate.certNumber}`}
+                className="btn btn-sm btn-purple font-mono text-xs font-bold flex items-center gap-1.5 shadow-pop-sm"
+              >
+                <span>VIEW OFFICIAL CERTIFICATE</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+
+              <a
+                href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
+                  `${certificate.awardTitle} - ${certificate.title}`
+                )}&organizationName=GoHackerz&issueYear=${new Date(
+                  certificate.issuedAt
+                ).getFullYear()}&issueMonth=${
+                  new Date(certificate.issuedAt).getMonth() + 1
+                }&certUrl=${encodeURIComponent(
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/verify/${certificate.certNumber}`
+                    : `https://gohackerz.com/verify/${certificate.certNumber}`
+                )}&certId=${encodeURIComponent(certificate.certNumber)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-sm bg-[#0A66C2] hover:bg-[#004182] text-white font-mono text-xs font-bold flex items-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                </svg>
+                <span>ADD TO LINKEDIN</span>
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 rounded-2xl bg-bg border border-ink/15 text-xs text-body leading-relaxed space-y-2">
+            <p>
+              Your official <strong>Hacker Certificate & Stamped Visa</strong> is queued in the GoHackerz registry.
+            </p>
+            <p className="text-muted text-[11px]">
+              Once the hackathon concludes and judging closes, your certificate will automatically mint here with a public verification link, printable high-res PDF, and 1-click LinkedIn export.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Interactive Squad Alliance Management (Owner Only) */}
       {isOwner && (
