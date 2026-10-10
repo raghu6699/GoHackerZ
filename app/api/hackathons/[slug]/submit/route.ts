@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { submitProject, getHackathonBySlug, getAllSubmissions, getParticipantByTicket } from "@/lib/hackathons";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -52,11 +53,24 @@ export async function POST(
       techStack: Array.isArray(techStack) ? techStack : [],
     });
 
-    return NextResponse.json({ success: true, submission });
-  } catch (error) {
+    // Verify database row write
+    let dbSaved = false;
+    let dbError: string | null = null;
+    try {
+      const dbRow = await prisma.hackathonSubmission.findUnique({
+        where: { id: submission.id },
+      });
+      dbSaved = Boolean(dbRow);
+    } catch (e: any) {
+      dbError = e.message || String(e);
+      console.error("[submit route] DB verify error:", e);
+    }
+
+    return NextResponse.json({ success: true, submission, dbSaved, dbError });
+  } catch (error: any) {
     console.error("Hackathon submission error:", error);
     return NextResponse.json(
-      { error: "Failed to save hackathon submission" },
+      { error: error.message || "Failed to save hackathon submission" },
       { status: 500 }
     );
   }
