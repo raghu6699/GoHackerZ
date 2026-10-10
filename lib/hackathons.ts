@@ -457,16 +457,31 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
   // 2. Query Postgres DB when available
   if (isDbAvailable()) {
     try {
+      const isFlagshipQuery =
+        slug === FLAGSHIP_HACKATHON.slug ||
+        cleanSlug === "shipathon-2026" ||
+        slug === "active" ||
+        slug === "current";
+
       const dbH = await prisma.hackathon.findFirst({
-        where: {
-          OR: [
-            { slug: slug },
-            { slug: cleanSlug },
-            { id: slug },
-            { id: `gh-${cleanSlug}` },
-            { slug: "shipathon-2026" },
-          ],
-        },
+        where: isFlagshipQuery
+          ? {
+              OR: [
+                { slug: slug },
+                { slug: cleanSlug },
+                { id: slug },
+                { id: `gh-${cleanSlug}` },
+                { slug: "shipathon-2026" },
+              ],
+            }
+          : {
+              OR: [
+                { slug: slug },
+                { slug: cleanSlug },
+                { id: slug },
+                { id: `gh-${cleanSlug}` },
+              ],
+            },
         select: {
           id: true,
           slug: true,
@@ -494,9 +509,9 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
             tagline: dbH.tagline,
             description: dbH.description,
             status: dbH.status as any,
-            startDate: dbH.startDate.toISOString(),
-            endDate: dbH.endDate.toISOString(),
-            submissionDeadline: dbH.submissionDeadline.toISOString(),
+            startDate: dbH.startDate ? dbH.startDate.toISOString() : new Date().toISOString(),
+            endDate: dbH.endDate ? dbH.endDate.toISOString() : new Date().toISOString(),
+            submissionDeadline: dbH.submissionDeadline ? dbH.submissionDeadline.toISOString() : new Date().toISOString(),
             prizePool: dbH.prizePool,
             participantCount: 0,
             teamCount: 0,
@@ -516,13 +531,41 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
   // 3. Check custom disk hackathons
   const customList = loadPersistedCustomHackathons();
   const customMatch = customList.find(
-    (h) => h.slug === slug || h.slug === cleanSlug || h.id === slug
+    (h) => h.slug === slug || h.slug === cleanSlug || h.id === slug || h.id === `gh-${cleanSlug}`
   );
   if (customMatch) {
     return {
       ...customMatch,
       status: (getPersistedHackathonStatus(customMatch.slug) as any) || customMatch.status,
     };
+  }
+
+  // 4. Fallback: Check approved / matching host proposals and auto-provision
+  try {
+    const { getAllHostProposals, createHackathonFromProposal } = await import("./host-proposals");
+    const proposals = await getAllHostProposals();
+    const matchedProposal = proposals.find((p) => {
+      const propSlug = p.hackathonTitle
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      return (
+        propSlug === slug ||
+        propSlug === cleanSlug ||
+        p.id === slug ||
+        p.refNumber.toUpperCase() === slug.toUpperCase() ||
+        (propSlug && slug.includes(propSlug)) ||
+        (propSlug && cleanSlug.includes(propSlug))
+      );
+    });
+
+    if (matchedProposal) {
+      const { hackathon: provisioned } = await createHackathonFromProposal(matchedProposal.id);
+      return provisioned;
+    }
+  } catch (propErr) {
+    console.warn("[getHackathonBySlug] Proposal fallback resolution notice:", propErr);
   }
 
   if (
@@ -569,8 +612,29 @@ export async function getAllHackathons(): Promise<HackathonData[]> {
         }
       }
     } catch (e) {
-      console.warn("[getAllHackathons] DB fetch notice:", e);
+      console.warn("[getAllHackathons] DB query notice:", e);
     }
+  }
+
+  // 4. Include any APPROVED host proposals
+  try {
+    const { getAllHostProposals } = await import("./host-proposals");
+    const proposals = await getAllHostProposals();
+    for (const p of proposals) {
+      if (p.status === "APPROVED") {
+        const propSlug = p.hackathonTitle
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        if (!map.has(propSlug)) {
+          const full = await getHackathonBySlug(propSlug);
+          if (full) map.set(full.slug, full);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[getAllHackathons] Host proposal sync notice:", e);
   }
 
   return Array.from(map.values());

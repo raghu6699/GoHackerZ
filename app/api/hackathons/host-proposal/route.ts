@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { saveHostProposal, getAllHostProposals, updateHostProposalStatus } from "@/lib/host-proposals";
+import {
+  saveHostProposal,
+  getAllHostProposals,
+  updateHostProposalStatus,
+  createHackathonFromProposal,
+} from "@/lib/host-proposals";
 import { sendEmail, hostProposalAdminNotificationEmail, hostProposalReceiptEmail } from "@/lib/mailer";
 import { getAdminEmails, isUserAdmin } from "@/lib/admin-auth";
 import { getCurrentDbUser } from "@/lib/profile";
@@ -144,12 +149,21 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Proposal ID and status are required." }, { status: 400 });
     }
 
-    const updated = await updateHostProposalStatus(id, status);
+    let updated;
+    let hackathon = null;
+    if (status === "APPROVED") {
+      const res = await createHackathonFromProposal(id);
+      updated = res.proposal;
+      hackathon = res.hackathon;
+    } else {
+      updated = await updateHostProposalStatus(id, status);
+    }
+
     if (!updated) {
       return NextResponse.json({ error: "Proposal not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, proposal: updated });
+    return NextResponse.json({ success: true, proposal: updated, hackathon });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to update proposal status." },

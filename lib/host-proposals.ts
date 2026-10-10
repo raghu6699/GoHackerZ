@@ -7,7 +7,7 @@ import {
   type HackathonData,
 } from "./hackathons";
 import { sendEmail, hostProposalApprovedEmail } from "./mailer";
-import { persistHackathonStatus } from "./participant-store";
+import { persistHackathonStatus, ensureTablesExist } from "./participant-store";
 
 export interface HostHackathonProposal {
   id: string;
@@ -343,26 +343,33 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
   // 4. Persist to DB if available
   if (isDbAvailable()) {
     try {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "Hackathon" 
-         ("id", "slug", "title", "tagline", "description", "status", "startDate", "endDate", "submissionDeadline", "prizePool", "tracks", "rules", "sponsors", "faqs")
-         VALUES ($1, $2, $3, $4, $5, $6::"HackathonStatus", $7, $8, $9, $10, $11, $12, $13, $14)
-         ON CONFLICT ("slug") DO UPDATE SET "title" = $3, "tagline" = $4, "description" = $5, "status" = $6::"HackathonStatus"`,
-        hackathon.id,
-        hackathon.slug,
-        hackathon.title,
-        hackathon.tagline,
-        hackathon.description,
-        "ACTIVE",
-        new Date(startDate),
-        new Date(endDate),
-        new Date(submissionDeadline),
-        hackathon.prizePool,
-        JSON.stringify(hackathon.tracks),
-        JSON.stringify(hackathon.rules),
-        JSON.stringify(hackathon.sponsors),
-        JSON.stringify(hackathon.faqs)
-      );
+      await ensureTablesExist();
+      await prisma.hackathon.upsert({
+        where: { slug: hackathon.slug },
+        update: {
+          title: hackathon.title,
+          tagline: hackathon.tagline,
+          description: hackathon.description,
+          status: "ACTIVE" as any,
+          prizePool: hackathon.prizePool,
+        },
+        create: {
+          id: hackathon.id,
+          slug: hackathon.slug,
+          title: hackathon.title,
+          tagline: hackathon.tagline,
+          description: hackathon.description,
+          status: "ACTIVE" as any,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          submissionDeadline: new Date(submissionDeadline),
+          prizePool: hackathon.prizePool,
+          tracks: hackathon.tracks as any,
+          rules: hackathon.rules as any,
+          sponsors: hackathon.sponsors as any,
+          faqs: hackathon.faqs as any,
+        },
+      });
     } catch (e) {
       console.warn("[createHackathonFromProposal] DB write notice:", e);
     }
