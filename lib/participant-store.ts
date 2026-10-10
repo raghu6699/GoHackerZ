@@ -441,6 +441,7 @@ export const getParticipantByTicket = getPersistedParticipantByTicket;
  */
 export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): Promise<HackathonParticipant[]> {
   const map = new Map<string, HackathonParticipant>();
+  const allSubsMap = new Map<string, HackathonSubmission>();
 
   // 1. Fetch from Postgres DB first if available
   if (isDbAvailable()) {
@@ -449,6 +450,7 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
       const realHackathonId = await getHackathonDbId(hackathonIdOrSlug);
       const cleanSlug = (hackathonIdOrSlug || "shipathon-2026").replace(/^gh-/, "");
 
+      // 1a. Query all participants
       const dbParts = await prisma.hackathonParticipant.findMany({
         where: {
           OR: [
@@ -477,6 +479,60 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
         orderBy: { createdAt: "desc" },
       });
 
+      // 1b. Query all submissions directly from DB to catch team & standalone submissions
+      try {
+        const dbAllSubs = await prisma.hackathonSubmission.findMany({
+          where: {
+            OR: [
+              { hackathonId: realHackathonId },
+              { hackathon: { slug: cleanSlug } },
+              { hackathonId: "gh-shipathon-2026" },
+              { hackathonId: "shipathon-2026" },
+            ],
+          },
+          include: {
+            participant: true,
+            team: true,
+            hackathon: true,
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        for (const s of dbAllSubs) {
+          const parsed: HackathonSubmission = {
+            id: s.id,
+            hackathonId: s.hackathon?.slug || s.hackathonId,
+            ticketNumber: s.participant?.ticketNumber || undefined,
+            teamName: s.team?.name || undefined,
+            trackId: s.trackId || "general",
+            title: s.title,
+            tagline: s.tagline,
+            description: s.description,
+            repoUrl: s.repoUrl,
+            demoUrl: s.demoUrl || undefined,
+            pitchDeckUrl: s.pitchDeckUrl || undefined,
+            videoUrl: s.videoUrl || undefined,
+            gammaUrl: s.gammaUrl || undefined,
+            techStack: (s.techStack as string[]) || [],
+            authorName: s.participant?.name || "GoHackerz Builder",
+            createdAt: s.createdAt.toISOString(),
+          };
+
+          if (s.id) allSubsMap.set(s.id, parsed);
+          if (s.participant?.ticketNumber) {
+            allSubsMap.set(`ticket:${s.participant.ticketNumber.toUpperCase()}`, parsed);
+          }
+          if (s.teamId) {
+            allSubsMap.set(`teamId:${s.teamId}`, parsed);
+          }
+          if (s.team?.name) {
+            allSubsMap.set(`teamName:${s.team.name.toLowerCase()}`, parsed);
+          }
+        }
+      } catch (subErr) {
+        console.warn("[getParticipantsForHackathon] Submissions query notice:", subErr);
+      }
+
       for (const p of dbParts) {
         const teamCode = p.team?.inviteCode || undefined;
         const teamName = p.team?.name || undefined;
@@ -488,10 +544,11 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
             }))
           : undefined;
 
+        // Try direct relation, then by ticket, teamId, or teamName
         const sub = p.submissions && p.submissions.length > 0 ? p.submissions[0] : undefined;
         const cert = p.certificates && p.certificates.length > 0 ? p.certificates[0] : undefined;
 
-        const parsedSub: HackathonSubmission | undefined = sub
+        let parsedSub: HackathonSubmission | undefined = sub
           ? {
               id: sub.id,
               hackathonId: p.hackathon?.slug || p.hackathonId,
@@ -512,6 +569,13 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
             }
           : undefined;
 
+        if (!parsedSub) {
+          parsedSub =
+            allSubsMap.get(`ticket:${p.ticketNumber.toUpperCase()}`) ||
+            (p.teamId ? allSubsMap.get(`teamId:${p.teamId}`) : undefined) ||
+            (teamName ? allSubsMap.get(`teamName:${teamName.toLowerCase()}`) : undefined);
+        }
+
         const parsedCert: HackathonCertificate | undefined = cert
           ? {
               id: cert.id,
@@ -523,9 +587,9 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
               title: cert.title,
               awardTitle: cert.awardTitle,
               recipientName: cert.recipientName,
-              projectName: cert.projectName || undefined,
-              teamName: cert.teamName || undefined,
-              trackName: cert.trackName || undefined,
+              projectName: cert.projectName || parsedSub?.title || undefined,
+              teamName: cert.teamName || teamName || undefined,
+              trackName: cert.trackName || parsedSub?.trackId || undefined,
               rank: cert.rank || undefined,
               issuedAt: cert.issuedAt.toISOString(),
               verificationUrl: `/verify/${cert.certNumber}`,
@@ -576,15 +640,20 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
     }
   }
 
-  // 4. Ensure all participants have their submission mapped if one exists
+  // 4. Ensure all participants have their submission mapped from disk/allSubs
   const allSubs = loadPersistedSubmissions();
   for (const p of map.values()) {
     if (!p.submission) {
-      const match = allSubs.find(
-        (s) =>
-          s.ticketNumber?.toUpperCase() === p.ticketNumber.toUpperCase() ||
-          (p.teamName && s.teamName && s.teamName.toLowerCase() === p.teamName.toLowerCase())
-      );
+      const match =
+        allSubs.find(
+          (s) =>
+            s.ticketNumber?.toUpperCase() === p.ticketNumber.toUpperCase() ||
+            (p.teamName && s.teamName && s.teamName.toLowerCase() === p.teamName.toLowerCase())
+        ) ||
+        allSubsMap.get(`ticket:${p.ticketNumber.toUpperCase()}`) ||
+        (p.teamId ? allSubsMap.get(`teamId:${p.teamId}`) : undefined) ||
+        (p.teamName ? allSubsMap.get(`teamName:${p.teamName.toLowerCase()}`) : undefined);
+
       if (match) {
         p.submission = match;
       }
