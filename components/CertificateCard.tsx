@@ -273,13 +273,12 @@ export function CertificateCard({
             {/* Bottom Bar: Signatures, QR Code & Date */}
             <div className="flex w-full items-end justify-between px-2 pt-1 border-t border-[#D7D3EA]/60">
               {/* Director Signature */}
-              <div className="w-28 sm:w-36 text-center">
-                <div
-                  className="text-base sm:text-lg text-[#5B3EE8] font-bold italic"
-                  style={{ fontFamily: '"Caveat", cursive' }}
-                >
-                  Raghu Raman
-                </div>
+              <div className="w-28 sm:w-36 text-center flex flex-col items-center justify-end">
+                <img
+                  src="/logo/header-logo.png"
+                  alt="GoHackerz"
+                  className="h-6 sm:h-7 w-auto object-contain mix-blend-multiply mb-0.5"
+                />
                 <div className="w-full h-px bg-[#1A1440] my-1" />
                 <div className="text-[8px] font-semibold uppercase tracking-wider text-[#4A4473]">
                   Hackathon Director
