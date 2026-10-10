@@ -564,6 +564,11 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
         }
 
         const cert = dbRow.certificates?.[0];
+        let certTitle = cert?.title;
+        if (cert) {
+          const resolvedHackId = dbRow.hackathon?.slug || dbRow.hackathonId;
+          certTitle = await resolveDynamicCertTitle(cert.title, resolvedHackId, dbRow.hackathon?.title);
+        }
         const certificate: HackathonCertificate | undefined = cert
           ? {
               id: cert.id,
@@ -572,7 +577,7 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
               participantId: dbRow.id,
               ticketNumber: dbRow.ticketNumber,
               type: cert.type as CertificateType,
-              title: cert.title,
+              title: certTitle || cert.title,
               awardTitle: cert.awardTitle,
               recipientName: cert.recipientName,
               projectName: cert.projectName || undefined,
@@ -796,6 +801,12 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
             (teamName ? allSubsMap.get(`teamName:${teamName.toLowerCase()}`) : undefined);
         }
 
+        let certTitle = cert?.title;
+        if (cert) {
+          const resolvedHackId = p.hackathon?.slug || p.hackathonId;
+          certTitle = await resolveDynamicCertTitle(cert.title, resolvedHackId, p.hackathon?.title);
+        }
+
         const parsedCert: HackathonCertificate | undefined = cert
           ? {
               id: cert.id,
@@ -804,7 +815,7 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
               participantId: p.id,
               ticketNumber: p.ticketNumber,
               type: cert.type as CertificateType,
-              title: cert.title,
+              title: certTitle || cert.title,
               awardTitle: cert.awardTitle,
               recipientName: cert.recipientName,
               projectName: cert.projectName || parsedSub?.title || undefined,
@@ -1579,19 +1590,55 @@ export async function persistCertificate(cert: HackathonCertificate): Promise<Ha
 }
 
 /**
+ * Resolve and dynamically correct certificate titles for non-flagship hackathons.
+ */
+export async function resolveDynamicCertTitle(
+  rawCertTitle: string,
+  hackathonSlugOrId?: string,
+  dbHackathonTitle?: string | null
+): Promise<string> {
+  const clean = (hackathonSlugOrId || "").trim().toLowerCase().replace(/^gh-/, "");
+  const isFlagship =
+    !clean ||
+    clean === "shipathon-2026" ||
+    clean === "shipathon" ||
+    clean === "active" ||
+    clean === "current";
+
+  if (isFlagship) {
+    return "GoHackerz Global Shipathon 2026";
+  }
+
+  if (dbHackathonTitle && !dbHackathonTitle.toLowerCase().includes("global shipathon")) {
+    return dbHackathonTitle;
+  }
+
+  if (rawCertTitle && !rawCertTitle.toLowerCase().includes("global shipathon")) {
+    return rawCertTitle;
+  }
+
+  return await getHackathonTitle(hackathonSlugOrId);
+}
+
+/**
  * Retrieve a certificate by its unique certNumber (e.g. "GH-2026-PART-8F92").
  */
 export async function getCertificateByNumber(certNumber: string): Promise<HackathonCertificate | null> {
   const clean = certNumber.trim().toUpperCase();
   // 1. Check memory
   const fromMem = memoryStore.certificates.get(clean);
-  if (fromMem) return fromMem;
+  if (fromMem) {
+    const resolvedTitle = await resolveDynamicCertTitle(fromMem.title, fromMem.hackathonId);
+    return { ...fromMem, title: resolvedTitle };
+  }
 
   // 2. Check disk
   const fromDisk = loadPersistedCertificates().find((c) => c.certNumber.toUpperCase() === clean);
   if (fromDisk) {
-    memoryStore.certificates.set(clean, fromDisk);
-    return fromDisk;
+    const resolvedTitle = await resolveDynamicCertTitle(fromDisk.title, fromDisk.hackathonId);
+    const updated = { ...fromDisk, title: resolvedTitle };
+    memoryStore.certificates.set(clean, updated);
+    return updated;
   }
 
   // 3. Check DB
@@ -1603,15 +1650,32 @@ export async function getCertificateByNumber(certNumber: string): Promise<Hackat
         include: { participant: true, hackathon: true },
       });
       if (fromDb) {
+        const resolvedHackId = fromDb.hackathon?.slug || fromDb.hackathonId;
+        const resolvedTitle = await resolveDynamicCertTitle(
+          fromDb.title,
+          resolvedHackId,
+          fromDb.hackathon?.title
+        );
+
+        // Self-heal DB row if title was previously stored as generic flagship name
+        if (fromDb.title !== resolvedTitle && isDbAvailable()) {
+          prisma.hackathonCertificate
+            .update({
+              where: { id: fromDb.id },
+              data: { title: resolvedTitle },
+            })
+            .catch(() => {});
+        }
+
         const cert: HackathonCertificate = {
           id: fromDb.id,
           certNumber: fromDb.certNumber,
-          hackathonId: fromDb.hackathon?.slug || fromDb.hackathonId,
+          hackathonId: resolvedHackId,
           participantId: fromDb.participantId,
           ticketNumber: fromDb.participant?.ticketNumber || "",
           userId: fromDb.userId || undefined,
           type: fromDb.type as CertificateType,
-          title: fromDb.title,
+          title: resolvedTitle,
           awardTitle: fromDb.awardTitle,
           recipientName: fromDb.recipientName,
           roleTitle: fromDb.participant?.roleTitle || undefined,
@@ -1640,7 +1704,10 @@ export async function getCertificateByTicket(ticketNumber: string): Promise<Hack
   const clean = ticketNumber.trim().toUpperCase();
   // 1. Check memory
   const fromMem = memoryStore.certificates.get(clean);
-  if (fromMem) return fromMem;
+  if (fromMem) {
+    const resolvedTitle = await resolveDynamicCertTitle(fromMem.title, fromMem.hackathonId);
+    return { ...fromMem, title: resolvedTitle };
+  }
 
   // 2. Check DB directly
   if (isDbAvailable()) {
@@ -1662,15 +1729,32 @@ export async function getCertificateByTicket(ticketNumber: string): Promise<Hack
       });
 
       if (fromDb) {
+        const resolvedHackId = fromDb.hackathon?.slug || fromDb.hackathonId;
+        const resolvedTitle = await resolveDynamicCertTitle(
+          fromDb.title,
+          resolvedHackId,
+          fromDb.hackathon?.title
+        );
+
+        // Self-heal DB row if title was previously stored as generic flagship name
+        if (fromDb.title !== resolvedTitle && isDbAvailable()) {
+          prisma.hackathonCertificate
+            .update({
+              where: { id: fromDb.id },
+              data: { title: resolvedTitle },
+            })
+            .catch(() => {});
+        }
+
         const cert: HackathonCertificate = {
           id: fromDb.id,
           certNumber: fromDb.certNumber,
-          hackathonId: fromDb.hackathon?.slug || fromDb.hackathonId,
+          hackathonId: resolvedHackId,
           participantId: fromDb.participantId,
           ticketNumber: fromDb.participant?.ticketNumber || clean,
           userId: fromDb.userId || undefined,
           type: fromDb.type as CertificateType,
-          title: fromDb.title,
+          title: resolvedTitle,
           awardTitle: fromDb.awardTitle,
           recipientName: fromDb.recipientName,
           roleTitle: fromDb.participant?.roleTitle || undefined,
@@ -1695,8 +1779,10 @@ export async function getCertificateByTicket(ticketNumber: string): Promise<Hack
     (c) => c.ticketNumber.toUpperCase() === clean || c.certNumber.toUpperCase() === clean
   );
   if (fromDisk) {
-    memoryStore.certificates.set(clean, fromDisk);
-    return fromDisk;
+    const resolvedTitle = await resolveDynamicCertTitle(fromDisk.title, fromDisk.hackathonId);
+    const updated = { ...fromDisk, title: resolvedTitle };
+    memoryStore.certificates.set(clean, updated);
+    return updated;
   }
 
   return null;
@@ -1747,15 +1833,31 @@ export async function getCertificatesForHackathon(hackathonIdOrSlug: string): Pr
       });
 
       for (const c of dbCerts) {
+        const resolvedHackId = c.hackathon?.slug || c.hackathonId;
+        const resolvedTitle = await resolveDynamicCertTitle(
+          c.title,
+          resolvedHackId,
+          c.hackathon?.title
+        );
+
+        if (c.title !== resolvedTitle && isDbAvailable()) {
+          prisma.hackathonCertificate
+            .update({
+              where: { id: c.id },
+              data: { title: resolvedTitle },
+            })
+            .catch(() => {});
+        }
+
         map.set(c.certNumber, {
           id: c.id,
           certNumber: c.certNumber,
-          hackathonId: c.hackathon?.slug || c.hackathonId,
+          hackathonId: resolvedHackId,
           participantId: c.participantId,
           ticketNumber: c.participant?.ticketNumber || "",
           userId: c.userId || undefined,
           type: c.type as CertificateType,
-          title: c.title,
+          title: resolvedTitle,
           awardTitle: c.awardTitle,
           recipientName: c.recipientName,
           roleTitle: c.participant?.roleTitle || undefined,
@@ -1775,13 +1877,15 @@ export async function getCertificatesForHackathon(hackathonIdOrSlug: string): Pr
   const diskList = loadPersistedCertificates();
   for (const c of diskList) {
     if (matchesHackathon(c.hackathonId) && !map.has(c.certNumber)) {
-      map.set(c.certNumber, c);
+      const resolvedTitle = await resolveDynamicCertTitle(c.title, c.hackathonId);
+      map.set(c.certNumber, { ...c, title: resolvedTitle });
     }
   }
 
   for (const c of memoryStore.certificates.values()) {
     if (matchesHackathon(c.hackathonId) && !map.has(c.certNumber)) {
-      map.set(c.certNumber, c);
+      const resolvedTitle = await resolveDynamicCertTitle(c.title, c.hackathonId);
+      map.set(c.certNumber, { ...c, title: resolvedTitle });
     }
   }
 

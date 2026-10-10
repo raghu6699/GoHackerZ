@@ -344,6 +344,7 @@ import {
   loadPersistedSubmissions,
   getPersistedHackathonStatus,
   persistHackathonStatus,
+  resolveDynamicCertTitle,
   memoryStore,
 } from "./participant-store";
 
@@ -726,6 +727,8 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
         let certificate: HackathonCertificate | undefined = undefined;
         const rawCert = dbRow.certificates?.[0];
         if (rawCert) {
+          const resolvedHackId = dbRow.hackathonId;
+          const certTitle = await resolveDynamicCertTitle(rawCert.title, resolvedHackId);
           certificate = {
             id: rawCert.id,
             certNumber: rawCert.certNumber,
@@ -733,7 +736,7 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
             participantId: dbRow.id,
             ticketNumber: dbRow.ticketNumber,
             type: rawCert.type as CertificateType,
-            title: rawCert.title,
+            title: certTitle,
             awardTitle: rawCert.awardTitle,
             recipientName: rawCert.recipientName,
             roleTitle: dbRow.roleTitle,
@@ -904,6 +907,8 @@ export async function getParticipantByEmail(
         let certificate: HackathonCertificate | undefined = undefined;
         const rawCert = dbRow.certificates?.[0];
         if (rawCert) {
+          const resolvedHackId = dbRow.hackathonId;
+          const certTitle = await resolveDynamicCertTitle(rawCert.title, resolvedHackId);
           certificate = {
             id: rawCert.id,
             certNumber: rawCert.certNumber,
@@ -911,7 +916,7 @@ export async function getParticipantByEmail(
             participantId: dbRow.id,
             ticketNumber: dbRow.ticketNumber,
             type: rawCert.type as CertificateType,
-            title: rawCert.title,
+            title: certTitle,
             awardTitle: rawCert.awardTitle,
             recipientName: rawCert.recipientName,
             roleTitle: dbRow.roleTitle,
@@ -1235,14 +1240,16 @@ export async function getUserHackathonHistory(email: string): Promise<{ hackatho
         let certificate: HackathonCertificate | undefined = undefined;
         const cert = row.certificates?.[0];
         if (cert) {
+          const resolvedHackId = row.hackathon?.slug || row.hackathonId;
+          const certTitle = await resolveDynamicCertTitle(cert.title, resolvedHackId, row.hackathon?.title);
           certificate = {
             id: cert.id,
             certNumber: cert.certNumber,
-            hackathonId: row.hackathon?.slug || row.hackathonId,
+            hackathonId: resolvedHackId,
             participantId: row.id,
             ticketNumber: row.ticketNumber,
             type: cert.type as CertificateType,
-            title: cert.title,
+            title: certTitle,
             awardTitle: cert.awardTitle,
             recipientName: cert.recipientName,
             roleTitle: row.roleTitle,
