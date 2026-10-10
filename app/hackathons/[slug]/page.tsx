@@ -127,22 +127,60 @@ export default async function HackathonDetailPage({
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                href={`/hackathons/${hackathon.slug}/register`}
-                className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2"
-              >
-                <span>GET HACKER PASSPORT</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {hackathon.status === "COMPLETED" ? (
+                <>
+                  <Link
+                    href={`/hackathons/${hackathon.slug}/submissions`}
+                    className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2"
+                  >
+                    <span>VIEW PROJECT SHOWCASE</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
 
-              <Link
-                href={`/hackathons/${hackathon.slug}/submit`}
-                className="btn bg-card text-ink hover:bg-white font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
-              >
-                SUBMIT PROJECT 🚀
-              </Link>
+                  <Link
+                    href="/passport"
+                    className="btn bg-card text-ink hover:bg-white font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink flex items-center gap-2"
+                  >
+                    <span>MY PASSPORT & CERTIFICATE 📜</span>
+                  </Link>
+                </>
+              ) : hackathon.status === "JUDGING" ? (
+                <>
+                  <Link
+                    href={`/hackathons/${hackathon.slug}/submissions`}
+                    className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2"
+                  >
+                    <span>VIEW SUBMISSIONS GALLERY</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
 
-              {submissions.length > 0 && (
+                  <Link
+                    href="/passport"
+                    className="btn bg-card text-ink hover:bg-white font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
+                  >
+                    MY HACKER PASSPORT
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`/hackathons/${hackathon.slug}/register`}
+                    className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2"
+                  >
+                    <span>GET HACKER PASSPORT</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+
+                  <Link
+                    href={`/hackathons/${hackathon.slug}/submit`}
+                    className="btn bg-card text-ink hover:bg-white font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
+                  >
+                    SUBMIT PROJECT 🚀
+                  </Link>
+                </>
+              )}
+
+              {submissions.length > 0 && hackathon.status !== "COMPLETED" && (
                 <Link
                   href={`/hackathons/${hackathon.slug}/submissions`}
                   className="font-mono text-xs text-lime underline hover:text-white pt-2 sm:pt-0"

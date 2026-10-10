@@ -29,12 +29,25 @@ export default function HackathonSubmitPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isEditingExisting, setIsEditingExisting] = useState(false);
+  const [hackathonStatus, setHackathonStatus] = useState<string>("ACTIVE");
+  const [checkingStatus, setCheckingStatus] = useState(true);
 
   useEffect(() => {
+    // 1. Fetch Hackathon Status
+    fetch(`/api/hackathons/${slug}/status`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.status) {
+          setHackathonStatus(d.status);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCheckingStatus(false));
+
+    // 2. Fetch participant/ticket details if available
     const t = ticketNumber || initialTicket || getActiveTicketNumber();
     if (t) {
       setTicketNumber(t);
-      // Fetch fresh participant details to prefill if already submitted
       fetch(`/api/hackathons/${slug}/pass/${t}`)
         .then((r) => r.json())
         .then((d) => {
@@ -158,15 +171,108 @@ export default function HackathonSubmitPage() {
             LIGHTWEIGHT LINK SUBMISSION
           </span>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-ink tracking-tight">
-            Submit Your Project
+            {hackathonStatus === "COMPLETED"
+              ? "Submissions Concluded"
+              : hackathonStatus === "JUDGING"
+              ? "Submissions Locked for Judging"
+              : "Submit Your Project"}
           </h1>
           <p className="text-sm sm:text-base text-body">
-            No heavy video or PDF file uploads. Simply link your GitHub repo, live demo, Gamma pitch
-            deck, and YouTube walkthrough.
+            {hackathonStatus === "COMPLETED"
+              ? "This hackathon has ended and final results & certificates have been minted."
+              : hackathonStatus === "JUDGING"
+              ? "The submission deadline has closed. Project evaluations are underway."
+              : "No heavy video or PDF file uploads. Simply link your GitHub repo, live demo, Gamma pitch deck, and YouTube walkthrough."}
           </p>
         </div>
 
-        {success ? (
+        {/* Closed or Judging State */}
+        {(hackathonStatus === "COMPLETED" || hackathonStatus === "JUDGING") ? (
+          <div className="bg-card border-2 border-ink shadow-pop-xl rounded-3xl p-6 sm:p-10 space-y-6">
+            <div className="p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl flex items-center gap-3 text-sm text-amber-300 font-bold">
+              <AlertCircle className="w-5 h-5 shrink-0 text-amber-400" />
+              <span>
+                {hackathonStatus === "COMPLETED"
+                  ? "Hackathon finalized: Project submissions and edits are closed."
+                  : "Judging in progress: Project submissions are locked."}
+              </span>
+            </div>
+
+            {isEditingExisting && title ? (
+              <div className="space-y-4 pt-2 border-t border-ink/10">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted font-bold">Your Recorded Submission</span>
+                  <span className="px-2.5 py-1 bg-lime text-[#1A1440] font-mono text-xs font-black rounded-md">
+                    VERIFIED SUBMISSION
+                  </span>
+                </div>
+                <div className="p-5 bg-bg rounded-2xl border-2 border-ink/20 space-y-3">
+                  <h3 className="text-xl font-bold text-ink">{title}</h3>
+                  {tagline && <p className="text-sm text-body italic">"{tagline}"</p>}
+                  {description && <p className="text-sm text-body">{description}</p>}
+                  
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {repoUrl && (
+                      <a
+                        href={repoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card border border-ink/20 rounded-lg text-xs font-mono font-bold text-purple hover:border-purple"
+                      >
+                        <span>GitHub Repo</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    {demoUrl && (
+                      <a
+                        href={demoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card border border-ink/20 rounded-lg text-xs font-mono font-bold text-lime hover:border-lime"
+                      >
+                        <span>Live Demo</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    {pitchDeckUrl && (
+                      <a
+                        href={pitchDeckUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card border border-ink/20 rounded-lg text-xs font-mono font-bold text-pink hover:border-pink"
+                      >
+                        <span>Pitch Deck</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-ink/10">
+              <Link
+                href={`/hackathons/${slug}/submissions`}
+                className="btn btn-lime text-[#1A1440] font-mono font-bold text-sm px-6 py-3 rounded-xl flex items-center gap-2"
+              >
+                <span>View All Submissions Showcase</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href={ticketNumber ? `/hackathons/${slug}/pass/${ticketNumber}` : "/passport"}
+                className="btn btn-purple font-mono font-bold text-sm px-6 py-3 rounded-xl"
+              >
+                <span>Access Hacker Passport</span>
+              </Link>
+              <Link
+                href={`/hackathons/${slug}`}
+                className="btn bg-bg border-2 border-ink text-ink font-mono font-bold text-sm px-6 py-3 rounded-xl hover:bg-card"
+              >
+                <span>Overview</span>
+              </Link>
+            </div>
+          </div>
+        ) : success ? (
           <div className="bg-card border-2 border-ink shadow-pop-xl rounded-3xl p-8 text-center space-y-4 anim-pop">
             <div className="w-12 h-12 rounded-full bg-lime text-brand-dark flex items-center justify-center mx-auto">
               <Check className="w-6 h-6 stroke-[3]" />

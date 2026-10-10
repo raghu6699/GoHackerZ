@@ -22,6 +22,17 @@ export async function POST(
       return NextResponse.json({ error: "Hackathon not found" }, { status: 404 });
     }
 
+    if (hackathon.status === "COMPLETED" || hackathon.status === "JUDGING") {
+      return NextResponse.json(
+        {
+          error: `Registrations are closed for this hackathon (${
+            hackathon.status === "COMPLETED" ? "Hackathon Concluded" : "Judging in Progress"
+          }).`,
+        },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
     const {
       name,
