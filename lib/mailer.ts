@@ -347,10 +347,12 @@ export function hostProposalAdminNotificationEmail(proposal: {
   contactEmail: string;
   contactHandle?: string;
   hackathonTitle: string;
+  eventFormat?: string;
   targetDates?: string;
   expectedParticipants?: string;
   estimatedPrizePool?: string;
   tracksAndGoals?: string;
+  agenda?: string;
   specialRequirements?: string;
   adminEmail: string;
 }): EmailMessage {
@@ -382,6 +384,15 @@ export function hostProposalAdminNotificationEmail(proposal: {
         </tr>`
             : ""
         }
+        ${
+          proposal.eventFormat
+            ? `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">EVENT FORMAT:</td>
+          <td style="padding:8px 0;color:#ffffff;font-weight:700;text-align:right;">⚡ ${proposal.eventFormat}</td>
+        </tr>`
+            : ""
+        }
         <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
           <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">EXPECTED DATES:</td>
           <td style="padding:8px 0;color:#ffffff;font-weight:700;text-align:right;">${proposal.targetDates || "Flexible / TBD"}</td>
@@ -400,8 +411,18 @@ export function hostProposalAdminNotificationEmail(proposal: {
         proposal.tracksAndGoals
           ? `
       <div style="background:#130E29;border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;">
-        <div style="font-family:monospace;font-size:11px;color:#8B84AD;text-transform:uppercase;margin-bottom:6px;">PROPOSED TRACKS & GOALS:</div>
+        <div style="font-family:monospace;font-size:11px;color:#8B84AD;text-transform:uppercase;margin-bottom:6px;">PROPOSED TRACKS & THEMES:</div>
         <p style="font-size:13px;color:#ded8ff;margin:0;line-height:1.5;">${proposal.tracksAndGoals}</p>
+      </div>`
+          : ""
+      }
+
+      ${
+        proposal.agenda
+          ? `
+      <div style="background:#130E29;border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;">
+        <div style="font-family:monospace;font-size:11px;color:#8B84AD;text-transform:uppercase;margin-bottom:6px;">PROPOSED AGENDA & TIMELINE:</div>
+        <pre style="font-family:inherit;font-size:13px;color:#ded8ff;margin:0;line-height:1.5;white-space:pre-wrap;">${proposal.agenda}</pre>
       </div>`
           : ""
       }

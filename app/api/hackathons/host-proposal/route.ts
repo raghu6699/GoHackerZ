@@ -21,10 +21,12 @@ export async function POST(req: Request) {
       contactEmail,
       contactHandle,
       hackathonTitle,
+      eventFormat,
       targetDates,
       expectedParticipants,
       estimatedPrizePool,
       tracksAndGoals,
+      agenda,
       specialRequirements,
     } = body;
 
@@ -51,10 +53,12 @@ export async function POST(req: Request) {
       contactEmail,
       contactHandle,
       hackathonTitle,
+      eventFormat,
       targetDates,
       expectedParticipants,
       estimatedPrizePool,
       tracksAndGoals,
+      agenda,
       specialRequirements,
     });
 
@@ -70,10 +74,12 @@ export async function POST(req: Request) {
         contactEmail: proposal.contactEmail,
         contactHandle: proposal.contactHandle,
         hackathonTitle: proposal.hackathonTitle,
+        eventFormat: proposal.eventFormat,
         targetDates: proposal.targetDates,
         expectedParticipants: proposal.expectedParticipants,
         estimatedPrizePool: proposal.estimatedPrizePool,
         tracksAndGoals: proposal.tracksAndGoals,
+        agenda: proposal.agenda,
         specialRequirements: proposal.specialRequirements,
         adminEmail: primaryAdmin,
       });

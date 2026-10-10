@@ -27,10 +27,12 @@ export function HostHackathonSection() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactHandle, setContactHandle] = useState("");
   const [hackathonTitle, setHackathonTitle] = useState("");
+  const [eventFormat, setEventFormat] = useState("weekend-48h");
   const [targetDates, setTargetDates] = useState("");
   const [expectedParticipants, setExpectedParticipants] = useState("200-500");
   const [estimatedPrizePool, setEstimatedPrizePool] = useState("$5,000 - $15,000");
   const [tracksAndGoals, setTracksAndGoals] = useState("");
+  const [agenda, setAgenda] = useState("");
   const [specialRequirements, setSpecialRequirements] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -58,10 +60,12 @@ export function HostHackathonSection() {
           contactEmail,
           contactHandle,
           hackathonTitle,
+          eventFormat,
           targetDates,
           expectedParticipants,
           estimatedPrizePool,
           tracksAndGoals,
+          agenda,
           specialRequirements,
         }),
       });
@@ -85,10 +89,12 @@ export function HostHackathonSection() {
     setContactEmail("");
     setContactHandle("");
     setHackathonTitle("");
+    setEventFormat("weekend-48h");
     setTargetDates("");
     setExpectedParticipants("200-500");
     setEstimatedPrizePool("$5,000 - $15,000");
     setTracksAndGoals("");
+    setAgenda("");
     setSpecialRequirements("");
     setSubmittedRef(null);
     setError(null);
@@ -366,16 +372,54 @@ export function HostHackathonSection() {
                   </div>
                 </div>
 
-                {/* Proposed Tracks & Goals */}
+                {/* Event Format Selection */}
                 <div className="space-y-1.5">
                   <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
-                    PROPOSED TRACKS & THEMES
+                    EVENT FORMAT & DURATION
                   </label>
+                  <select
+                    value={eventFormat}
+                    onChange={(e) => setEventFormat(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all"
+                  >
+                    <option value="weekend-48h">48-Hour Weekend Sprint (Standard Flagship)</option>
+                    <option value="3-hours">3-Hours Flash Sprint (Live Prompt & Instant Demos)</option>
+                    <option value="5-hours">5-Hours Buildathon (Fast Shipping)</option>
+                    <option value="single-day">Single-Day 12-Hour Sprint</option>
+                    <option value="async-marathon">Multi-Week Async Marathon (Global)</option>
+                  </select>
+                </div>
+
+                {/* Proposed Tracks & Goals */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
+                      PROPOSED TRACKS & THEMES
+                    </label>
+                    <span className="text-[10px] font-mono text-[#8B84AD]">Auto-configures arena tracks</span>
+                  </div>
                   <textarea
                     rows={2}
                     placeholder="e.g. Track 1: Edge AI, Track 2: Open Source DevTools, Track 3: Local-first Databases..."
                     value={tracksAndGoals}
                     onChange={(e) => setTracksAndGoals(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all placeholder:text-[#58517c] resize-y"
+                  />
+                </div>
+
+                {/* Proposed Schedule & Agenda */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
+                      PROPOSED SCHEDULE & EVENT AGENDA
+                    </label>
+                    <span className="text-[10px] font-mono text-[#8B84AD]">Auto-generates event timeline</span>
+                  </div>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g.&#10;Day 1 · 10:00 UTC: Opening Keynote & Kickoff Broadcast&#10;Day 2 · 18:00 UTC: Architecture Check-in & Mentor Office Hours&#10;Day 3 · 20:00 UTC: Final Submission Deadline & Deliberation&#10;Day 4 · 18:00 UTC: Live Demos & Podium Winner Ceremony"
+                    value={agenda}
+                    onChange={(e) => setAgenda(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all placeholder:text-[#58517c] resize-y"
                   />
                 </div>
