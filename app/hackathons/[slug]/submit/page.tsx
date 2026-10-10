@@ -53,13 +53,13 @@ export default function HackathonSubmitPage() {
       .finally(() => setCheckingStatus(false));
 
     // 2. Fetch participant/ticket details if available
-    const t = ticketNumber || initialTicket || getActiveTicketNumber();
+    const t = ticketNumber || initialTicket || getActiveTicketNumber(slug);
     if (t) {
-      setTicketNumber(t);
       fetch(`/api/hackathons/${slug}/pass/${t}`)
         .then((r) => r.json())
         .then((d) => {
           if (d.success && d.participant) {
+            setTicketNumber(t);
             setIsRegistered(true);
             if (d.participant.submission) {
               const s = d.participant.submission;
@@ -79,10 +79,16 @@ export default function HackathonSubmitPage() {
             }
           } else {
             setIsRegistered(false);
+            if (!initialTicket) {
+              setTicketNumber("");
+            }
           }
         })
         .catch(() => {
           setIsRegistered(false);
+          if (!initialTicket) {
+            setTicketNumber("");
+          }
         });
     } else {
       setIsRegistered(false);

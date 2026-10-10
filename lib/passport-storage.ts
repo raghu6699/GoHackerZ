@@ -94,7 +94,7 @@ export function getMyPassport(
   return null;
 }
 
-export function getActiveTicketNumber(forEmail?: string): string | null {
+export function getActiveTicketNumber(hackathonId = "shipathon-2026", forEmail?: string): string | null {
   if (typeof window === "undefined") return null;
 
   try {
@@ -102,11 +102,15 @@ export function getActiveTicketNumber(forEmail?: string): string | null {
       .trim()
       .toLowerCase();
 
-    if (!activeEmail) return null;
+    const cleanHack = hackathonId.replace(/^gh-/, "");
+    const pass =
+      getMyPassport(cleanHack, activeEmail || undefined) ||
+      getMyPassport(`gh-${cleanHack}`, activeEmail || undefined);
 
-    const pass = getMyPassport("gh-shipathon-2026", activeEmail);
-    if (pass && pass.email && pass.email.trim().toLowerCase() === activeEmail) {
-      return pass.ticketNumber;
+    if (pass?.ticketNumber) {
+      if (!activeEmail || !pass.email || pass.email.trim().toLowerCase() === activeEmail) {
+        return pass.ticketNumber;
+      }
     }
   } catch {
     return null;
