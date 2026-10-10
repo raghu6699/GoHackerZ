@@ -1668,7 +1668,7 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
     }
   } catch {}
 
-  // 3. Save to Postgres DB safely (checking existing rows to prevent unique constraint violations)
+  // 3. Save to Postgres DB safely (ensuring participant and submission always write to DB)
   if (isDbAvailable()) {
     try {
       await ensureTablesExist();
@@ -1677,14 +1677,66 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
       let teamDbId: string | null = null;
 
       if (submission.ticketNumber) {
-        const pDb = await prisma.hackathonParticipant.findUnique({
-          where: { ticketNumber: submission.ticketNumber.trim().toUpperCase() },
+        const cleanTicket = submission.ticketNumber.trim().toUpperCase();
+
+        // 1. Try finding participant in DB
+        let pDb = await prisma.hackathonParticipant.findUnique({
+          where: { ticketNumber: cleanTicket },
           select: { id: true, teamId: true },
         });
+
+        // 2. If not found in DB, sync from disk or memory
+        if (!pDb) {
+          const persistedPart = getPersistedParticipantByTicket(cleanTicket);
+          if (persistedPart) {
+            await persistParticipantToDb(persistedPart);
+            pDb = await prisma.hackathonParticipant.findUnique({
+              where: { ticketNumber: cleanTicket },
+              select: { id: true, teamId: true },
+            });
+          }
+        }
+
+        // 3. If still not found, upsert participant row directly in Postgres
+        if (!pDb) {
+          try {
+            pDb = await prisma.hackathonParticipant.upsert({
+              where: { ticketNumber: cleanTicket },
+              update: {
+                name: submission.authorName || "Builder",
+                hackathonId: realHackathonId,
+              },
+              create: {
+                id: `part-${Date.now()}`,
+                hackathonId: realHackathonId,
+                ticketNumber: cleanTicket,
+                name: submission.authorName || "Builder",
+                email: "",
+                roleTitle: "Fullstack & AI Engineer",
+                themeStyle: "lime",
+              },
+              select: { id: true, teamId: true },
+            });
+          } catch (err) {
+            console.warn("[persistSubmission] Fallback participant create notice:", err);
+          }
+        }
+
         if (pDb) {
           participantDbId = pDb.id;
           teamDbId = pDb.teamId;
         }
+      }
+
+      // If teamDbId is not set, attempt to resolve team from teamName
+      if (!teamDbId && submission.teamName) {
+        try {
+          const teamRow = await prisma.hackathonTeam.findFirst({
+            where: { name: { equals: submission.teamName.trim(), mode: "insensitive" } },
+            select: { id: true },
+          });
+          if (teamRow) teamDbId = teamRow.id;
+        } catch {}
       }
 
       if (participantDbId) {
@@ -1693,8 +1745,8 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
           where: {
             OR: [
               { id: submission.id },
-              ...(teamDbId ? [{ teamId: teamDbId }] : []),
               { participantId: participantDbId },
+              ...(teamDbId ? [{ teamId: teamDbId }] : []),
             ],
           },
         });
@@ -1703,6 +1755,9 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
           await prisma.hackathonSubmission.update({
             where: { id: existingSub.id },
             data: {
+              hackathonId: realHackathonId,
+              participantId: participantDbId,
+              teamId: teamDbId || existingSub.teamId,
               title: submission.title,
               tagline: submission.tagline,
               description: submission.description,
@@ -1737,7 +1792,7 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
         }
       }
     } catch (e) {
-      console.warn("[persistSubmission] DB write error:", e);
+      console.error("[persistSubmission] DB write error:", e);
     }
   }
 

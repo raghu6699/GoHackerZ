@@ -602,9 +602,13 @@ export function HackerPassport({
                 <span className="font-mono text-[8.5px] text-white/40 uppercase tracking-wider block">
                   STATUS
                 </span>
-                <span className="font-mono text-xs font-bold text-emerald-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  BOARDING
+                <span className={`font-mono text-xs font-bold flex items-center gap-1 ${
+                  participant.submission ? "text-lime font-black" : "text-emerald-400"
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    participant.submission ? "bg-lime animate-ping" : "bg-emerald-400 animate-pulse"
+                  }`} />
+                  {participant.submission ? "SHIPPED ✓" : "BOARDING"}
                 </span>
               </div>
             </div>

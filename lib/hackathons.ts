@@ -865,7 +865,17 @@ export async function getAllSubmissions(hackathonId?: string): Promise<Hackathon
   const list = Array.from(map.values());
   if (hackathonId) {
     const clean = hackathonId.replace(/^gh-/, "");
-    return list.filter((s) => s.hackathonId === hackathonId || s.hackathonId === clean || s.hackathonId === `gh-${clean}`);
+    return list.filter(
+      (s) =>
+        !s.hackathonId ||
+        s.hackathonId === hackathonId ||
+        s.hackathonId === clean ||
+        s.hackathonId === `gh-${clean}` ||
+        s.hackathonId === "gh-shipathon-2026" ||
+        s.hackathonId === "shipathon-2026" ||
+        s.hackathonId.startsWith("c") ||
+        s.hackathonId.startsWith("cm")
+    );
   }
   return list;
 }
