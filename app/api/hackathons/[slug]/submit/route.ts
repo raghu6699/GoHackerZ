@@ -49,10 +49,40 @@ export async function POST(
       );
     }
 
+    const cleanTicket = ticketNumber.trim().toUpperCase();
+    const participant = await getParticipantByTicket(cleanTicket);
+
+    if (!participant) {
+      return NextResponse.json(
+        {
+          error: `Ticket #${cleanTicket} is not registered. You must register for "${hackathon.title}" before submitting a project.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if participant is registered for THIS specific hackathon
+    const cleanSlug = slug.replace(/^gh-/, "").toLowerCase();
+    const isFlagship = cleanSlug === "shipathon-2026" || cleanSlug === "shipathon" || slug === "active" || slug === "current";
+    const pHackId = (participant.hackathonId || "").replace(/^gh-/, "").toLowerCase();
+
+    const matchesThisHackathon = isFlagship
+      ? (!pHackId || pHackId === "shipathon-2026" || pHackId === "shipathon" || pHackId === hackathon.id)
+      : (pHackId === cleanSlug || pHackId === hackathon.id || pHackId === `gh-${cleanSlug}`);
+
+    if (!matchesThisHackathon) {
+      return NextResponse.json(
+        {
+          error: `Ticket #${cleanTicket} is registered for another event. Please register for "${hackathon.title}" to get your event pass.`,
+        },
+        { status: 403 }
+      );
+    }
+
     const submission = await submitProject({
       hackathonId: hackathon.id,
-      ticketNumber,
-      trackId: trackId || "ai-agents",
+      ticketNumber: cleanTicket,
+      trackId: trackId || (hackathon.tracks?.[0]?.id ?? "general"),
       title,
       tagline: tagline || "",
       description: description || "",

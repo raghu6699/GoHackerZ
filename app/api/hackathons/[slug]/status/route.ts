@@ -29,6 +29,7 @@ export async function GET(
         slug: hackathon.slug,
         title: hackathon.title,
         status: hackathon.status,
+        tracks: hackathon.tracks,
       },
     });
   } catch (error: any) {

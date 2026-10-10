@@ -14,7 +14,7 @@ export default function HackathonSubmitPage() {
   const initialTicket = searchParams.get("ticket") || "";
 
   const [ticketNumber, setTicketNumber] = useState(initialTicket);
-  const [trackId, setTrackId] = useState("ai-agents");
+  const [trackId, setTrackId] = useState("");
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
@@ -30,15 +30,23 @@ export default function HackathonSubmitPage() {
   const [success, setSuccess] = useState(false);
   const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [hackathonStatus, setHackathonStatus] = useState<string>("ACTIVE");
+  const [hackathonTitle, setHackathonTitle] = useState<string>("Hackathon");
+  const [tracks, setTracks] = useState<Array<{ id: string; title: string; prize?: string }>>([]);
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
   useEffect(() => {
-    // 1. Fetch Hackathon Status
+    // 1. Fetch Hackathon Status & Tracks
     fetch(`/api/hackathons/${slug}/status`)
       .then((r) => r.json())
       .then((d) => {
-        if (d.success && d.status) {
-          setHackathonStatus(d.status);
+        if (d.success && d.hackathon) {
+          setHackathonStatus(d.status || d.hackathon.status || "ACTIVE");
+          setHackathonTitle(d.hackathon.title || "Hackathon");
+          if (Array.isArray(d.hackathon.tracks) && d.hackathon.tracks.length > 0) {
+            setTracks(d.hackathon.tracks);
+            setTrackId((prev) => prev || d.hackathon.tracks[0].id);
+          }
         }
       })
       .catch(() => {})
@@ -51,24 +59,33 @@ export default function HackathonSubmitPage() {
       fetch(`/api/hackathons/${slug}/pass/${t}`)
         .then((r) => r.json())
         .then((d) => {
-          if (d.success && d.participant?.submission) {
-            const s = d.participant.submission;
-            setIsEditingExisting(true);
-            setTitle(s.title || "");
-            setTagline(s.tagline || "");
-            setDescription(s.description || "");
-            setRepoUrl(s.repoUrl || "");
-            setDemoUrl(s.demoUrl || "");
-            setPitchDeckUrl(s.pitchDeckUrl || "");
-            setVideoUrl(s.videoUrl || "");
-            setGammaUrl(s.gammaUrl || "");
-            if (s.trackId) setTrackId(s.trackId);
-            if (s.techStack && s.techStack.length > 0) {
-              setTechStackInput(s.techStack.join(", "));
+          if (d.success && d.participant) {
+            setIsRegistered(true);
+            if (d.participant.submission) {
+              const s = d.participant.submission;
+              setIsEditingExisting(true);
+              setTitle(s.title || "");
+              setTagline(s.tagline || "");
+              setDescription(s.description || "");
+              setRepoUrl(s.repoUrl || "");
+              setDemoUrl(s.demoUrl || "");
+              setPitchDeckUrl(s.pitchDeckUrl || "");
+              setVideoUrl(s.videoUrl || "");
+              setGammaUrl(s.gammaUrl || "");
+              if (s.trackId) setTrackId(s.trackId);
+              if (s.techStack && s.techStack.length > 0) {
+                setTechStackInput(s.techStack.join(", "));
+              }
             }
+          } else {
+            setIsRegistered(false);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          setIsRegistered(false);
+        });
+    } else {
+      setIsRegistered(false);
     }
   }, [ticketNumber, initialTicket, slug]);
 
@@ -295,6 +312,24 @@ export default function HackathonSubmitPage() {
               </div>
             )}
 
+            {isRegistered === false && (
+              <div className="p-4 bg-amber-500/15 border-2 border-amber-500/30 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-amber-200">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                  <span className="text-xs font-bold">
+                    You must register for <strong>{hackathonTitle}</strong> to receive your verified Hacker Pass before submitting.
+                  </span>
+                </div>
+                <Link
+                  href={`/hackathons/${slug}/register`}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#C6FF3D] hover:bg-[#b5f028] text-[#0A071B] font-mono text-xs font-black transition-all shadow-sm inline-flex items-center gap-1.5"
+                >
+                  <span>Register &amp; Get Pass</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
+
             {/* Ticket ID */}
             <div className="space-y-1.5">
               <label className="font-mono text-xs font-bold text-ink block">
@@ -309,7 +344,7 @@ export default function HackathonSubmitPage() {
                 className="w-full px-4 py-3 bg-bg border-2 border-ink/20 focus:border-purple rounded-xl font-mono text-sm uppercase text-ink outline-none transition-all"
               />
               <span className="font-mono text-[11px] text-muted block">
-                Found on your official Hacker Passport.
+                Found on your official Hacker Passport for {hackathonTitle}.
               </span>
             </div>
 
@@ -323,9 +358,19 @@ export default function HackathonSubmitPage() {
                 onChange={(e) => setTrackId(e.target.value)}
                 className="w-full px-4 py-3 bg-bg border-2 border-ink/20 focus:border-purple rounded-xl font-sans text-sm text-ink outline-none transition-all"
               >
-                <option value="ai-agents">Autonomous AI Agents & Workflows (Cash Grants & Credits)</option>
-                <option value="edge-systems">Edge Architecture & High-Performance Web (Cash Grants & Credits)</option>
-                <option value="devex-tools">Developer Tools & Open Source Infrastructure (Cash Grants & Credits)</option>
+                {tracks.length > 0 ? (
+                  tracks.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title} {t.prize ? `· ${t.prize}` : ""}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="ai-agents">Autonomous AI Agents & Workflows (Cash Grants & Credits)</option>
+                    <option value="edge-systems">Edge Architecture & High-Performance Web (Cash Grants & Credits)</option>
+                    <option value="devex-tools">Developer Tools & Open Source Infrastructure (Cash Grants & Credits)</option>
+                  </>
+                )}
               </select>
             </div>
 
