@@ -398,41 +398,146 @@ export const getParticipantByTicket = getPersistedParticipantByTicket;
 
 /**
  * Get all registered participants for a given hackathon.
+ * Queries Postgres/Supabase DB first and merges with disk and in-memory caches.
  */
 export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): Promise<HackathonParticipant[]> {
-  const diskList = loadPersistedParticipants();
-  if (diskList.length > 0) return diskList;
+  const map = new Map<string, HackathonParticipant>();
 
+  // 1. Fetch from Postgres DB first if available
   if (isDbAvailable()) {
     try {
       await ensureTablesExist();
       const realHackathonId = await getHackathonDbId(hackathonIdOrSlug);
+      const cleanSlug = (hackathonIdOrSlug || "shipathon-2026").replace(/^gh-/, "");
+
       const dbParts = await prisma.hackathonParticipant.findMany({
-        where: { hackathonId: realHackathonId },
-        include: { submissions: true, certificates: true },
+        where: {
+          OR: [
+            { hackathonId: realHackathonId },
+            { hackathon: { slug: cleanSlug } },
+            { hackathonId: "gh-shipathon-2026" },
+            { hackathonId: "shipathon-2026" },
+          ],
+        },
+        include: {
+          team: {
+            include: {
+              participants: true,
+            },
+          },
+          submissions: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+          certificates: {
+            orderBy: { issuedAt: "desc" },
+            take: 1,
+          },
+          hackathon: true,
+        },
+        orderBy: { createdAt: "desc" },
       });
-      return dbParts.map((p) => ({
-        id: p.id,
-        hackathonId: p.hackathonId,
-        ticketNumber: p.ticketNumber,
-        name: p.name,
-        email: p.email,
-        roleTitle: p.roleTitle,
-        bio: p.bio || undefined,
-        discordHandle: p.discordHandle || undefined,
-        twitterHandle: p.twitterHandle || undefined,
-        avatarUrl: p.avatarUrl || undefined,
-        themeStyle: (p.themeStyle || "lime") as any,
-        isCaptain: p.isCaptain,
-        teamId: p.teamId || undefined,
-        createdAt: p.createdAt.toISOString(),
-      }));
+
+      for (const p of dbParts) {
+        const teamCode = p.team?.inviteCode || undefined;
+        const teamName = p.team?.name || undefined;
+        const teammates = p.team?.participants
+          ? p.team.participants.map((m) => ({
+              name: m.name,
+              roleTitle: m.roleTitle,
+              avatarUrl: m.avatarUrl || undefined,
+            }))
+          : undefined;
+
+        const sub = p.submissions && p.submissions.length > 0 ? p.submissions[0] : undefined;
+        const cert = p.certificates && p.certificates.length > 0 ? p.certificates[0] : undefined;
+
+        const parsedSub: HackathonSubmission | undefined = sub
+          ? {
+              id: sub.id,
+              hackathonId: p.hackathon?.slug || p.hackathonId,
+              ticketNumber: p.ticketNumber,
+              teamName: teamName,
+              trackId: sub.trackId || "general",
+              title: sub.title,
+              tagline: sub.tagline,
+              description: sub.description,
+              repoUrl: sub.repoUrl,
+              demoUrl: sub.demoUrl || undefined,
+              pitchDeckUrl: sub.pitchDeckUrl || undefined,
+              videoUrl: sub.videoUrl || undefined,
+              gammaUrl: sub.gammaUrl || undefined,
+              techStack: (sub.techStack as string[]) || [],
+              authorName: p.name,
+              createdAt: sub.createdAt.toISOString(),
+            }
+          : undefined;
+
+        const parsedCert: HackathonCertificate | undefined = cert
+          ? {
+              id: cert.id,
+              certNumber: cert.certNumber,
+              hackathonId: p.hackathon?.slug || p.hackathonId,
+              participantId: p.id,
+              ticketNumber: p.ticketNumber,
+              type: cert.type as CertificateType,
+              title: cert.title,
+              awardTitle: cert.awardTitle,
+              recipientName: cert.recipientName,
+              projectName: cert.projectName || undefined,
+              teamName: cert.teamName || undefined,
+              trackName: cert.trackName || undefined,
+              rank: cert.rank || undefined,
+              issuedAt: cert.issuedAt.toISOString(),
+              verificationUrl: `/verify/${cert.certNumber}`,
+            }
+          : undefined;
+
+        const mapped: HackathonParticipant = {
+          id: p.id,
+          hackathonId: p.hackathon?.slug || p.hackathonId,
+          ticketNumber: p.ticketNumber,
+          name: p.name,
+          email: p.email,
+          roleTitle: p.roleTitle,
+          bio: p.bio || undefined,
+          discordHandle: p.discordHandle || undefined,
+          twitterHandle: p.twitterHandle || undefined,
+          avatarUrl: p.avatarUrl || undefined,
+          themeStyle: (p.themeStyle || "lime") as any,
+          isCaptain: p.isCaptain,
+          teamId: p.teamId || undefined,
+          teamName,
+          teamCode,
+          teammates,
+          submission: parsedSub,
+          certificate: parsedCert,
+          createdAt: p.createdAt.toISOString(),
+        };
+
+        map.set(p.ticketNumber.toUpperCase(), mapped);
+      }
     } catch (e) {
-      console.warn("[getParticipantsForHackathon] DB query error:", e);
+      console.warn("[getParticipantsForHackathon] DB query notice:", e);
     }
   }
 
-  return diskList;
+  // 2. Merge with disk participants (sync)
+  const diskList = loadPersistedParticipants();
+  for (const p of diskList) {
+    if (!map.has(p.ticketNumber.toUpperCase())) {
+      map.set(p.ticketNumber.toUpperCase(), p);
+    }
+  }
+
+  // 3. Merge with in-memory store
+  for (const p of memoryStore.participants.values()) {
+    if (!map.has(p.ticketNumber.toUpperCase())) {
+      map.set(p.ticketNumber.toUpperCase(), p);
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 /**

@@ -18,6 +18,11 @@ import {
   AlertCircle,
   RefreshCw,
   Zap,
+  Ticket,
+  User,
+  GitPullRequest,
+  Check,
+  Filter,
 } from "lucide-react";
 import type { HackathonParticipant, HackathonCertificate, CertificateType } from "@/lib/hackathons";
 
@@ -33,12 +38,14 @@ export function AdminControlClient({
   slug,
   initialStatus,
   hackathonTitle,
-  participants,
+  participants: initialParticipants,
   initialCertificates,
 }: AdminControlClientProps) {
   const [status, setStatus] = useState(initialStatus);
+  const [participants, setParticipants] = useState<HackathonParticipant[]>(initialParticipants);
   const [certificates, setCertificates] = useState<HackathonCertificate[]>(initialCertificates);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Award studio state
@@ -49,13 +56,38 @@ export function AdminControlClient({
   const [isIssuingAward, setIsIssuingAward] = useState(false);
   const [awardSuccessMsg, setAwardSuccessMsg] = useState<string | null>(null);
 
-  // Filter & search
-  const [searchQuery, setSearchQuery] = useState("");
+  // Search & tab filters
+  const [participantFilterTab, setParticipantFilterTab] = useState<"all" | "solo" | "team" | "submitted">("all");
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [certSearch, setCertSearch] = useState("");
+
+  const refreshAllData = async () => {
+    setIsRefreshing(true);
+    try {
+      const [pRes, cRes, sRes] = await Promise.all([
+        fetch(`/api/hackathons/${slug}/participants`),
+        fetch(`/api/hackathons/${slug}/certificates`),
+        fetch(`/api/hackathons/${slug}/status`),
+      ]);
+
+      const pData = await pRes.json();
+      const cData = await cRes.json();
+      const sData = await sRes.json();
+
+      if (pData.success) setParticipants(pData.participants || []);
+      if (cData.success) setCertificates(cData.certificates || []);
+      if (sData.success) setStatus(sData.status);
+    } catch (err) {
+      console.warn("Error refreshing admin data:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === "COMPLETED") {
       const confirmClose = window.confirm(
-        "Finalizing and closing this hackathon will AUTOMATICALLY generate and issue official Participation Certificates and Visa Stamps to all registered participants. Proceed?"
+        `Finalizing and closing this hackathon will AUTOMATICALLY generate and issue official Participation Certificates and Visa Stamps to all ${participants.length} registered participants. Proceed?`
       );
       if (!confirmClose) return;
     }
@@ -74,13 +106,7 @@ export function AdminControlClient({
       if (data.success) {
         setStatus(data.status);
         setStatusMessage(data.message || `Status updated to ${newStatus}`);
-
-        // Refresh certificates list
-        const certsRes = await fetch(`/api/hackathons/${slug}/certificates`);
-        const certsData = await certsRes.json();
-        if (certsData.success) {
-          setCertificates(certsData.certificates || []);
-        }
+        await refreshAllData();
       } else {
         alert(data.error || "Failed to update status");
       }
@@ -124,12 +150,7 @@ export function AdminControlClient({
       const data = await res.json();
       if (data.success && data.certificate) {
         setAwardSuccessMsg(data.message);
-        // Refresh certs
-        setCertificates((prev) => [
-          data.certificate,
-          ...prev.filter((c) => c.certNumber !== data.certificate.certNumber && c.ticketNumber !== data.certificate.ticketNumber),
-        ]);
-        setSelectedTicket("");
+        await refreshAllData();
       } else {
         alert(data.error || "Failed to issue award");
       }
@@ -140,13 +161,44 @@ export function AdminControlClient({
     }
   };
 
+  const selectParticipantForAward = (ticket: string, name: string) => {
+    setSelectedTicket(ticket);
+    const awardForm = document.getElementById("award-studio-form");
+    if (awardForm) {
+      awardForm.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  // Filtered participants
+  const filteredParticipants = participants.filter((p) => {
+    const q = participantSearch.toLowerCase();
+    const matchesSearch =
+      p.name.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q) ||
+      p.ticketNumber.toLowerCase().includes(q) ||
+      (p.teamName && p.teamName.toLowerCase().includes(q)) ||
+      (p.roleTitle && p.roleTitle.toLowerCase().includes(q));
+
+    if (!matchesSearch) return false;
+
+    if (participantFilterTab === "solo") return !p.teamCode && !p.teamName;
+    if (participantFilterTab === "team") return !!p.teamCode || !!p.teamName;
+    if (participantFilterTab === "submitted") return !!p.submission;
+    return true;
+  });
+
+  // Filtered certificates
   const filteredCerts = certificates.filter(
     (c) =>
-      c.recipientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.certNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.awardTitle.toLowerCase().includes(searchQuery.toLowerCase())
+      c.recipientName.toLowerCase().includes(certSearch.toLowerCase()) ||
+      c.certNumber.toLowerCase().includes(certSearch.toLowerCase()) ||
+      c.ticketNumber.toLowerCase().includes(certSearch.toLowerCase()) ||
+      c.awardTitle.toLowerCase().includes(certSearch.toLowerCase())
   );
+
+  const soloCount = participants.filter((p) => !p.teamCode && !p.teamName).length;
+  const teamCount = participants.filter((p) => !!p.teamCode || !!p.teamName).length;
+  const submissionCount = participants.filter((p) => !!p.submission).length;
 
   return (
     <div className="min-h-screen bg-[#070512] text-white py-10 px-4 sm:px-6">
@@ -156,7 +208,7 @@ export function AdminControlClient({
           <div>
             <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#C6FF3D]">
               <ShieldCheck className="w-4 h-4" />
-              <span>Admin Hackathon & Awards Studio</span>
+              <span>Admin Director & Awards Studio</span>
             </div>
             <h1 className="text-3xl font-bold mt-1 text-white tracking-tight">
               {hackathonTitle}
@@ -164,16 +216,25 @@ export function AdminControlClient({
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={refreshAllData}
+              disabled={isRefreshing}
+              className="px-4 py-2 rounded-xl bg-[#161233] hover:bg-[#201b47] text-xs font-medium text-[#C6FF3D] border border-[#2c2459] transition-colors flex items-center gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>{isRefreshing ? "Refreshing..." : "Refresh Roster & DB"}</span>
+            </button>
+
             <Link
               href={`/hackathons/${slug}`}
               className="px-4 py-2 rounded-xl bg-[#161233] hover:bg-[#201b47] text-xs font-medium text-[#a59fcf] border border-[#2c2459] transition-colors"
             >
-              View Public Page
+              Public Arena Page ↗
             </Link>
           </div>
         </div>
 
-        {/* Section 1: Lifecycle Management */}
+        {/* Section 1: Lifecycle Control Bar */}
         <div className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
@@ -182,11 +243,11 @@ export function AdminControlClient({
                 Hackathon Lifecycle Control
               </h2>
               <p className="text-xs text-[#8e88b8] mt-0.5">
-                Control the state of submissions, judging, and automated certificate issuance.
+                Control the sprint phase. Closing the hackathon automatically issues official certificates to all {participants.length} hackers.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#181339] border border-[#2e2763]">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#181339] border border-[#2e2763]">
               <span className="text-xs text-[#8e88b8]">Current Status:</span>
               <span
                 className={`text-xs font-bold font-mono px-2.5 py-0.5 rounded-full ${
@@ -204,7 +265,6 @@ export function AdminControlClient({
             </div>
           </div>
 
-          {/* Status buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <button
               onClick={() => handleStatusChange("UPCOMING")}
@@ -238,7 +298,7 @@ export function AdminControlClient({
                 2. ACTIVE (Hackathon Live)
               </div>
               <p className="text-[11px] text-[#8e88b8] mt-1">
-                Live hacking, team formation, and open submissions.
+                Live sprint, team matchmaking, open submissions.
               </p>
             </button>
 
@@ -256,7 +316,7 @@ export function AdminControlClient({
                 3. JUDGING
               </div>
               <p className="text-[11px] text-[#8e88b8] mt-1">
-                Submissions locked. Judges review pitches.
+                Submissions locked. Pitch review active.
               </p>
             </button>
 
@@ -274,7 +334,7 @@ export function AdminControlClient({
                 4. CLOSE & AUTO-ISSUE
               </div>
               <p className="text-[11px] text-[#a59fcf] mt-1">
-                Finalizes event & auto-mints certificates to all hackers.
+                Finalizes event & auto-mints certificates to all.
               </p>
             </button>
           </div>
@@ -287,8 +347,204 @@ export function AdminControlClient({
           )}
         </div>
 
-        {/* Section 2: Special Winner & Awards Studio */}
+        {/* Section 2: ALL REGISTERED PARTICIPANTS & SQUADS DIRECTORY */}
         <div className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#C6FF3D]" />
+                Registered Participants & Squads ({participants.length})
+              </h2>
+              <p className="text-xs text-[#8e88b8] mt-0.5">
+                Complete live directory of all Solo builders, Squad Captains, and Squad Members registered in this hackathon.
+              </p>
+            </div>
+
+            {/* Search filter */}
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#8e88b8]" />
+              <input
+                type="text"
+                value={participantSearch}
+                onChange={(e) => setParticipantSearch(e.target.value)}
+                placeholder="Search builder, email, squad, ticket..."
+                className="w-full h-9 pl-9 pr-3 rounded-xl bg-[#161233] border border-[#2c2459] text-xs text-white placeholder:text-[#5d5687] focus:outline-none focus:border-[#7C5CFF]"
+              />
+            </div>
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="flex flex-wrap gap-2 mb-4 font-mono text-xs">
+            <button
+              onClick={() => setParticipantFilterTab("all")}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                participantFilterTab === "all"
+                  ? "bg-[#7C5CFF] text-white shadow-sm"
+                  : "bg-[#161233] text-[#8e88b8] hover:text-white"
+              }`}
+            >
+              ALL BUILDERS ({participants.length})
+            </button>
+            <button
+              onClick={() => setParticipantFilterTab("solo")}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                participantFilterTab === "solo"
+                  ? "bg-[#7C5CFF] text-white shadow-sm"
+                  : "bg-[#161233] text-[#8e88b8] hover:text-white"
+              }`}
+            >
+              SOLO BUILDERS ({soloCount})
+            </button>
+            <button
+              onClick={() => setParticipantFilterTab("team")}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                participantFilterTab === "team"
+                  ? "bg-[#7C5CFF] text-white shadow-sm"
+                  : "bg-[#161233] text-[#8e88b8] hover:text-white"
+              }`}
+            >
+              SQUADS & TEAMS ({teamCount})
+            </button>
+            <button
+              onClick={() => setParticipantFilterTab("submitted")}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                participantFilterTab === "submitted"
+                  ? "bg-[#7C5CFF] text-white shadow-sm"
+                  : "bg-[#161233] text-[#8e88b8] hover:text-white"
+              }`}
+            >
+              SUBMITTED PROJECTS ({submissionCount})
+            </button>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#161233] text-[#8e88b8] uppercase font-mono text-[10px]">
+                <tr>
+                  <th className="py-3 px-4 rounded-l-xl">Builder</th>
+                  <th className="py-3 px-4">Ticket</th>
+                  <th className="py-3 px-4">Squad Type</th>
+                  <th className="py-3 px-4">Project Submission</th>
+                  <th className="py-3 px-4">Certificate Status</th>
+                  <th className="py-3 px-4 rounded-r-xl text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e1942]">
+                {filteredParticipants.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-[#8e88b8]">
+                      No participants found matching your search.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredParticipants.map((p) => {
+                    const hasTeam = !!p.teamCode || !!p.teamName;
+                    const hasSub = !!p.submission;
+                    const hasCert = !!p.certificate;
+
+                    return (
+                      <tr key={p.ticketNumber} className="hover:bg-[#141030] transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white">{p.name || "Anonymous Builder"}</div>
+                          <div className="text-[11px] text-[#8e88b8] font-mono">{p.email}</div>
+                          {p.roleTitle && (
+                            <div className="text-[10px] text-[#C6FF3D] mt-0.5">{p.roleTitle}</div>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-4 font-mono font-bold text-[#a59fcf]">
+                          {p.ticketNumber}
+                        </td>
+
+                        <td className="py-3 px-4">
+                          {hasTeam ? (
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple/20 text-purple border border-purple/30">
+                                {p.isCaptain ? "★ CAPTAIN" : "● SQUAD"}
+                              </span>
+                              <div className="text-xs font-semibold text-white mt-1">
+                                {p.teamName || "Team Squad"}
+                              </div>
+                              {p.teamCode && (
+                                <div className="text-[10px] font-mono text-[#8e88b8]">
+                                  Code: {p.teamCode}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-[#8e88b8] border border-slate-700">
+                              SOLO BUILDER
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-4">
+                          {hasSub ? (
+                            <div>
+                              <div className="font-semibold text-white truncate max-w-[180px]">
+                                {p.submission?.title}
+                              </div>
+                              <div className="flex gap-2 text-[10px] text-[#C6FF3D] mt-0.5">
+                                {p.submission?.demoUrl && <span>Live Demo ✓</span>}
+                                {p.submission?.repoUrl && <span>Repo ✓</span>}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-[#645e8f] text-[11px]">No Submission Yet</span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-4">
+                          {hasCert ? (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                p.certificate?.type === "WINNER_FIRST"
+                                  ? "bg-amber-400 text-black"
+                                  : p.certificate?.type.startsWith("WINNER")
+                                  ? "bg-purple text-white"
+                                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                              }`}
+                            >
+                              {p.certificate?.awardTitle}
+                            </span>
+                          ) : (
+                            <span className="text-[#645e8f] text-[11px]">Unissued</span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => selectParticipantForAward(p.ticketNumber, p.name)}
+                              className="px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors flex items-center gap-1"
+                              title="Select for Award in Studio"
+                            >
+                              <Trophy className="w-3 h-3" />
+                              Award
+                            </button>
+
+                            <Link
+                              href={`/hackathons/${slug}/pass/${p.ticketNumber}`}
+                              target="_blank"
+                              className="px-2.5 py-1 rounded-lg bg-[#161233] hover:bg-[#201b47] text-white font-mono text-[10px] transition-colors"
+                              title="Open 3D Passport"
+                            >
+                              Passport ↗
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section 3: Special Winner & Awards Studio Form */}
+        <div id="award-studio-form" className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-400" />
@@ -304,7 +560,7 @@ export function AdminControlClient({
               {/* Participant selector */}
               <div>
                 <label className="block text-xs font-semibold text-[#8e88b8] uppercase tracking-wider mb-1.5">
-                  Select Participant / Squad
+                  Select Participant / Squad ({participants.length} Available)
                 </label>
                 <select
                   value={selectedTicket}
@@ -315,7 +571,7 @@ export function AdminControlClient({
                   <option value="">-- Choose Builder or Team --</option>
                   {participants.map((p) => (
                     <option key={p.ticketNumber} value={p.ticketNumber}>
-                      {p.name} ({p.ticketNumber}) {p.teamName ? `· Squad: ${p.teamName}` : ""}
+                      {p.name} ({p.ticketNumber}) {p.teamName ? `· Squad: ${p.teamName}` : "· Solo"}
                     </option>
                   ))}
                 </select>
@@ -365,7 +621,9 @@ export function AdminControlClient({
 
             <div className="flex items-center justify-between pt-2">
               <div className="text-xs text-[#8e88b8]">
-                Once issued, this award automatically stamps their Passport and unlocks their gold credential.
+                {selectedTicket
+                  ? `Ready to stamp honor badge for ${selectedTicket}`
+                  : "Pick a builder from the table or dropdown above to mint their honor badge."}
               </div>
 
               <button
@@ -396,7 +654,7 @@ export function AdminControlClient({
           </form>
         </div>
 
-        {/* Section 3: Issued Credentials & Certificates Roster */}
+        {/* Section 4: Issued Credentials & Certificates Roster */}
         <div className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
@@ -414,8 +672,8 @@ export function AdminControlClient({
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#8e88b8]" />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={certSearch}
+                onChange={(e) => setCertSearch(e.target.value)}
                 placeholder="Search builder, cert ID..."
                 className="w-full h-9 pl-9 pr-3 rounded-xl bg-[#161233] border border-[#2c2459] text-xs text-white placeholder:text-[#5d5687] focus:outline-none focus:border-[#7C5CFF]"
               />
