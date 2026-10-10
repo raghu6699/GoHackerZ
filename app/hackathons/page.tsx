@@ -56,14 +56,6 @@ export default async function HackathonsPage() {
               </Link>
 
               <Link
-                href={`/hackathons/${activeHackathon.slug}/admin`}
-                className="btn bg-[#1A1440] text-[#C6FF3D] hover:bg-[#282060] font-bold text-[15px] px-5 py-3.5 rounded-2xl shadow-pop border-2 border-[#7C5CFF]/50 flex items-center gap-2"
-              >
-                <Shield className="w-4 h-4" />
-                <span>ADMIN STUDIO</span>
-              </Link>
-
-              <Link
                 href={`/hackathons/${activeHackathon.slug}/register`}
                 className="btn bg-purple text-white hover:bg-purple-dark font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
               >

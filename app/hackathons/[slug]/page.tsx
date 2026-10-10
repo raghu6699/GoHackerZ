@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
+import { getCurrentDbUser } from "@/lib/profile";
+import { isUserAdmin } from "@/lib/admin-auth";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
 import {
   Trophy,
@@ -43,6 +45,8 @@ export default async function HackathonDetailPage({
     notFound();
   }
 
+  const user = await getCurrentDbUser();
+  const isAdmin = isUserAdmin(user);
   const submissions = await getAllSubmissions(hackathon.id);
 
   return (
@@ -60,13 +64,15 @@ export default async function HackathonDetailPage({
             ← BACK TO HACKATHONS
           </Link>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/hackathons/${hackathon.slug}/admin`}
-              className="px-3 py-1 bg-[#1A1440] text-[#C6FF3D] border border-[#7C5CFF]/40 font-mono text-xs font-bold rounded-full hover:bg-[#251f52] transition-colors flex items-center gap-1.5"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              ADMIN STUDIO
-            </Link>
+            {isAdmin && (
+              <Link
+                href={`/hackathons/${hackathon.slug}/admin`}
+                className="px-3 py-1 bg-[#1A1440] text-[#C6FF3D] border border-[#7C5CFF]/40 font-mono text-xs font-bold rounded-full hover:bg-[#251f52] transition-colors flex items-center gap-1.5"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                ADMIN STUDIO
+              </Link>
+            )}
             <span
               className={`inline-flex items-center gap-1.5 px-3 py-1 font-mono text-xs font-black rounded-full shadow-sm ${
                 hackathon.status === "ACTIVE"
