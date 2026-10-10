@@ -27,6 +27,7 @@ export function HostHackathonSection() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactHandle, setContactHandle] = useState("");
   const [hackathonTitle, setHackathonTitle] = useState("");
+  const [eventFormat, setEventFormat] = useState("weekend-48h");
   const [targetDates, setTargetDates] = useState("");
   const [expectedParticipants, setExpectedParticipants] = useState("200-500");
   const [estimatedPrizePool, setEstimatedPrizePool] = useState("$5,000 - $15,000");
@@ -59,6 +60,7 @@ export function HostHackathonSection() {
           contactEmail,
           contactHandle,
           hackathonTitle,
+          eventFormat,
           targetDates,
           expectedParticipants,
           estimatedPrizePool,
@@ -87,6 +89,7 @@ export function HostHackathonSection() {
     setContactEmail("");
     setContactHandle("");
     setHackathonTitle("");
+    setEventFormat("weekend-48h");
     setTargetDates("");
     setExpectedParticipants("200-500");
     setEstimatedPrizePool("$5,000 - $15,000");
@@ -301,7 +304,7 @@ export function HostHackathonSection() {
                   </div>
                 </div>
 
-                {/* Hackathon Title & Target Dates */}
+                {/* Hackathon Title & Event Format */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
@@ -319,23 +322,45 @@ export function HostHackathonSection() {
 
                   <div className="space-y-1.5">
                     <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
-                      TARGET TIMELINE / DATES
+                      EVENT FORMAT & DURATION <span className="text-[#C6FF3D]">*</span>
+                    </label>
+                    <select
+                      value={eventFormat}
+                      onChange={(e) => setEventFormat(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all"
+                    >
+                      <option value="3-hours">⚡ 3-Hour Blitz Speedrun (3h sprint)</option>
+                      <option value="5-hours">⚡ 5-Hour Speed Sprint (5h sprint)</option>
+                      <option value="single-day">☀️ Single-Day Sprint (8 – 12 Hours)</option>
+                      <option value="weekend-48h">🚀 Weekend Sprint (24 – 48 Hours)</option>
+                      <option value="multi-day">📅 Multi-Day Arena (3 – 7 Days)</option>
+                      <option value="async-marathon">🌐 Async Virtual Marathon (2 – 4 Weeks)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Target Dates & Expected Builders */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
+                      TARGET DATES / TIME
                     </label>
                     <div className="relative">
                       <Calendar className="w-4 h-4 text-[#8B84AD] absolute left-3.5 top-3.5" />
                       <input
                         type="text"
-                        placeholder="e.g. Nov 15–18, 2026 or Q4 2026"
+                        placeholder={
+                          eventFormat === "3-hours" || eventFormat === "5-hours"
+                            ? "e.g. Nov 15 · 14:00–19:00 UTC"
+                            : "e.g. Nov 15–18, 2026"
+                        }
                         value={targetDates}
                         onChange={(e) => setTargetDates(e.target.value)}
                         className="w-full pl-10 pr-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all placeholder:text-[#58517c]"
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* Expected Builders & Prize Pool */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
                       EXPECTED PARTICIPANTS
@@ -360,7 +385,7 @@ export function HostHackathonSection() {
                       <Trophy className="w-4 h-4 text-[#8B84AD] absolute left-3.5 top-3.5" />
                       <input
                         type="text"
-                        placeholder="e.g. $10,000 Cash + Cloud Credits"
+                        placeholder="e.g. $10,000 Cash + Credits"
                         value={estimatedPrizePool}
                         onChange={(e) => setEstimatedPrizePool(e.target.value)}
                         className="w-full pl-10 pr-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all placeholder:text-[#58517c]"
@@ -392,11 +417,23 @@ export function HostHackathonSection() {
                     <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
                       PROPOSED SCHEDULE & EVENT AGENDA
                     </label>
-                    <span className="text-[10px] font-mono text-[#8B84AD]">Auto-generates event timeline</span>
+                    <span className="text-[10px] font-mono text-[#8B84AD]">
+                      {eventFormat === "3-hours" || eventFormat === "5-hours"
+                        ? "Hourly milestone breakdown"
+                        : "Day-by-day milestone breakdown"}
+                    </span>
                   </div>
                   <textarea
-                    rows={2}
-                    placeholder="e.g.&#10;Day 1 · 10:00 UTC: Opening Keynote & Kickoff Broadcast&#10;Day 2 · 18:00 UTC: Architecture Check-in & Mentor Office Hours&#10;Day 3 · 20:00 UTC: Final Submission Deadline & Deliberation&#10;Day 4 · 18:00 UTC: Live Demos & Podium Winner Ceremony"
+                    rows={3}
+                    placeholder={
+                      eventFormat === "3-hours"
+                        ? "e.g.&#10;Hour 00:00 · Kickoff, Spec Reveal & Clock Starts&#10;Hour 01:30 · Midpoint Architecture Check-in&#10;Hour 02:45 · 15-Min Link Drop & Polish Warning&#10;Hour 03:00 · Submissions Freeze & Live Demos"
+                        : eventFormat === "5-hours"
+                        ? "e.g.&#10;Hour 00:00 · Kickoff & Challenge Reveal&#10;Hour 02:30 · Mid-Sprint Architecture Review&#10;Hour 04:30 · Final Polish & Link Verification&#10;Hour 05:00 · Code Freeze & Live Demos"
+                        : eventFormat === "single-day"
+                        ? "e.g.&#10;09:00 UTC · Morning Kickoff Broadcast&#10;13:00 UTC · Mentor Huddle & Check-in&#10;17:00 UTC · Final Code Freeze & Link Drop&#10;18:30 UTC · Lightning Demos & Podium Ceremony"
+                        : "e.g.&#10;Day 1 · 10:00 UTC: Opening Keynote & Kickoff Broadcast&#10;Day 2 · 18:00 UTC: Architecture Check-in & Mentor Office Hours&#10;Day 3 · 20:00 UTC: Final Submission Deadline & Deliberation&#10;Day 4 · 18:00 UTC: Live Demos & Podium Winner Ceremony"
+                    }
                     value={agenda}
                     onChange={(e) => setAgenda(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all placeholder:text-[#58517c] resize-y"

@@ -17,6 +17,7 @@ export interface HostHackathonProposal {
   contactEmail: string;
   contactHandle?: string;
   hackathonTitle: string;
+  eventFormat?: string; // e.g. "3-hours", "5-hours", "single-day", "weekend-48h", "multi-day", "async-marathon"
   targetDates?: string;
   expectedParticipants?: string;
   estimatedPrizePool?: string;
@@ -65,6 +66,7 @@ async function ensureDbTable() {
         "contactEmail" TEXT NOT NULL,
         "contactHandle" TEXT,
         "hackathonTitle" TEXT NOT NULL,
+        "eventFormat" TEXT,
         "targetDates" TEXT,
         "expectedParticipants" TEXT,
         "estimatedPrizePool" TEXT,
@@ -78,6 +80,7 @@ async function ensureDbTable() {
     try {
       await prisma.$executeRawUnsafe(`
         ALTER TABLE "HackathonHostProposal" ADD COLUMN IF NOT EXISTS "agenda" TEXT;
+        ALTER TABLE "HackathonHostProposal" ADD COLUMN IF NOT EXISTS "eventFormat" TEXT;
       `);
     } catch {}
     _tableEnsured = true;
@@ -128,6 +131,7 @@ export async function saveHostProposal(
     contactEmail: data.contactEmail.trim().toLowerCase(),
     contactHandle: data.contactHandle?.trim() || undefined,
     hackathonTitle: data.hackathonTitle.trim(),
+    eventFormat: data.eventFormat?.trim() || undefined,
     targetDates: data.targetDates?.trim() || undefined,
     expectedParticipants: data.expectedParticipants || "100-300",
     estimatedPrizePool: data.estimatedPrizePool?.trim() || undefined,
@@ -152,8 +156,8 @@ export async function saveHostProposal(
       await ensureDbTable();
       await prisma.$executeRawUnsafe(
         `INSERT INTO "HackathonHostProposal" 
-         ("id", "refNumber", "orgName", "contactName", "contactEmail", "contactHandle", "hackathonTitle", "targetDates", "expectedParticipants", "estimatedPrizePool", "tracksAndGoals", "agenda", "specialRequirements", "status", "createdAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         ("id", "refNumber", "orgName", "contactName", "contactEmail", "contactHandle", "hackathonTitle", "eventFormat", "targetDates", "expectedParticipants", "estimatedPrizePool", "tracksAndGoals", "agenda", "specialRequirements", "status", "createdAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          ON CONFLICT ("refNumber") DO NOTHING`,
         proposal.id,
         proposal.refNumber,
@@ -162,6 +166,7 @@ export async function saveHostProposal(
         proposal.contactEmail,
         proposal.contactHandle ?? null,
         proposal.hackathonTitle,
+        proposal.eventFormat ?? null,
         proposal.targetDates ?? null,
         proposal.expectedParticipants ?? null,
         proposal.estimatedPrizePool ?? null,
@@ -205,6 +210,7 @@ export async function getAllHostProposals(): Promise<HostHackathonProposal[]> {
           contactEmail: r.contactEmail,
           contactHandle: r.contactHandle ?? undefined,
           hackathonTitle: r.hackathonTitle,
+          eventFormat: r.eventFormat ?? undefined,
           targetDates: r.targetDates ?? undefined,
           expectedParticipants: r.expectedParticipants ?? undefined,
           estimatedPrizePool: r.estimatedPrizePool ?? undefined,
@@ -340,7 +346,33 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
     }
   }
 
-  // 3. Parse custom schedule/agenda from proposal if provided
+  // 3. Determine duration & start/end timeline dynamically based on event format (3hr, 5hr, single-day, weekend, etc.)
+  const now = new Date();
+  let durationHours = 48; // default 48h
+  const formatStr = (proposal.eventFormat || "").toLowerCase();
+  const datesStr = (proposal.targetDates || "").toLowerCase();
+
+  const is3Hour = formatStr.includes("3-hour") || formatStr === "3-hours" || datesStr.includes("3 hour") || datesStr.includes("3hr") || datesStr.includes("3-hr");
+  const is5Hour = formatStr.includes("5-hour") || formatStr === "5-hours" || datesStr.includes("5 hour") || datesStr.includes("5hr") || datesStr.includes("5-hr");
+  const isSingleDay = formatStr.includes("single-day") || formatStr.includes("1-day") || datesStr.includes("single day") || datesStr.includes("1 day") || datesStr.includes("8 hour") || datesStr.includes("12 hour");
+  const isMultiWeek = formatStr.includes("async-marathon") || formatStr.includes("month") || datesStr.includes("month") || datesStr.includes("4 week");
+
+  if (is3Hour) {
+    durationHours = 3;
+  } else if (is5Hour) {
+    durationHours = 5;
+  } else if (isSingleDay) {
+    durationHours = 12;
+  } else if (isMultiWeek) {
+    durationHours = 28 * 24;
+  }
+
+  const startDate = now.toISOString();
+  const endDate = new Date(now.getTime() + durationHours * 60 * 60 * 1000).toISOString();
+  const deadlineBufferMinutes = durationHours <= 3 ? 15 : durationHours <= 5 ? 20 : durationHours <= 12 ? 45 : 240;
+  const submissionDeadline = new Date(new Date(endDate).getTime() - deadlineBufferMinutes * 60 * 1000).toISOString();
+
+  // 4. Parse custom schedule/agenda or format-tailored default
   let schedule = FLAGSHIP_HACKATHON.schedule;
   if (proposal.agenda?.trim()) {
     const rawAgendaLines = proposal.agenda
@@ -368,12 +400,28 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
         };
       });
     }
+  } else if (is3Hour) {
+    schedule = [
+      { time: "00:00", title: "Theme Reveal & Timer Starts", description: "Prompt released, sprint clock begins.", status: "active" },
+      { time: "01:30", title: "Midpoint Check-in", description: "Architecture huddle and mentor assistance.", status: "upcoming" },
+      { time: "02:45", title: "15-Min Warning & Polish", description: "Verify GitHub links and live demos.", status: "upcoming" },
+      { time: "03:00", title: "Submissions Lock & Demos", description: "Submissions lock, live judge evaluation.", status: "upcoming" },
+    ];
+  } else if (is5Hour) {
+    schedule = [
+      { time: "00:00", title: "Opening Kickoff & Challenge Reveal", description: "Timer starts, repo templates distributed.", status: "active" },
+      { time: "02:30", title: "Mid-Sprint Check-in", description: "Mentor office hours & live feedback.", status: "upcoming" },
+      { time: "04:30", title: "Final Polish & Link Drop", description: "Test live URLs & decks.", status: "upcoming" },
+      { time: "05:00", title: "Code Freeze & Live Demos", description: "Final judging and leaderboard reveal.", status: "upcoming" },
+    ];
+  } else if (isSingleDay) {
+    schedule = [
+      { time: "09:00 UTC", title: "Morning Kickoff Broadcast", description: "Live stream opening & prompt reveal.", status: "active" },
+      { time: "13:00 UTC", title: "Lunch & Architecture Review", description: "Midway checkpoint with mentors.", status: "upcoming" },
+      { time: "17:00 UTC", title: "Final Submission Lock", description: "Submissions freeze for deliberation.", status: "upcoming" },
+      { time: "18:30 UTC", title: "Lightning Demos & Winners", description: "Top projects present live.", status: "upcoming" },
+    ];
   }
-
-  const now = new Date();
-  const startDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
-  const endDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString();
-  const submissionDeadline = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString();
 
   const hackathon: HackathonData = {
     id: hackathonId,
