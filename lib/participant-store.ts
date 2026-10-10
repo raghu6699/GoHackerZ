@@ -125,11 +125,24 @@ export async function ensureTablesExist(): Promise<void> {
         "pitchDeckUrl" TEXT,
         "videoUrl" TEXT,
         "gammaUrl" TEXT,
-        "techStack" JSONB NOT NULL,
-        "upvotes" INTEGER NOT NULL DEFAULT 0,
+        "techStack" TEXT[] NOT NULL DEFAULT '{}',
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+
+      DO $$ BEGIN
+        -- If techStack column in HackathonSubmission was jsonb or text, convert to text[]
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'HackathonSubmission' 
+          AND column_name = 'techStack' 
+          AND data_type = 'jsonb'
+        ) THEN
+          ALTER TABLE "HackathonSubmission" ALTER COLUMN "techStack" TYPE TEXT[] 
+          USING ARRAY(SELECT jsonb_array_elements_text("techStack"));
+        END IF;
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END $$;
 
       DO $$ BEGIN
         CREATE TYPE "CertificateType" AS ENUM ('PARTICIPATION', 'WINNER_FIRST', 'WINNER_SECOND', 'WINNER_THIRD', 'TRACK_WINNER', 'HONORABLE_MENTION');
@@ -1740,55 +1753,89 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
       }
 
       if (participantDbId) {
-        // Check if a submission already exists by id, teamId, or participantId
-        const existingSub = await prisma.hackathonSubmission.findFirst({
-          where: {
-            OR: [
-              { id: submission.id },
-              { participantId: participantDbId },
-              ...(teamDbId ? [{ teamId: teamDbId }] : []),
-            ],
-          },
-        });
+        try {
+          // 1. Try Prisma Client write
+          const existingSub = await prisma.hackathonSubmission.findFirst({
+            where: {
+              OR: [
+                { id: submission.id },
+                { participantId: participantDbId },
+                ...(teamDbId ? [{ teamId: teamDbId }] : []),
+              ],
+            },
+          });
 
-        if (existingSub) {
-          await prisma.hackathonSubmission.update({
-            where: { id: existingSub.id },
-            data: {
-              hackathonId: realHackathonId,
-              participantId: participantDbId,
-              teamId: teamDbId || existingSub.teamId,
-              title: submission.title,
-              tagline: submission.tagline,
-              description: submission.description,
-              repoUrl: submission.repoUrl,
-              demoUrl: submission.demoUrl || null,
-              pitchDeckUrl: submission.pitchDeckUrl || null,
-              videoUrl: submission.videoUrl || null,
-              gammaUrl: submission.gammaUrl || null,
-              techStack: submission.techStack || [],
-              trackId: submission.trackId || null,
-            },
-          });
-        } else {
-          await prisma.hackathonSubmission.create({
-            data: {
-              id: submission.id,
-              hackathonId: realHackathonId,
-              participantId: participantDbId,
-              teamId: teamDbId,
-              title: submission.title,
-              tagline: submission.tagline,
-              description: submission.description,
-              repoUrl: submission.repoUrl,
-              demoUrl: submission.demoUrl || null,
-              pitchDeckUrl: submission.pitchDeckUrl || null,
-              videoUrl: submission.videoUrl || null,
-              gammaUrl: submission.gammaUrl || null,
-              techStack: submission.techStack || [],
-              trackId: submission.trackId || null,
-            },
-          });
+          if (existingSub) {
+            await prisma.hackathonSubmission.update({
+              where: { id: existingSub.id },
+              data: {
+                hackathonId: realHackathonId,
+                participantId: participantDbId,
+                teamId: teamDbId || existingSub.teamId,
+                title: submission.title,
+                tagline: submission.tagline,
+                description: submission.description,
+                repoUrl: submission.repoUrl,
+                demoUrl: submission.demoUrl || null,
+                pitchDeckUrl: submission.pitchDeckUrl || null,
+                videoUrl: submission.videoUrl || null,
+                gammaUrl: submission.gammaUrl || null,
+                techStack: submission.techStack || [],
+                trackId: submission.trackId || null,
+              },
+            });
+          } else {
+            await prisma.hackathonSubmission.create({
+              data: {
+                id: submission.id,
+                hackathonId: realHackathonId,
+                participantId: participantDbId,
+                teamId: teamDbId,
+                title: submission.title,
+                tagline: submission.tagline,
+                description: submission.description,
+                repoUrl: submission.repoUrl,
+                demoUrl: submission.demoUrl || null,
+                pitchDeckUrl: submission.pitchDeckUrl || null,
+                videoUrl: submission.videoUrl || null,
+                gammaUrl: submission.gammaUrl || null,
+                techStack: submission.techStack || [],
+                trackId: submission.trackId || null,
+              },
+            });
+          }
+        } catch (prismaWriteErr) {
+          console.warn("[persistSubmission] Prisma write warning, executing raw SQL fallback:", prismaWriteErr);
+          // 2. Direct Raw SQL Fallback
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "HackathonSubmission" 
+              ("id", "hackathonId", "participantId", "teamId", "title", "tagline", "description", "repoUrl", "demoUrl", "pitchDeckUrl", "videoUrl", "gammaUrl", "techStack", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+             ON CONFLICT ("id") DO UPDATE SET
+              "title" = EXCLUDED."title",
+              "tagline" = EXCLUDED."tagline",
+              "description" = EXCLUDED."description",
+              "repoUrl" = EXCLUDED."repoUrl",
+              "demoUrl" = EXCLUDED."demoUrl",
+              "pitchDeckUrl" = EXCLUDED."pitchDeckUrl",
+              "videoUrl" = EXCLUDED."videoUrl",
+              "gammaUrl" = EXCLUDED."gammaUrl",
+              "techStack" = EXCLUDED."techStack",
+              "updatedAt" = NOW();`,
+            submission.id,
+            realHackathonId,
+            participantDbId,
+            teamDbId,
+            submission.title,
+            submission.tagline,
+            submission.description,
+            submission.repoUrl,
+            submission.demoUrl || null,
+            submission.pitchDeckUrl || null,
+            submission.videoUrl || null,
+            submission.gammaUrl || null,
+            submission.techStack || []
+          );
         }
       }
     } catch (e) {
