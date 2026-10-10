@@ -896,7 +896,12 @@ export function AdminControlClient({
                         )}
                         {prop.tracksAndGoals && (
                           <div className="text-[10px] text-[#ded8ff] max-w-xs truncate" title={prop.tracksAndGoals}>
-                            Tracks: {prop.tracksAndGoals}
+                            <span className="text-[#C6FF3D] font-mono">Tracks:</span> {prop.tracksAndGoals}
+                          </div>
+                        )}
+                        {prop.agenda && (
+                          <div className="text-[10px] text-[#a59fcf] max-w-xs truncate" title={prop.agenda}>
+                            <span className="text-[#a88dff] font-mono">Agenda:</span> {prop.agenda}
                           </div>
                         )}
                       </td>

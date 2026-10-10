@@ -21,6 +21,7 @@ export interface HostHackathonProposal {
   expectedParticipants?: string;
   estimatedPrizePool?: string;
   tracksAndGoals?: string;
+  agenda?: string;
   specialRequirements?: string;
   status: "PENDING" | "REVIEWED" | "APPROVED" | "DECLINED";
   createdAt: string;
@@ -68,11 +69,17 @@ async function ensureDbTable() {
         "expectedParticipants" TEXT,
         "estimatedPrizePool" TEXT,
         "tracksAndGoals" TEXT,
+        "agenda" TEXT,
         "specialRequirements" TEXT,
         "status" TEXT NOT NULL DEFAULT 'PENDING',
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    try {
+      await prisma.$executeRawUnsafe(`
+        ALTER TABLE "HackathonHostProposal" ADD COLUMN IF NOT EXISTS "agenda" TEXT;
+      `);
+    } catch {}
     _tableEnsured = true;
   } catch (e) {
     console.warn("[host-proposals] DB table ensure notice:", e);
@@ -125,6 +132,7 @@ export async function saveHostProposal(
     expectedParticipants: data.expectedParticipants || "100-300",
     estimatedPrizePool: data.estimatedPrizePool?.trim() || undefined,
     tracksAndGoals: data.tracksAndGoals?.trim() || undefined,
+    agenda: data.agenda?.trim() || undefined,
     specialRequirements: data.specialRequirements?.trim() || undefined,
     status: "PENDING",
     createdAt: now,
@@ -144,8 +152,8 @@ export async function saveHostProposal(
       await ensureDbTable();
       await prisma.$executeRawUnsafe(
         `INSERT INTO "HackathonHostProposal" 
-         ("id", "refNumber", "orgName", "contactName", "contactEmail", "contactHandle", "hackathonTitle", "targetDates", "expectedParticipants", "estimatedPrizePool", "tracksAndGoals", "specialRequirements", "status", "createdAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         ("id", "refNumber", "orgName", "contactName", "contactEmail", "contactHandle", "hackathonTitle", "targetDates", "expectedParticipants", "estimatedPrizePool", "tracksAndGoals", "agenda", "specialRequirements", "status", "createdAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          ON CONFLICT ("refNumber") DO NOTHING`,
         proposal.id,
         proposal.refNumber,
@@ -158,6 +166,7 @@ export async function saveHostProposal(
         proposal.expectedParticipants ?? null,
         proposal.estimatedPrizePool ?? null,
         proposal.tracksAndGoals ?? null,
+        proposal.agenda ?? null,
         proposal.specialRequirements ?? null,
         proposal.status,
         new Date(proposal.createdAt)
@@ -200,6 +209,7 @@ export async function getAllHostProposals(): Promise<HostHackathonProposal[]> {
           expectedParticipants: r.expectedParticipants ?? undefined,
           estimatedPrizePool: r.estimatedPrizePool ?? undefined,
           tracksAndGoals: r.tracksAndGoals ?? undefined,
+          agenda: r.agenda ?? undefined,
           specialRequirements: r.specialRequirements ?? undefined,
           status: r.status as any,
           createdAt: new Date(r.createdAt).toISOString(),
@@ -330,6 +340,36 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
     }
   }
 
+  // 3. Parse custom schedule/agenda from proposal if provided
+  let schedule = FLAGSHIP_HACKATHON.schedule;
+  if (proposal.agenda?.trim()) {
+    const rawAgendaLines = proposal.agenda
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 3);
+
+    if (rawAgendaLines.length > 0) {
+      schedule = rawAgendaLines.slice(0, 6).map((line, idx) => {
+        const parts = line.split(/[-:–—]+/).map((p) => p.trim());
+        let time = `Milestone ${idx + 1}`;
+        let title = line;
+        let description = `Official event milestone for ${proposal.hackathonTitle}.`;
+
+        if (parts.length >= 2) {
+          time = parts[0];
+          title = parts.slice(1).join(" - ");
+        }
+
+        return {
+          time,
+          title,
+          description,
+          status: (idx === 0 ? "active" : "upcoming") as "active" | "upcoming" | "completed",
+        };
+      });
+    }
+  }
+
   const now = new Date();
   const startDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
   const endDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString();
@@ -349,7 +389,7 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
     participantCount: 0,
     teamCount: 0,
     tracks,
-    schedule: FLAGSHIP_HACKATHON.schedule,
+    schedule,
     rules: FLAGSHIP_HACKATHON.rules,
     sponsors: [
       {

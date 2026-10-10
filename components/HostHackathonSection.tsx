@@ -31,6 +31,7 @@ export function HostHackathonSection() {
   const [expectedParticipants, setExpectedParticipants] = useState("200-500");
   const [estimatedPrizePool, setEstimatedPrizePool] = useState("$5,000 - $15,000");
   const [tracksAndGoals, setTracksAndGoals] = useState("");
+  const [agenda, setAgenda] = useState("");
   const [specialRequirements, setSpecialRequirements] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -62,6 +63,7 @@ export function HostHackathonSection() {
           expectedParticipants,
           estimatedPrizePool,
           tracksAndGoals,
+          agenda,
           specialRequirements,
         }),
       });
@@ -89,6 +91,7 @@ export function HostHackathonSection() {
     setExpectedParticipants("200-500");
     setEstimatedPrizePool("$5,000 - $15,000");
     setTracksAndGoals("");
+    setAgenda("");
     setSpecialRequirements("");
     setSubmittedRef(null);
     setError(null);
@@ -366,16 +369,36 @@ export function HostHackathonSection() {
                   </div>
                 </div>
 
-                {/* Proposed Tracks & Goals */}
+                {/* Proposed Tracks & Themes */}
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
-                    PROPOSED TRACKS & THEMES
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
+                      PROPOSED COMPETITION TRACKS & THEMES
+                    </label>
+                    <span className="text-[10px] font-mono text-[#8B84AD]">Auto-configures your arena</span>
+                  </div>
                   <textarea
                     rows={2}
-                    placeholder="e.g. Track 1: Edge AI, Track 2: Open Source DevTools, Track 3: Local-first Databases..."
+                    placeholder="e.g.&#10;Track 1: Autonomous AI Agents & Multi-Agent Swarms&#10;Track 2: Edge & High-Performance Realtime Web&#10;Track 3: Open Innovation & DevTools"
                     value={tracksAndGoals}
                     onChange={(e) => setTracksAndGoals(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all placeholder:text-[#58517c] resize-y"
+                  />
+                </div>
+
+                {/* Proposed Schedule & Agenda */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[11px] font-bold text-[#D4CEF5] block">
+                      PROPOSED SCHEDULE & EVENT AGENDA
+                    </label>
+                    <span className="text-[10px] font-mono text-[#8B84AD]">Auto-generates event timeline</span>
+                  </div>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g.&#10;Day 1 · 10:00 UTC: Opening Keynote & Kickoff Broadcast&#10;Day 2 · 18:00 UTC: Architecture Check-in & Mentor Office Hours&#10;Day 3 · 20:00 UTC: Final Submission Deadline & Deliberation&#10;Day 4 · 18:00 UTC: Live Demos & Podium Winner Ceremony"
+                    value={agenda}
+                    onChange={(e) => setAgenda(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-[#0A071B] border border-[#7C5CFF]/30 focus:border-[#C6FF3D] rounded-xl font-sans text-xs text-white outline-none transition-all placeholder:text-[#58517c] resize-y"
                   />
                 </div>
