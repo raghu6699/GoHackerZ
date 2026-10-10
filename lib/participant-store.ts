@@ -442,7 +442,119 @@ export function getPersistedParticipantByTicket(ticketNumber: string): Hackathon
   return participant;
 }
 
-export const getParticipantByTicket = getPersistedParticipantByTicket;
+export async function getParticipantByTicket(ticketNumber: string): Promise<HackathonParticipant | null> {
+  if (!ticketNumber) return null;
+  const clean = ticketNumber.trim().replace(/^#/, "").toUpperCase();
+
+  // 1. Try Memory Store
+  const mem = memoryStore.participants.get(clean);
+  if (mem) return mem;
+
+  // 2. Try Postgres DB
+  if (isDbAvailable()) {
+    try {
+      const dbRow = await prisma.hackathonParticipant.findUnique({
+        where: { ticketNumber: clean },
+        include: {
+          team: {
+            include: {
+              participants: true,
+            },
+          },
+          submissions: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+          certificates: {
+            orderBy: { issuedAt: "desc" },
+            take: 1,
+          },
+          hackathon: true,
+        },
+      });
+
+      if (dbRow) {
+        let submission: HackathonSubmission | undefined = undefined;
+        const sub = dbRow.submissions?.[0];
+        if (sub) {
+          submission = {
+            id: sub.id,
+            hackathonId: dbRow.hackathon?.slug || dbRow.hackathonId,
+            ticketNumber: dbRow.ticketNumber,
+            teamName: dbRow.team?.name || undefined,
+            trackId: sub.trackId || "general",
+            title: sub.title,
+            tagline: sub.tagline,
+            description: sub.description,
+            repoUrl: sub.repoUrl,
+            demoUrl: sub.demoUrl || undefined,
+            pitchDeckUrl: sub.pitchDeckUrl || undefined,
+            videoUrl: sub.videoUrl || undefined,
+            gammaUrl: sub.gammaUrl || undefined,
+            techStack: (sub.techStack as string[]) || [],
+            authorName: dbRow.name,
+            createdAt: sub.createdAt.toISOString(),
+          };
+        }
+
+        const cert = dbRow.certificates?.[0];
+        const certificate: HackathonCertificate | undefined = cert
+          ? {
+              id: cert.id,
+              certNumber: cert.certNumber,
+              hackathonId: dbRow.hackathon?.slug || dbRow.hackathonId,
+              participantId: dbRow.id,
+              ticketNumber: dbRow.ticketNumber,
+              type: cert.type as CertificateType,
+              title: cert.title,
+              awardTitle: cert.awardTitle,
+              recipientName: cert.recipientName,
+              projectName: cert.projectName || undefined,
+              teamName: cert.teamName || undefined,
+              trackName: cert.trackName || undefined,
+              rank: cert.rank || undefined,
+              issuedAt: cert.issuedAt.toISOString(),
+              verificationUrl: `/verify/${cert.certNumber}`,
+            }
+          : undefined;
+
+        const participant: HackathonParticipant = {
+          id: dbRow.id,
+          hackathonId: dbRow.hackathon?.slug || dbRow.hackathonId,
+          ticketNumber: dbRow.ticketNumber,
+          name: dbRow.name,
+          email: dbRow.email,
+          roleTitle: dbRow.roleTitle,
+          bio: dbRow.bio || undefined,
+          discordHandle: dbRow.discordHandle || undefined,
+          twitterHandle: dbRow.twitterHandle || undefined,
+          avatarUrl: dbRow.avatarUrl || undefined,
+          themeStyle: (dbRow.themeStyle || "lime") as any,
+          isCaptain: dbRow.isCaptain,
+          teamId: dbRow.teamId || undefined,
+          teamName: dbRow.team?.name || undefined,
+          teamCode: dbRow.team?.inviteCode || undefined,
+          teammates: dbRow.team?.participants.map((m) => ({
+            name: m.name,
+            roleTitle: m.roleTitle,
+            avatarUrl: m.avatarUrl || undefined,
+          })),
+          submission,
+          certificate,
+          createdAt: dbRow.createdAt.toISOString(),
+        };
+
+        memoryStore.participants.set(clean, participant);
+        return participant;
+      }
+    } catch (e) {
+      console.warn("[getParticipantByTicket] DB query error:", e);
+    }
+  }
+
+  // 3. Fallback to Disk
+  return getPersistedParticipantByTicket(ticketNumber);
+}
 
 /**
  * Get all registered participants for a given hackathon.
