@@ -64,7 +64,7 @@ export function CertificateCard({
 
   const kicker = isWinner
     ? "GoHackerz · Award of Excellence"
-    : "GoHackerz · Global Shipathon 2026";
+    : `GoHackerz · ${certificate.title || "Engineering Hackathon"}`;
 
   const formattedDate = new Date(certificate.issuedAt).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -290,7 +290,7 @@ export function CertificateCard({
               <div className="text-center text-[9px] text-[#4A4473] leading-tight">
                 <div>Issued on</div>
                 <strong className="text-[#1A1440] text-[10px]">{formattedDate}</strong>
-                <div className="text-[8px] text-[#7C5CFF] font-medium">Global Shipathon</div>
+                <div className="text-[8px] text-[#7C5CFF] font-medium truncate max-w-[140px]">{certificate.title || "GoHackerz Arena"}</div>
               </div>
 
               {/* QR Verification Code */}

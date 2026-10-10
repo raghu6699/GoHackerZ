@@ -1789,6 +1789,56 @@ export async function getCertificatesForHackathon(hackathonIdOrSlug: string): Pr
 }
 
 /**
+ * Resolve the dynamic display title for a hackathon.
+ */
+export async function getHackathonTitle(hackathonIdOrSlug?: string): Promise<string> {
+  if (!hackathonIdOrSlug) return "GoHackerz Global Shipathon 2026";
+  const cleanSlug = hackathonIdOrSlug.trim().toLowerCase().replace(/^gh-/, "");
+  const isFlagship =
+    cleanSlug === "shipathon-2026" ||
+    cleanSlug === "shipathon" ||
+    hackathonIdOrSlug === "active" ||
+    hackathonIdOrSlug === "current";
+  if (isFlagship) return "GoHackerz Global Shipathon 2026";
+
+  // 1. Check PostgreSQL database
+  if (isDbAvailable()) {
+    try {
+      const h = await prisma.hackathon.findFirst({
+        where: {
+          OR: [
+            { slug: cleanSlug },
+            { id: hackathonIdOrSlug },
+            { id: `gh-${cleanSlug}` },
+          ],
+        },
+        select: { title: true },
+      });
+      if (h?.title) return h.title;
+    } catch {}
+  }
+
+  // 2. Check host proposals file
+  try {
+    const proposalsFile = path.join(DATA_DIR, "host-proposals.json");
+    if (fs.existsSync(proposalsFile)) {
+      const raw = fs.readFileSync(proposalsFile, "utf-8");
+      if (raw.trim()) {
+        const list = JSON.parse(raw);
+        const match = list.find((p: any) => {
+          const pSlug = (p.hackathonTitle || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          return pSlug === cleanSlug || p.id === hackathonIdOrSlug || p.refNumber === hackathonIdOrSlug;
+        });
+        if (match?.hackathonTitle) return match.hackathonTitle;
+      }
+    }
+  } catch {}
+
+  // 3. Fallback: Format from slug
+  return cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+/**
  * Auto-generate Participation Certificates for all registered participants of a hackathon.
  * Runs with ZERO manual admin intervention when a hackathon is closed/completed.
  */
@@ -1796,25 +1846,28 @@ export async function autoGenerateParticipationCertificates(
   hackathonIdOrSlug: string
 ): Promise<{ generated: number; total: number }> {
   const participants = await getParticipantsForHackathon(hackathonIdOrSlug);
+  const hackathonTitle = await getHackathonTitle(hackathonIdOrSlug);
   let generated = 0;
 
   for (const p of participants) {
     const existing = await getCertificateByTicket(p.ticketNumber);
     if (existing) continue;
 
+    const eventTitle = p.hackathonId ? await getHackathonTitle(p.hackathonId) : hackathonTitle;
+
     // Generate unique verifiable certificate number
     const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
-    const certNumber = `GH-2026-PART-${randomHex}`;
+    const certNumber = `GH-${new Date().getFullYear()}-PART-${randomHex}`;
 
     const cert: HackathonCertificate = {
       id: `cert-${Date.now()}-${randomHex}`,
       certNumber,
-      hackathonId: p.hackathonId || "shipathon-2026",
+      hackathonId: p.hackathonId || hackathonIdOrSlug,
       participantId: p.id,
       ticketNumber: p.ticketNumber,
       userId: p.id,
       type: "PARTICIPATION",
-      title: "GoHackerz Global Shipathon 2026",
+      title: eventTitle,
       awardTitle: "Certificate of Participation",
       recipientName: p.name || "GoHackerz Builder",
       roleTitle: p.roleTitle || "Builder",
@@ -1851,6 +1904,8 @@ export async function issueSpecialAward(params: {
     throw new Error(`Participant with ticket ${params.ticketNumber} not found.`);
   }
 
+  const eventTitle = await getHackathonTitle(params.hackathonIdOrSlug || participant.hackathonId);
+
   const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
   const typeCode =
     params.type === "WINNER_FIRST"
@@ -1863,7 +1918,7 @@ export async function issueSpecialAward(params: {
       ? "TRACK"
       : "HONOR";
 
-  const certNumber = `GH-2026-${typeCode}-${randomHex}`;
+  const certNumber = `GH-${new Date().getFullYear()}-${typeCode}-${randomHex}`;
 
   const cert: HackathonCertificate = {
     id: `cert-${Date.now()}-${randomHex}`,
@@ -1873,7 +1928,7 @@ export async function issueSpecialAward(params: {
     ticketNumber: participant.ticketNumber,
     userId: participant.id,
     type: params.type,
-    title: "GoHackerz Global Shipathon 2026",
+    title: eventTitle,
     awardTitle: params.awardTitle,
     recipientName: participant.name || "GoHackerz Winner",
     roleTitle: participant.roleTitle || "Lead Builder",
