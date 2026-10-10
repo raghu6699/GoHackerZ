@@ -411,11 +411,45 @@ export function generateTeamCode(teamName: string): string {
 }
 
 export async function getHackathonBySlug(slug: string): Promise<HackathonData | null> {
-  if (slug === FLAGSHIP_HACKATHON.slug || slug === "active" || slug === "current") {
+  const cleanSlug = slug.replace(/^gh-/, "");
+  let liveStatus = FLAGSHIP_HACKATHON.status;
+
+  if (isDbAvailable()) {
+    try {
+      const dbH = await prisma.hackathon.findFirst({
+        where: {
+          OR: [
+            { slug: slug },
+            { slug: cleanSlug },
+            { id: slug },
+            { id: `gh-${cleanSlug}` },
+            { slug: "shipathon-2026" },
+          ],
+        },
+        select: { status: true, title: true, tagline: true, prizePool: true },
+      });
+      if (dbH) {
+        liveStatus = dbH.status as any;
+      }
+    } catch (e) {
+      console.warn("[getHackathonBySlug] DB status query notice:", e);
+    }
+  }
+
+  if (
+    slug === FLAGSHIP_HACKATHON.slug ||
+    cleanSlug === "shipathon-2026" ||
+    slug === "active" ||
+    slug === "current"
+  ) {
     return {
       ...FLAGSHIP_HACKATHON,
-      participantCount: FLAGSHIP_HACKATHON.participantCount + memoryStore.participants.size - SEED_PARTICIPANTS.length,
-      teamCount: FLAGSHIP_HACKATHON.teamCount + memoryStore.teams.size,
+      status: liveStatus,
+      participantCount: Math.max(
+        FLAGSHIP_HACKATHON.participantCount,
+        FLAGSHIP_HACKATHON.participantCount + memoryStore.participants.size - SEED_PARTICIPANTS.length
+      ),
+      teamCount: Math.max(FLAGSHIP_HACKATHON.teamCount, FLAGSHIP_HACKATHON.teamCount + memoryStore.teams.size),
     };
   }
   return null;
@@ -934,12 +968,63 @@ export async function getUserHackathonHistory(email: string): Promise<{ hackatho
     try {
       const dbRows = await prisma.hackathonParticipant.findMany({
         where: { email: { equals: cleanEmail, mode: "insensitive" } },
-        include: { team: { include: { participants: true } } },
+        include: {
+          team: { include: { participants: true } },
+          submissions: { orderBy: { createdAt: "desc" }, take: 1 },
+          certificates: { orderBy: { issuedAt: "desc" }, take: 1 },
+          hackathon: true,
+        },
       });
       for (const row of dbRows) {
+        let submission: HackathonSubmission | undefined = undefined;
+        const sub = row.submissions?.[0];
+        if (sub) {
+          submission = {
+            id: sub.id,
+            hackathonId: row.hackathon?.slug || row.hackathonId,
+            ticketNumber: row.ticketNumber,
+            teamName: row.team?.name || undefined,
+            trackId: sub.trackId || "general",
+            title: sub.title,
+            tagline: sub.tagline,
+            description: sub.description,
+            repoUrl: sub.repoUrl,
+            demoUrl: sub.demoUrl || undefined,
+            pitchDeckUrl: sub.pitchDeckUrl || undefined,
+            videoUrl: sub.videoUrl || undefined,
+            gammaUrl: sub.gammaUrl || undefined,
+            techStack: (sub.techStack as string[]) || [],
+            authorName: row.name,
+            createdAt: sub.createdAt.toISOString(),
+          };
+        }
+
+        let certificate: HackathonCertificate | undefined = undefined;
+        const cert = row.certificates?.[0];
+        if (cert) {
+          certificate = {
+            id: cert.id,
+            certNumber: cert.certNumber,
+            hackathonId: row.hackathon?.slug || row.hackathonId,
+            participantId: row.id,
+            ticketNumber: row.ticketNumber,
+            type: cert.type as CertificateType,
+            title: cert.title,
+            awardTitle: cert.awardTitle,
+            recipientName: cert.recipientName,
+            roleTitle: row.roleTitle,
+            projectName: cert.projectName || submission?.title || undefined,
+            teamName: cert.teamName || row.team?.name || undefined,
+            trackName: cert.trackName || submission?.trackId || undefined,
+            rank: cert.rank || undefined,
+            issuedAt: cert.issuedAt.toISOString(),
+            verificationUrl: `/verify/${cert.certNumber}`,
+          };
+        }
+
         const participant: HackathonParticipant = {
           id: row.id,
-          hackathonId: row.hackathonId,
+          hackathonId: row.hackathon?.slug || row.hackathonId,
           ticketNumber: row.ticketNumber,
           name: row.name,
           email: row.email,
@@ -958,6 +1043,8 @@ export async function getUserHackathonHistory(email: string): Promise<{ hackatho
             roleTitle: p.roleTitle,
             avatarUrl: p.avatarUrl ?? undefined,
           })),
+          submission,
+          certificate,
           createdAt: row.createdAt.toISOString(),
         };
         userMap.set(row.ticketNumber.toUpperCase(), participant);

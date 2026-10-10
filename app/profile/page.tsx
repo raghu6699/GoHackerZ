@@ -22,7 +22,7 @@ export const metadata: Metadata = { title: "Your profile — GoHackerz" };
 
 const TABS = [
   { key: "edit", label: "Edit profile", emoji: "👤" },
-  { key: "passports", label: "Hacker Passports", emoji: "🎫" },
+  { key: "passports", label: "Passports & Credentials", emoji: "🎫" },
   { key: "posts", label: "Your posts", emoji: "📝" },
   { key: "saved", label: "Saved articles", emoji: "★" },
   { key: "following", label: "Following", emoji: "💜" },
@@ -60,6 +60,7 @@ export default async function ProfilePage({
 
   const published = posts.filter((p) => p.status === "PUBLISHED").length;
   const inProgress = posts.length - published;
+  const totalCerts = userPassports.filter((p) => !!p.participant.certificate).length;
   const initials = (user.name ?? user.email)
     .split(" ")
     .map((p) => p[0])
@@ -93,6 +94,7 @@ export default async function ProfilePage({
           <span className="chip bg-lime text-[#1A1440]">{published} published</span>
           <span className="chip bg-sky text-[#1A1440]">{inProgress} in progress</span>
           <span className="chip bg-[#D4CEF5] text-[#1A1440]">{userPassports.length} passports</span>
+          {totalCerts > 0 && <span className="chip bg-lime text-[#1A1440] font-bold">🏆 {totalCerts} certified</span>}
           <span className="chip bg-peach text-[#1A1440]">{savedArticles.length} saved</span>
           <span className="chip bg-pink text-[#1A1440]">{followedAuthors.length} following</span>
         </div>
@@ -133,14 +135,14 @@ export default async function ProfilePage({
         </div>
       )}
 
-      {/* ── panel: passports ── */}
+      {/* ── panel: passports & certifications ── */}
       {tab === "passports" && (
         <div className="anim space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Hacker Passports & Event History</h2>
+              <h2 className="text-2xl font-bold tracking-tight">Hacker Passports & Verified Credentials</h2>
               <p className="text-sm text-muted">
-                Official digital boarding passes and verification credentials for hackathons you have attended.
+                Official digital boarding passes, competition standings, and verifiable certificates from GoHackerz hackathons.
               </p>
             </div>
             <Link href="/hackathons" className="btn btn-purple btn-sm">
@@ -150,62 +152,137 @@ export default async function ProfilePage({
 
           {userPassports.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-1">
-              {userPassports.map(({ hackathon, participant }) => (
-                <div
-                  key={participant.ticketNumber}
-                  className="rounded-3xl border-2 border-ink bg-card p-6 shadow-pop-lg relative overflow-hidden transition-all hover:shadow-pop-xl"
-                >
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-purple text-lime border-2 border-ink flex items-center justify-center font-bold text-xl shrink-0 shadow-pop-sm">
-                        🎫
+              {userPassports.map(({ hackathon, participant }) => {
+                const cert = participant.certificate;
+                const hasSub = !!participant.submission;
+
+                return (
+                  <div
+                    key={participant.ticketNumber}
+                    className="rounded-3xl border-2 border-ink bg-card p-6 sm:p-7 shadow-pop-lg relative overflow-hidden transition-all hover:shadow-pop-xl space-y-6"
+                  >
+                    {/* Header Row */}
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-purple text-lime border-2 border-ink flex items-center justify-center font-bold text-xl shrink-0 shadow-pop-sm">
+                          {cert ? (cert.type.startsWith("WINNER") ? "🏆" : "📜") : "🎫"}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase bg-lime text-[#1A1440] border border-ink">
+                              {hackathon.status}
+                            </span>
+                            <span className="font-mono text-xs text-purple font-bold">
+                              Ticket #{participant.ticketNumber}
+                            </span>
+                            {cert && (
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase bg-brand-dark text-lime border border-ink">
+                                {cert.type === "WINNER_FIRST"
+                                  ? "★ GRAND CHAMPION"
+                                  : cert.type === "WINNER_SECOND"
+                                  ? "★ 1ST RUNNER UP"
+                                  : cert.type === "WINNER_THIRD"
+                                  ? "★ 2ND RUNNER UP"
+                                  : cert.type === "TRACK_WINNER"
+                                  ? "✦ TRACK CHAMPION"
+                                  : "✓ VERIFIED"}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-2xl font-bold text-ink dark:text-white leading-tight">
+                            {hackathon.title}
+                          </h3>
+                          <p className="text-sm text-muted mt-1 leading-relaxed max-w-xl">
+                            {hackathon.tagline}
+                          </p>
+                          
+                          <div className="flex items-center gap-4 flex-wrap mt-3 text-xs font-mono text-body dark:text-[#D4CEF5]">
+                            <span className="flex items-center gap-1 font-semibold text-purple">
+                              <Sparkles className="w-3.5 h-3.5" /> Role: {participant.roleTitle}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5" /> Squad: {participant.teamName || "Solo Builder"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase bg-lime text-[#1A1440] border border-ink">
-                            {hackathon.status}
-                          </span>
-                          <span className="font-mono text-xs text-purple font-bold">
-                            Ticket #{participant.ticketNumber}
-                          </span>
-                        </div>
-                        <h3 className="text-2xl font-bold text-ink dark:text-white leading-tight">
-                          {hackathon.title}
-                        </h3>
-                        <p className="text-sm text-muted mt-1 leading-relaxed max-w-xl">
-                          {hackathon.tagline}
-                        </p>
-                        
-                        <div className="flex items-center gap-4 flex-wrap mt-3 text-xs font-mono text-body dark:text-[#D4CEF5]">
-                          <span className="flex items-center gap-1 font-semibold text-purple">
-                            <Sparkles className="w-3.5 h-3.5" /> Role: {participant.roleTitle}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5" /> Squad: {participant.teamName || "Solo Builder"}
-                          </span>
-                        </div>
+
+                      <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 shrink-0 w-full md:w-auto">
+                        <Link
+                          href={`/hackathons/${hackathon.slug}/pass/${participant.ticketNumber}`}
+                          className="btn btn-lime font-mono font-bold text-xs justify-center"
+                        >
+                          <QrCode className="w-4 h-4 mr-1.5" />
+                          <span>View 3D Passport</span>
+                        </Link>
+                        <Link
+                          href={`/hackathons/${hackathon.slug}`}
+                          className="btn btn-ghost text-xs justify-center font-mono"
+                        >
+                          <span>Hackathon Arena</span>
+                          <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                        </Link>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 shrink-0 w-full md:w-auto">
-                      <Link
-                        href={`/hackathons/${hackathon.slug}/pass/${participant.ticketNumber}`}
-                        className="btn btn-lime font-mono font-bold text-xs justify-center"
-                      >
-                        <QrCode className="w-4 h-4 mr-1.5" />
-                        <span>View 3D Passport</span>
-                      </Link>
-                      <Link
-                        href={`/hackathons/${hackathon.slug}`}
-                        className="btn btn-ghost text-xs justify-center font-mono"
-                      >
-                        <span>Hackathon Page</span>
-                        <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                      </Link>
-                    </div>
+                    {/* Official Certificate & Award Showcase */}
+                    {cert ? (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-bg border-2 border-ink/15 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ink/10 pb-3">
+                          <div>
+                            <span className="text-[10px] font-mono text-purple uppercase font-bold tracking-wider block">
+                              OFFICIAL CREDENTIAL & DISTINCTION
+                            </span>
+                            <h4 className="text-lg font-bold text-ink dark:text-white mt-0.5">
+                              {cert.awardTitle}
+                            </h4>
+                            <p className="text-xs text-muted mt-0.5">
+                              {cert.projectName && <span>Project: <strong>{cert.projectName}</strong> · </span>}
+                              Credential ID: <code className="font-mono text-purple font-bold">{cert.certNumber}</code>
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/verify/${cert.certNumber}`}
+                              className="btn btn-sm btn-purple font-mono text-xs font-bold whitespace-nowrap shadow-pop-sm"
+                            >
+                              <span>Verify & View ↗</span>
+                            </Link>
+                            <a
+                              href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
+                                `${cert.awardTitle} - ${cert.title}`
+                              )}&organizationName=GoHackerz&issueYear=${new Date(
+                                cert.issuedAt
+                              ).getFullYear()}&issueMonth=${
+                                new Date(cert.issuedAt).getMonth() + 1
+                              }&certUrl=${encodeURIComponent(
+                                `https://gohackerz.com/verify/${cert.certNumber}`
+                              )}&certId=${encodeURIComponent(cert.certNumber)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-sm bg-[#0A66C2] hover:bg-[#004182] text-white font-mono text-xs font-bold whitespace-nowrap shadow-pop-sm flex items-center gap-1.5"
+                            >
+                              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                              </svg>
+                              <span>LinkedIn</span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ) : hasSub ? (
+                      <div className="p-4 rounded-2xl bg-bg border border-ink/15 text-xs text-body flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-purple shrink-0" />
+                          <span>
+                            Project <strong>&quot;{participant.submission?.title}&quot;</strong> submitted & recorded. Verified credential pending judging closure.
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="card p-10 text-center">
