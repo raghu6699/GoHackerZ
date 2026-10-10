@@ -64,17 +64,14 @@ export function PassPortPageClient({
     // Use the actual hackathonId so keys are consistent across the app
     const hackId = serverParticipant.hackathonId || "gh-shipathon-2026";
     const activeEmail = (localStorage.getItem("gh_active_email") || "").trim().toLowerCase();
+    const activeTicket = (localStorage.getItem("gh_active_ticket") || "").trim().toUpperCase();
     const myPassport = getMyPassport(hackId, activeEmail || undefined);
 
-    // Strict ownership verification:
-    // 1. myPassport exists and matches the exact ticket ID
-    // 2. The ticket's registered email matches the logged-in active email
+    // Ownership verification:
+    // 1. myPassport exists and matches the exact ticket ID OR active ticket matches
     const isExactMatch =
-      !!myPassport &&
-      myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase() &&
-      (!serverParticipant.email ||
-        !myPassport.email ||
-        myPassport.email.trim().toLowerCase() === serverParticipant.email.trim().toLowerCase());
+      (!!myPassport && myPassport.ticketNumber.toUpperCase() === ticketId.toUpperCase()) ||
+      activeTicket === ticketId.toUpperCase();
 
     if (isExactMatch) {
       setIsOwner(true);
@@ -99,7 +96,7 @@ export function PassPortPageClient({
             : (serverParticipant.teammates && serverParticipant.teammates.length > 0)
             ? serverParticipant.teammates
             : undefined,
-        submission: serverParticipant.submission || myPassport?.submission,
+        submission: participant.submission || serverParticipant.submission || myPassport?.submission,
       };
 
       setParticipant(merged);
@@ -117,7 +114,10 @@ export function PassPortPageClient({
       }
     } else {
       setIsOwner(false);
-      setParticipant(serverParticipant);
+      setParticipant((prev) => ({
+        ...serverParticipant,
+        submission: prev.submission || serverParticipant.submission,
+      }));
     }
     setResolved(true);
   }, [ticketId, serverParticipant, slug]);

@@ -54,24 +54,38 @@ export function getMyPassport(
       .trim()
       .toLowerCase();
 
-    if (!activeEmail) {
-      return null;
-    }
-
-    // Look up email-scoped key
-    const scopedKey = buildStorageKey(hackathonId, activeEmail);
-    const scopedRaw = localStorage.getItem(scopedKey);
-    if (scopedRaw) {
-      const parsed: HackathonParticipant = JSON.parse(scopedRaw);
-      if (parsed.email && parsed.email.trim().toLowerCase() === activeEmail) {
-        return parsed;
+    if (activeEmail) {
+      // Look up email-scoped key
+      const scopedKey = buildStorageKey(hackathonId, activeEmail);
+      const scopedRaw = localStorage.getItem(scopedKey);
+      if (scopedRaw) {
+        const parsed: HackathonParticipant = JSON.parse(scopedRaw);
+        if (parsed.email && parsed.email.trim().toLowerCase() === activeEmail) {
+          return parsed;
+        }
       }
     }
 
-    // Clean up any stray legacy unscoped key so it doesn't cause leakage
-    const legacyKey = buildStorageKey(hackathonId);
-    if (localStorage.getItem(legacyKey)) {
-      localStorage.removeItem(legacyKey);
+    // Fallback: check active ticket
+    const activeTicket = (localStorage.getItem(ACTIVE_TICKET_KEY) || "").trim().toUpperCase();
+
+    // Check all storage keys for matching passport
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORAGE_PREFIX)) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            const parsed: HackathonParticipant = JSON.parse(raw);
+            if (activeTicket && parsed.ticketNumber?.toUpperCase() === activeTicket) {
+              return parsed;
+            }
+            if (activeEmail && parsed.email?.trim().toLowerCase() === activeEmail) {
+              return parsed;
+            }
+          }
+        } catch {}
+      }
     }
   } catch (e) {
     console.error("Failed to read passport from storage:", e);
