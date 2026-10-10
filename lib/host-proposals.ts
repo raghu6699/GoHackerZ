@@ -270,32 +270,12 @@ export async function updateHostProposalStatus(
   return found;
 }
 
-/**
- * Convert an approved host proposal into an active, provisioned Hackathon on GoHackerz!
- * Dispatches approval email to organizer with their live arena & admin studio links.
- */
-export async function createHackathonFromProposal(proposalIdOrRef: string): Promise<{
-  hackathon: HackathonData;
-  proposal: HostHackathonProposal;
-}> {
-  const proposal = await updateHostProposalStatus(proposalIdOrRef, "APPROVED");
-  if (!proposal) {
-    throw new Error("Host proposal not found.");
-  }
-
-  // 1. Generate clean URL slug
-  let baseSlug = proposal.hackathonTitle
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  if (!baseSlug) baseSlug = `hackathon-${Date.now()}`;
-  if (baseSlug === "shipathon-2026") baseSlug = `partner-${baseSlug}`;
-
-  const slug = baseSlug;
-  const hackathonId = `gh-${slug}`;
-
-  // 2. Parse tracks from proposal input or provide rich structured tracks
+export function parseProposalTracks(proposal: {
+  tracksAndGoals?: string;
+  estimatedPrizePool?: string;
+  orgName: string;
+  hackathonTitle: string;
+}) {
   let tracks = [
     {
       id: "ai-track",
@@ -327,28 +307,126 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
       .filter((s) => s.length > 2);
 
     if (rawLines.length > 0) {
-      tracks = rawLines.slice(0, 4).map((line, idx) => {
+      tracks = rawLines.slice(0, 6).map((line, idx) => {
         const cleanTitle = line.replace(/^[0-9.-]+\s*/, "").trim();
         const trackId =
           cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
           `track-${idx + 1}`;
-        const firstWord = cleanTitle.split(" ")[0] || "Innovation";
+        const words = cleanTitle.split(" ").filter((w) => w.length > 2);
+        const tags = Array.from(new Set([words[0] || "Innovation", words[1] || "Tech", proposal.orgName.split(" ")[0]]));
         return {
           id: trackId,
-          title: cleanTitle.length > 45 ? cleanTitle.slice(0, 45) + "..." : cleanTitle,
+          title: cleanTitle.length > 50 ? cleanTitle.slice(0, 50) + "..." : cleanTitle,
           prize: proposal.estimatedPrizePool
             ? `Top Prize · ${proposal.estimatedPrizePool}`
             : "Cash Grant + Cloud Credits",
           description: `Build innovative, production-grade solutions for ${cleanTitle}.`,
-          tags: [firstWord, "GoHackerz", proposal.orgName.split(" ")[0]],
+          tags,
         };
       });
     }
   }
 
-  // 3. Determine duration & start/end timeline dynamically based on event format (3hr, 5hr, single-day, weekend, etc.)
+  return tracks;
+}
+
+export function parseAgendaToSchedule(proposal: {
+  agenda?: string;
+  hackathonTitle: string;
+  eventFormat?: string;
+  targetDates?: string;
+}) {
+  const formatStr = (proposal.eventFormat || "").toLowerCase();
+  const datesStr = (proposal.targetDates || "").toLowerCase();
+
+  const is3Hour = formatStr.includes("3-hour") || formatStr === "3-hours" || datesStr.includes("3 hour") || datesStr.includes("3hr") || datesStr.includes("3-hr");
+  const is5Hour = formatStr.includes("5-hour") || formatStr === "5-hours" || datesStr.includes("5 hour") || datesStr.includes("5hr") || datesStr.includes("5-hr");
+  const isSingleDay = formatStr.includes("single-day") || formatStr.includes("1-day") || datesStr.includes("single day") || datesStr.includes("1 day") || datesStr.includes("8 hour") || datesStr.includes("12 hour");
+
+  if (proposal.agenda?.trim()) {
+    const rawAgendaLines = proposal.agenda
+      .split(/\n+/)
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 2);
+
+    if (rawAgendaLines.length > 0) {
+      return rawAgendaLines.slice(0, 8).map((line: string, idx: number) => {
+        let time = `Milestone ${idx + 1}`;
+        let title = line;
+
+        if (line.includes(" : ")) {
+          const split = line.split(" : ");
+          time = split[0].trim().replace(/\s*-\s*/, " · ");
+          title = split.slice(1).join(" : ").trim();
+        } else if (line.includes(" - ") && !line.match(/^[a-zA-Z]+\s+\d+\s+-\s+\d+/)) {
+          const split = line.split(" - ");
+          time = split[0].trim();
+          title = split.slice(1).join(" - ").trim();
+        } else {
+          const colonMatch = line.match(/^([^:]+):\s*(.+)$/);
+          if (colonMatch) {
+            time = colonMatch[1].trim().replace(/\s*-\s*/, " · ");
+            title = colonMatch[2].trim();
+          }
+        }
+
+        return {
+          time: time || `Phase ${idx + 1}`,
+          title: title || line,
+          description: `Official event milestone for ${proposal.hackathonTitle}.`,
+          status: (idx === 0 ? "active" : "upcoming") as "active" | "upcoming" | "completed",
+        };
+      });
+    }
+  }
+
+  if (is3Hour) {
+    return [
+      { time: "00:00", title: "Theme Reveal & Timer Starts", description: "Prompt released, sprint clock begins.", status: "active" as const },
+      { time: "01:30", title: "Midpoint Check-in", description: "Architecture huddle and mentor assistance.", status: "upcoming" as const },
+      { time: "02:45", title: "15-Min Warning & Polish", description: "Verify GitHub links and live demos.", status: "upcoming" as const },
+      { time: "03:00", title: "Submissions Lock & Demos", description: "Submissions lock, live judge evaluation.", status: "upcoming" as const },
+    ];
+  }
+
+  if (is5Hour) {
+    return [
+      { time: "00:00", title: "Opening Kickoff & Challenge Reveal", description: "Timer starts, repo templates distributed.", status: "active" as const },
+      { time: "02:30", title: "Mid-Sprint Check-in", description: "Mentor office hours & live feedback.", status: "upcoming" as const },
+      { time: "04:30", title: "Final Polish & Link Drop", description: "Test live URLs & decks.", status: "upcoming" as const },
+      { time: "05:00", title: "Code Freeze & Live Demos", description: "Final judging and leaderboard reveal.", status: "upcoming" as const },
+    ];
+  }
+
+  if (isSingleDay) {
+    return [
+      { time: "09:00 UTC", title: "Morning Kickoff Broadcast", description: "Live stream opening & prompt reveal.", status: "active" as const },
+      { time: "13:00 UTC", title: "Lunch & Architecture Review", description: "Midway checkpoint with mentors.", status: "upcoming" as const },
+      { time: "17:00 UTC", title: "Final Submission Lock", description: "Submissions freeze for deliberation.", status: "upcoming" as const },
+      { time: "18:30 UTC", title: "Lightning Demos & Winners", description: "Top projects present live.", status: "upcoming" as const },
+    ];
+  }
+
+  return FLAGSHIP_HACKATHON.schedule;
+}
+
+export function buildHackathonFromProposal(proposal: HostHackathonProposal): HackathonData {
+  let baseSlug = proposal.hackathonTitle
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!baseSlug) baseSlug = `hackathon-${Date.now()}`;
+  if (baseSlug === "shipathon-2026") baseSlug = `partner-${baseSlug}`;
+
+  const slug = baseSlug;
+  const hackathonId = `gh-${slug}`;
+
+  const tracks = parseProposalTracks(proposal);
+  const schedule = parseAgendaToSchedule(proposal);
+
   const now = new Date();
-  let durationHours = 48; // default 48h
+  let durationHours = 48;
   const formatStr = (proposal.eventFormat || "").toLowerCase();
   const datesStr = (proposal.targetDates || "").toLowerCase();
 
@@ -372,64 +450,10 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
   const deadlineBufferMinutes = durationHours <= 3 ? 15 : durationHours <= 5 ? 20 : durationHours <= 12 ? 45 : 240;
   const submissionDeadline = new Date(new Date(endDate).getTime() - deadlineBufferMinutes * 60 * 1000).toISOString();
 
-  // 4. Parse custom schedule/agenda or format-tailored default
-  let schedule = FLAGSHIP_HACKATHON.schedule;
-  if (proposal.agenda?.trim()) {
-    const rawAgendaLines = proposal.agenda
-      .split(/\n+/)
-      .map((s: string) => s.trim())
-      .filter((s: string) => s.length > 3);
-
-    if (rawAgendaLines.length > 0) {
-      schedule = rawAgendaLines.slice(0, 6).map((line: string, idx: number) => {
-        const colonIdx = line.indexOf(":");
-        const dashIdx = line.indexOf(" - ");
-        let time = `Milestone ${idx + 1}`;
-        let title = line;
-
-        if (colonIdx > 0 && colonIdx < 30) {
-          time = line.slice(0, colonIdx).trim();
-          title = line.slice(colonIdx + 1).trim();
-        } else if (dashIdx > 0 && dashIdx < 30) {
-          time = line.slice(0, dashIdx).trim();
-          title = line.slice(dashIdx + 3).trim();
-        }
-
-        return {
-          time,
-          title: title || line,
-          description: `Official event milestone for ${proposal.hackathonTitle}.`,
-          status: (idx === 0 ? "active" : "upcoming") as "active" | "upcoming" | "completed",
-        };
-      });
-    }
-  } else if (is3Hour) {
-    schedule = [
-      { time: "00:00", title: "Theme Reveal & Timer Starts", description: "Prompt released, sprint clock begins.", status: "active" },
-      { time: "01:30", title: "Midpoint Check-in", description: "Architecture huddle and mentor assistance.", status: "upcoming" },
-      { time: "02:45", title: "15-Min Warning & Polish", description: "Verify GitHub links and live demos.", status: "upcoming" },
-      { time: "03:00", title: "Submissions Lock & Demos", description: "Submissions lock, live judge evaluation.", status: "upcoming" },
-    ];
-  } else if (is5Hour) {
-    schedule = [
-      { time: "00:00", title: "Opening Kickoff & Challenge Reveal", description: "Timer starts, repo templates distributed.", status: "active" },
-      { time: "02:30", title: "Mid-Sprint Check-in", description: "Mentor office hours & live feedback.", status: "upcoming" },
-      { time: "04:30", title: "Final Polish & Link Drop", description: "Test live URLs & decks.", status: "upcoming" },
-      { time: "05:00", title: "Code Freeze & Live Demos", description: "Final judging and leaderboard reveal.", status: "upcoming" },
-    ];
-  } else if (isSingleDay) {
-    schedule = [
-      { time: "09:00 UTC", title: "Morning Kickoff Broadcast", description: "Live stream opening & prompt reveal.", status: "active" },
-      { time: "13:00 UTC", title: "Lunch & Architecture Review", description: "Midway checkpoint with mentors.", status: "upcoming" },
-      { time: "17:00 UTC", title: "Final Submission Lock", description: "Submissions freeze for deliberation.", status: "upcoming" },
-      { time: "18:30 UTC", title: "Lightning Demos & Winners", description: "Top projects present live.", status: "upcoming" },
-    ];
-  }
-
   const hostEmail = proposal.contactEmail.trim().toLowerCase();
-  const hostKey = `GH-HOST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const hostKey = `GH-HOST-${proposal.refNumber.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase() || "ADMIN"}`;
 
-  const hackathon: HackathonData = {
+  return {
     id: hackathonId,
     slug: slug,
     title: proposal.hackathonTitle,
@@ -457,6 +481,23 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
     ],
     faqs: FLAGSHIP_HACKATHON.faqs,
   };
+}
+
+/**
+ * Convert an approved host proposal into an active, provisioned Hackathon on GoHackerz!
+ * Dispatches approval email to organizer with their live arena & admin studio links.
+ */
+export async function createHackathonFromProposal(proposalIdOrRef: string): Promise<{
+  hackathon: HackathonData;
+  proposal: HostHackathonProposal;
+}> {
+  const proposal = await updateHostProposalStatus(proposalIdOrRef, "APPROVED");
+  if (!proposal) {
+    throw new Error("Host proposal not found.");
+  }
+
+  const hackathon = buildHackathonFromProposal(proposal);
+  const slug = hackathon.slug;
 
   // 3. Persist hackathon to disk & memory
   savePersistedCustomHackathon(hackathon);
@@ -474,6 +515,10 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
           description: hackathon.description,
           status: "ACTIVE" as any,
           prizePool: hackathon.prizePool,
+          tracks: hackathon.tracks as any,
+          rules: hackathon.rules as any,
+          sponsors: hackathon.sponsors as any,
+          faqs: hackathon.faqs as any,
         },
         create: {
           id: hackathon.id,
@@ -482,9 +527,9 @@ export async function createHackathonFromProposal(proposalIdOrRef: string): Prom
           tagline: hackathon.tagline,
           description: hackathon.description,
           status: "ACTIVE" as any,
-          startDate: new Date(startDate),
-          endDate: new Date(endDate),
-          submissionDeadline: new Date(submissionDeadline),
+          startDate: new Date(hackathon.startDate),
+          endDate: new Date(hackathon.endDate),
+          submissionDeadline: new Date(hackathon.submissionDeadline),
           prizePool: hackathon.prizePool,
           tracks: hackathon.tracks as any,
           rules: hackathon.rules as any,

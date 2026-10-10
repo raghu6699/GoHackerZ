@@ -456,7 +456,55 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
     liveStatus = persisted as any;
   }
 
-  // 2. Query Postgres DB when available
+  // 2. Check for matching Host Proposal first to get hostEmail, custom schedule & custom tracks
+  let matchedProposal: any = null;
+  try {
+    const { getAllHostProposals } = await import("./host-proposals");
+    const proposals = await getAllHostProposals();
+    matchedProposal = proposals.find((p) => {
+      const propSlug = p.hackathonTitle
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      return (
+        propSlug === slug ||
+        propSlug === cleanSlug ||
+        p.id === slug ||
+        p.refNumber.toUpperCase() === slug.toUpperCase() ||
+        (propSlug && slug.includes(propSlug)) ||
+        (propSlug && cleanSlug.includes(propSlug))
+      );
+    });
+  } catch (propErr) {
+    console.warn("[getHackathonBySlug] Proposal lookup notice:", propErr);
+  }
+
+  // 3. Check custom disk hackathons
+  const customList = loadPersistedCustomHackathons();
+  const customMatch = customList.find(
+    (h) => h.slug === slug || h.slug === cleanSlug || h.id === slug || h.id === `gh-${cleanSlug}`
+  );
+
+  // If we have a matched proposal, build and return the fully populated HackathonData
+  if (matchedProposal) {
+    try {
+      const { buildHackathonFromProposal, parseAgendaToSchedule, parseProposalTracks } = await import("./host-proposals");
+      const baseH = buildHackathonFromProposal(matchedProposal);
+      return {
+        ...baseH,
+        status: (getPersistedHackathonStatus(baseH.slug) as any) || (customMatch?.status as any) || baseH.status,
+        schedule: parseAgendaToSchedule(matchedProposal),
+        tracks: parseProposalTracks(matchedProposal),
+        hostEmail: matchedProposal.contactEmail.trim().toLowerCase(),
+        hostKey: customMatch?.hostKey || baseH.hostKey,
+      };
+    } catch (e) {
+      console.warn("[getHackathonBySlug] buildHackathonFromProposal notice:", e);
+    }
+  }
+
+  // 4. Query Postgres DB when available
   if (isDbAvailable()) {
     try {
       const isFlagshipQuery =
@@ -511,14 +559,16 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
             tagline: dbH.tagline,
             description: dbH.description,
             status: dbH.status as any,
+            hostEmail: customMatch?.hostEmail,
+            hostKey: customMatch?.hostKey,
             startDate: dbH.startDate ? dbH.startDate.toISOString() : new Date().toISOString(),
             endDate: dbH.endDate ? dbH.endDate.toISOString() : new Date().toISOString(),
             submissionDeadline: dbH.submissionDeadline ? dbH.submissionDeadline.toISOString() : new Date().toISOString(),
             prizePool: dbH.prizePool,
             participantCount: 0,
             teamCount: 0,
-            tracks: Array.isArray(dbH.tracks) ? (dbH.tracks as any) : FLAGSHIP_HACKATHON.tracks,
-            schedule: FLAGSHIP_HACKATHON.schedule,
+            tracks: Array.isArray(dbH.tracks) ? (dbH.tracks as any) : customMatch?.tracks || FLAGSHIP_HACKATHON.tracks,
+            schedule: customMatch?.schedule || FLAGSHIP_HACKATHON.schedule,
             rules: Array.isArray(dbH.rules) ? (dbH.rules as any) : FLAGSHIP_HACKATHON.rules,
             sponsors: Array.isArray(dbH.sponsors) ? (dbH.sponsors as any) : FLAGSHIP_HACKATHON.sponsors,
             faqs: Array.isArray(dbH.faqs) ? (dbH.faqs as any) : FLAGSHIP_HACKATHON.faqs,
@@ -530,44 +580,11 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
     }
   }
 
-  // 3. Check custom disk hackathons
-  const customList = loadPersistedCustomHackathons();
-  const customMatch = customList.find(
-    (h) => h.slug === slug || h.slug === cleanSlug || h.id === slug || h.id === `gh-${cleanSlug}`
-  );
   if (customMatch) {
     return {
       ...customMatch,
       status: (getPersistedHackathonStatus(customMatch.slug) as any) || customMatch.status,
     };
-  }
-
-  // 4. Fallback: Check approved / matching host proposals and auto-provision
-  try {
-    const { getAllHostProposals, createHackathonFromProposal } = await import("./host-proposals");
-    const proposals = await getAllHostProposals();
-    const matchedProposal = proposals.find((p) => {
-      const propSlug = p.hackathonTitle
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-      return (
-        propSlug === slug ||
-        propSlug === cleanSlug ||
-        p.id === slug ||
-        p.refNumber.toUpperCase() === slug.toUpperCase() ||
-        (propSlug && slug.includes(propSlug)) ||
-        (propSlug && cleanSlug.includes(propSlug))
-      );
-    });
-
-    if (matchedProposal) {
-      const { hackathon: provisioned } = await createHackathonFromProposal(matchedProposal.id);
-      return provisioned;
-    }
-  } catch (propErr) {
-    console.warn("[getHackathonBySlug] Proposal fallback resolution notice:", propErr);
   }
 
   if (
@@ -618,21 +635,19 @@ export async function getAllHackathons(): Promise<HackathonData[]> {
     }
   }
 
-  // 4. Include any APPROVED host proposals
+  // 4. Include host proposals
   try {
     const { getAllHostProposals } = await import("./host-proposals");
     const proposals = await getAllHostProposals();
     for (const p of proposals) {
-      if (p.status === "APPROVED") {
-        const propSlug = p.hackathonTitle
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "");
-        if (!map.has(propSlug)) {
-          const full = await getHackathonBySlug(propSlug);
-          if (full) map.set(full.slug, full);
-        }
+      const propSlug = p.hackathonTitle
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      if (!map.has(propSlug)) {
+        const full = await getHackathonBySlug(propSlug);
+        if (full) map.set(full.slug, full);
       }
     }
   } catch (e) {
