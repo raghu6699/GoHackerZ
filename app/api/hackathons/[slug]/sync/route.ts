@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { persistParticipant, persistParticipantToDb } from "@/lib/participant-store";
+import { persistParticipant, persistParticipantToDb, persistSubmission } from "@/lib/participant-store";
 import type { HackathonParticipant } from "@/lib/hackathons";
 
 export async function POST(
@@ -7,6 +7,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const body = await req.json();
     const participant = body.participant as HackathonParticipant;
 
@@ -20,6 +21,14 @@ export async function POST(
     // Persist to server memory, disk & DB
     persistParticipant(participant);
     await persistParticipantToDb(participant);
+
+    if (participant.submission) {
+      await persistSubmission({
+        ...participant.submission,
+        ticketNumber: participant.ticketNumber,
+        hackathonId: participant.hackathonId || slug,
+      });
+    }
 
     return NextResponse.json({ success: true, participant });
   } catch (error) {

@@ -384,6 +384,15 @@ export async function persistParticipantToDb(participant: HackathonParticipant):
         teamId: resolvedTeamId,
       },
     });
+
+    // If a submission is attached to this participant, persist it directly to DB as well!
+    if (participant.submission) {
+      await persistSubmission({
+        ...participant.submission,
+        ticketNumber: participant.ticketNumber,
+        hackathonId: participant.hackathonId || hackathonId,
+      });
+    }
   } catch (err) {
     console.warn("[persistParticipantToDb] DB upsert error:", err);
   }
@@ -1824,6 +1833,30 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
           });
           if (teamRow) teamDbId = teamRow.id;
         } catch {}
+      }
+
+      // If participantDbId is still null, guarantee a participant row exists in DB
+      if (!participantDbId) {
+        const cleanTicket = (submission.ticketNumber || `GH-2026-${Math.random().toString(16).substring(2, 6)}`).toUpperCase();
+        participantDbId = `part-${cleanTicket.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+        try {
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "HackathonParticipant" 
+              ("id", "hackathonId", "ticketNumber", "name", "email", "roleTitle", "themeStyle", "isCaptain")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT ("ticketNumber") DO UPDATE SET "name" = EXCLUDED."name"`,
+            participantDbId,
+            realHackathonId,
+            cleanTicket,
+            submission.authorName || "GoHackerz Builder",
+            `${cleanTicket.toLowerCase()}@gohackerz.dev`,
+            "Fullstack & AI Engineer",
+            "lime",
+            false
+          );
+        } catch (rawPartErr) {
+          console.warn("[persistSubmission] Fallback participant insert notice:", rawPartErr);
+        }
       }
 
       if (participantDbId) {
