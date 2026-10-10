@@ -1818,7 +1818,20 @@ export async function getHackathonTitle(hackathonIdOrSlug?: string): Promise<str
     } catch {}
   }
 
-  // 2. Check host proposals file
+  // 2. Check custom hackathons file
+  try {
+    const hackathonsFile = path.join(DATA_DIR, "hackathons.json");
+    if (fs.existsSync(hackathonsFile)) {
+      const raw = fs.readFileSync(hackathonsFile, "utf-8");
+      if (raw.trim()) {
+        const list = JSON.parse(raw);
+        const match = list.find((h: any) => h.slug === cleanSlug || h.id === hackathonIdOrSlug || h.slug === hackathonIdOrSlug || h.id === `gh-${cleanSlug}`);
+        if (match?.title) return match.title;
+      }
+    }
+  } catch {}
+
+  // 3. Check host proposals file
   try {
     const proposalsFile = path.join(DATA_DIR, "host-proposals.json");
     if (fs.existsSync(proposalsFile)) {
@@ -1834,7 +1847,7 @@ export async function getHackathonTitle(hackathonIdOrSlug?: string): Promise<str
     }
   } catch {}
 
-  // 3. Fallback: Format from slug
+  // 4. Fallback: Format from slug
   return cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
