@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { HackerPassport } from "@/components/HackerPassport";
 import { getMyPassport, getActiveTicketNumber, saveMyPassport } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme, HackathonCertificate } from "@/lib/hackathons";
-import { Sparkles, ArrowRight, ShieldCheck, Loader2, RefreshCw, Trophy, Award, Printer, ExternalLink, CheckCircle } from "lucide-react";
+import { Sparkles, ArrowRight, ShieldCheck, Loader2, RefreshCw, Trophy, Award, Printer, ExternalLink, CheckCircle, Code2 } from "lucide-react";
 
 interface PassPortPageClientProps {
   serverParticipant: HackathonParticipant;
@@ -437,9 +437,13 @@ export function PassPortPageClient({
                 </>
               )}
             </span>
+          ) : participant.submission ? (
+            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-brand-dark text-lime flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-lime" /> SUBMISSION VERIFIED · PENDING JUDGING
+            </span>
           ) : (
-            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-muted/20 text-muted">
-              PENDING JUDGING
+            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300">
+              SUBMISSION REQUIRED
             </span>
           )}
         </div>
@@ -497,14 +501,32 @@ export function PassPortPageClient({
               </a>
             </div>
           </div>
-        ) : (
+        ) : participant.submission ? (
           <div className="p-4 rounded-2xl bg-bg border border-ink/15 text-xs text-body leading-relaxed space-y-2">
+            <div className="flex items-center gap-2 font-mono text-xs font-bold text-ink">
+              <Sparkles className="w-4 h-4 text-purple" />
+              <span>Project &quot;{participant.submission.title}&quot; Shipped & Recorded</span>
+            </div>
             <p>
-              Your official <strong>Hacker Certificate & Stamped Visa</strong> is queued in the GoHackerz registry.
+              Your project submission is verified and queued for judging. Once the hackathon concludes and judging closes, your official <strong>Hacker Certificate & Stamped Visa</strong> will automatically mint here.
             </p>
-            <p className="text-muted text-[11px]">
-              Once the hackathon concludes and judging closes, your certificate will automatically mint here with a public verification link, printable high-res PDF, and 1-click LinkedIn export.
+          </div>
+        ) : (
+          <div className="p-4 rounded-2xl bg-bg border border-ink/15 text-xs text-body leading-relaxed space-y-3">
+            <p>
+              You are admitted with boarding pass <strong>#{participant.ticketNumber}</strong>. To unlock your verified <strong>Hacker Certificate & Stamped Visa</strong>, you must build and submit your project before the deadline.
             </p>
+            {isOwner && (
+              <div className="pt-1">
+                <Link
+                  href={`/hackathons/${slug}/submit?ticket=${participant.ticketNumber}`}
+                  className="btn btn-sm btn-lime text-brand-dark font-mono text-xs font-bold inline-flex items-center gap-1.5 shadow-pop-sm"
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  <span>SUBMIT PROJECT TO UNLOCK CREDENTIALS →</span>
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>

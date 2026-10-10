@@ -4,6 +4,9 @@ import type { Metadata } from "next";
 import { getParticipantByTicket, getHackathonBySlug } from "@/lib/hackathons";
 import { PassPortPageClient } from "@/components/PassPortPageClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function generateMetadata({
   params,
 }: {
