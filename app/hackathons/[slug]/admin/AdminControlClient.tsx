@@ -23,8 +23,13 @@ import {
   GitPullRequest,
   Check,
   Filter,
+  Building2,
+  Mail,
+  MessageSquare,
+  Calendar,
 } from "lucide-react";
 import type { HackathonParticipant, HackathonCertificate, CertificateType } from "@/lib/hackathons";
+import type { HostHackathonProposal } from "@/lib/host-proposals";
 
 interface AdminControlClientProps {
   slug: string;
@@ -44,6 +49,7 @@ export function AdminControlClient({
   const [status, setStatus] = useState(initialStatus);
   const [participants, setParticipants] = useState<HackathonParticipant[]>(initialParticipants);
   const [certificates, setCertificates] = useState<HackathonCertificate[]>(initialCertificates);
+  const [hostProposals, setHostProposals] = useState<HostHackathonProposal[]>([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -64,23 +70,57 @@ export function AdminControlClient({
   const refreshAllData = async () => {
     setIsRefreshing(true);
     try {
-      const [pRes, cRes, sRes] = await Promise.all([
+      const [pRes, cRes, sRes, hRes] = await Promise.all([
         fetch(`/api/hackathons/${slug}/participants`),
         fetch(`/api/hackathons/${slug}/certificates`),
         fetch(`/api/hackathons/${slug}/status`),
+        fetch(`/api/hackathons/host-proposal`).catch(() => null),
       ]);
 
       const pData = await pRes.json();
       const cData = await cRes.json();
       const sData = await sRes.json();
+      const hData = hRes ? await hRes.json().catch(() => null) : null;
 
       if (pData.success) setParticipants(pData.participants || []);
       if (cData.success) setCertificates(cData.certificates || []);
       if (sData.success) setStatus(sData.status);
+      if (hData?.success && Array.isArray(hData.proposals)) {
+        setHostProposals(hData.proposals);
+      }
     } catch (err) {
       console.warn("Error refreshing admin data:", err);
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetch(`/api/hackathons/host-proposal`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.proposals)) {
+          setHostProposals(d.proposals);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleUpdateProposalStatus = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch("/api/hackathons/host-proposal", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success && data.proposal) {
+        setHostProposals((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, status: newStatus as any } : p))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update proposal status:", err);
     }
   };
 
@@ -742,6 +782,122 @@ export function AdminControlClient({
                           Verify View
                           <ExternalLink className="w-3 h-3 text-[#C6FF3D]" />
                         </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section 5: Partner Host Applications & Hackathon Inquiries */}
+        <div id="host-proposals-section" className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-[#C6FF3D]" />
+                <h2 className="text-lg font-bold text-white">Partner Host Proposals & Applications</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#C6FF3D]/15 border border-[#C6FF3D]/30 text-[#C6FF3D] font-mono text-xs font-bold">
+                  {hostProposals.filter((p) => p.status === "PENDING").length} Pending Review
+                </span>
+              </div>
+              <p className="text-xs text-[#8e88b8] mt-0.5">
+                Proposals submitted via the public Host Hackathon portal. Notifications are automatically emailed to admin.
+              </p>
+            </div>
+          </div>
+
+          {/* Proposals Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#161233] text-[#8e88b8] uppercase font-mono text-[10px]">
+                <tr>
+                  <th className="py-3 px-4 rounded-l-xl">Ref / Date</th>
+                  <th className="py-3 px-4">Organization & Contact</th>
+                  <th className="py-3 px-4">Proposed Hackathon</th>
+                  <th className="py-3 px-4">Audience & Budget</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 rounded-r-xl text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e1942]">
+                {hostProposals.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-[#8e88b8]">
+                      No partner host proposals submitted yet. Applications will appear here automatically when submitted.
+                    </td>
+                  </tr>
+                ) : (
+                  hostProposals.map((prop) => (
+                    <tr key={prop.id} className="hover:bg-[#141030] transition-colors">
+                      <td className="py-3 px-4">
+                        <span className="font-mono text-[#C6FF3D] font-bold block">{prop.refNumber}</span>
+                        <span className="text-[10px] text-[#8e88b8]">
+                          {new Date(prop.createdAt).toLocaleDateString("en-GB")}
+                        </span>
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-white">{prop.orgName}</div>
+                        <div className="text-[11px] text-[#a59fcf]">
+                          {prop.contactName} &lt;<a href={`mailto:${prop.contactEmail}`} className="text-[#C6FF3D] underline">{prop.contactEmail}</a>&gt;
+                        </div>
+                        {prop.contactHandle && (
+                          <div className="text-[10px] text-[#8e88b8]">Handle: {prop.contactHandle}</div>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-white">{prop.hackathonTitle}</div>
+                        {prop.targetDates && (
+                          <div className="text-[10px] text-[#8e88b8]">Timeline: {prop.targetDates}</div>
+                        )}
+                        {prop.tracksAndGoals && (
+                          <div className="text-[10px] text-[#ded8ff] max-w-xs truncate" title={prop.tracksAndGoals}>
+                            Tracks: {prop.tracksAndGoals}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <div className="text-white font-mono text-[11px]">
+                          👥 {prop.expectedParticipants || "100-300"}
+                        </div>
+                        <div className="text-[#C6FF3D] font-mono text-[11px]">
+                          💰 {prop.estimatedPrizePool || "TBD"}
+                        </div>
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <select
+                          value={prop.status}
+                          onChange={(e) => handleUpdateProposalStatus(prop.id, e.target.value)}
+                          className={`px-2 py-1 rounded-lg font-mono text-[10px] font-bold outline-none border transition-colors ${
+                            prop.status === "PENDING"
+                              ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                              : prop.status === "APPROVED"
+                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                              : prop.status === "REVIEWED"
+                              ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                              : "bg-rose-500/20 text-rose-300 border-rose-500/30"
+                          }`}
+                        >
+                          <option value="PENDING" className="bg-[#141030] text-white">PENDING</option>
+                          <option value="REVIEWED" className="bg-[#141030] text-white">REVIEWED</option>
+                          <option value="APPROVED" className="bg-[#141030] text-white">APPROVED</option>
+                          <option value="DECLINED" className="bg-[#141030] text-white">DECLINED</option>
+                        </select>
+                      </td>
+
+                      <td className="py-3 px-4 text-right">
+                        <a
+                          href={`mailto:${prop.contactEmail}?subject=Re:%20GoHackerz%20Hackathon%20Hosting%20Proposal%20[${prop.refNumber}]`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors"
+                        >
+                          <Mail className="w-3 h-3" />
+                          Email
+                        </a>
                       </td>
                     </tr>
                   ))

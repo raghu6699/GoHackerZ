@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getAllHackathons } from "@/lib/hackathons";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
+import { HostHackathonSection } from "@/components/HostHackathonSection";
 import { Trophy, Users, Sparkles, ArrowRight, Zap, Flame, Shield, Code, CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -285,27 +286,8 @@ export default async function HackathonsPage() {
           </div>
         </section>
 
-        {/* Sponsor Banner */}
-        <section className="bg-brand-dark text-white rounded-3xl p-8 sm:p-10 border-2 border-ink shadow-pop-lg flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center md:text-left">
-            <span className="font-mono text-xs text-lime font-bold uppercase tracking-wider">
-              FOR TECH COMPANIES & PROTOCOLS
-            </span>
-            <h3 className="text-2xl font-extrabold text-white">
-              Want to host a hackathon on GoHackerz?
-            </h3>
-            <p className="text-sm text-[#D4CEF5] max-w-xl">
-              Engage thousands of hungry developers who ship production-grade code. Sponsor a track,
-              distribute API credits, and hire top talent.
-            </p>
-          </div>
-          <Link
-            href="/contact"
-            className="btn btn-lime text-brand-dark font-extrabold px-6 py-3 rounded-xl shadow-pop text-sm whitespace-nowrap"
-          >
-            PARTNER WITH US →
-          </Link>
-        </section>
+        {/* Host a Hackathon Proposal Section */}
+        <HostHackathonSection />
       </div>
     </div>
   );

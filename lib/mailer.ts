@@ -337,5 +337,144 @@ export function hackerPassportEmail(params: {
   };
 }
 
+/**
+ * 4. Admin Alert: New Hackathon Host Proposal Submitted
+ */
+export function hostProposalAdminNotificationEmail(proposal: {
+  refNumber: string;
+  orgName: string;
+  contactName: string;
+  contactEmail: string;
+  contactHandle?: string;
+  hackathonTitle: string;
+  targetDates?: string;
+  expectedParticipants?: string;
+  estimatedPrizePool?: string;
+  tracksAndGoals?: string;
+  specialRequirements?: string;
+  adminEmail: string;
+}): EmailMessage {
+  const body = `
+    <div style="background-color:#0A071B;border:2px solid #C6FF3D;border-radius:20px;padding:24px;color:#ffffff;margin:20px 0;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+      <div style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:#C6FF3D;text-transform:uppercase;">⚡ NEW HOST APPLICATION</span>
+        <span style="font-family:monospace;font-size:13px;font-weight:900;color:#C6FF3D;background:#1A1440;padding:2px 8px;border-radius:4px;border:1px solid rgba(198,255,61,0.4);">${proposal.refNumber}</span>
+      </div>
+
+      <h2 style="font-size:22px;margin:0 0 4px 0;color:#ffffff;font-weight:800;">${proposal.hackathonTitle}</h2>
+      <p style="font-family:monospace;font-size:13px;color:#D4CEF5;margin:0 0 16px 0;">Organizer: <strong>${proposal.orgName}</strong></p>
+
+      <table style="width:100%;margin-bottom:16px;border-collapse:collapse;font-size:13px;">
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <td style="padding:8px 0;color:#8B84AD;font-family:monospace;width:38%;">CONTACT PERSON:</td>
+          <td style="padding:8px 0;color:#ffffff;font-weight:700;text-align:right;">${proposal.contactName}</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">EMAIL:</td>
+          <td style="padding:8px 0;color:#C6FF3D;font-weight:700;text-align:right;"><a href="mailto:${proposal.contactEmail}" style="color:#C6FF3D;text-decoration:none;">${proposal.contactEmail}</a></td>
+        </tr>
+        ${
+          proposal.contactHandle
+            ? `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">HANDLE / PHONE:</td>
+          <td style="padding:8px 0;color:#ffffff;font-weight:700;text-align:right;">${proposal.contactHandle}</td>
+        </tr>`
+            : ""
+        }
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">EXPECTED DATES:</td>
+          <td style="padding:8px 0;color:#ffffff;font-weight:700;text-align:right;">${proposal.targetDates || "Flexible / TBD"}</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">BUILDER CAPACITY:</td>
+          <td style="padding:8px 0;color:#ffffff;font-weight:700;text-align:right;">👥 ${proposal.expectedParticipants || "100-300"}</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <td style="padding:8px 0;color:#8B84AD;font-family:monospace;">PRIZE POOL / BUDGET:</td>
+          <td style="padding:8px 0;color:#C6FF3D;font-weight:700;text-align:right;">💰 ${proposal.estimatedPrizePool || "TBD"}</td>
+        </tr>
+      </table>
+
+      ${
+        proposal.tracksAndGoals
+          ? `
+      <div style="background:#130E29;border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;">
+        <div style="font-family:monospace;font-size:11px;color:#8B84AD;text-transform:uppercase;margin-bottom:6px;">PROPOSED TRACKS & GOALS:</div>
+        <p style="font-size:13px;color:#ded8ff;margin:0;line-height:1.5;">${proposal.tracksAndGoals}</p>
+      </div>`
+          : ""
+      }
+
+      ${
+        proposal.specialRequirements
+          ? `
+      <div style="background:#130E29;border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;">
+        <div style="font-family:monospace;font-size:11px;color:#8B84AD;text-transform:uppercase;margin-bottom:6px;">ADDITIONAL NOTES:</div>
+        <p style="font-size:13px;color:#ded8ff;margin:0;line-height:1.5;">${proposal.specialRequirements}</p>
+      </div>`
+          : ""
+      }
+
+      <div style="text-align:center;padding-top:8px;">
+        <a href="mailto:${proposal.contactEmail}?subject=Re:%20GoHackerz%20Hackathon%20Partnership%20-%20${encodeURIComponent(
+    proposal.hackathonTitle
+  )}" style="display:inline-block;background:#C6FF3D;color:#0A071B;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:900;font-size:13px;font-family:monospace;">REPLY TO ORGANIZER →</a>
+      </div>
+    </div>
+  `;
+
+  return {
+    to: proposal.adminEmail,
+    subject: `🔥 New Hackathon Host Proposal: "${proposal.hackathonTitle}" (${proposal.orgName}) [Ref: ${proposal.refNumber}]`,
+    html: shell(`New Hackathon Host Proposal Received! 🚀`, body),
+  };
+}
+
+/**
+ * 5. Applicant Receipt: Confirmation for Hackathon Proposal
+ */
+export function hostProposalReceiptEmail(proposal: {
+  refNumber: string;
+  orgName: string;
+  contactName: string;
+  contactEmail: string;
+  hackathonTitle: string;
+}): EmailMessage {
+  const body = `
+    <div style="background-color:#0A071B;border:2px solid #7c5cff;border-radius:20px;padding:24px;color:#ffffff;margin:20px 0;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+      <div style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:#C6FF3D;text-transform:uppercase;">APPLICATION RECEIVED</span>
+        <span style="font-family:monospace;font-size:13px;font-weight:900;color:#C6FF3D;background:#1A1440;padding:2px 8px;border-radius:4px;border:1px solid rgba(198,255,61,0.4);">${proposal.refNumber}</span>
+      </div>
+
+      <h2 style="font-size:22px;margin:0 0 6px 0;color:#ffffff;font-weight:800;">Hi ${proposal.contactName},</h2>
+      <p style="font-size:14px;color:#D4CEF5;line-height:1.6;margin:0 0 16px 0;">
+        Thank you for submitting your proposal to host <strong>${proposal.hackathonTitle}</strong> on GoHackerz! We have received your application and our events team is reviewing the details.
+      </p>
+
+      <div style="background:#130E29;border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.1);margin-bottom:20px;">
+        <h3 style="font-size:14px;color:#C6FF3D;margin:0 0 10px 0;font-family:monospace;text-transform:uppercase;">What GoHackerz provides your Hackathon:</h3>
+        <ul style="padding-left:20px;margin:0;color:#ded8ff;font-size:13px;line-height:1.6;">
+          <li><strong>3D Holographic Hacker Passports:</strong> Customized animated tickets with tamper-proof QR check-in codes.</li>
+          <li><strong>Lightweight Link Submissions:</strong> Zero heavy uploads — supports GitHub repos, live demos, and Gamma/Loom presentations.</li>
+          <li><strong>Automated Verifiable Certificates:</strong> Instant cryptographically-signed digital credentials with public verification.</li>
+          <li><strong>Built-in Admin & Judging Studio:</strong> Track management, team formations, and score evaluations.</li>
+        </ul>
+      </div>
+
+      <p style="font-size:13px;color:#8B84AD;line-height:1.5;">
+        A GoHackerz Partner Specialist will reach out to you at <code style="color:#C6FF3D;font-family:monospace;">${proposal.contactEmail}</code> within 24–48 business hours to discuss timeline, tracks, and platform onboarding.
+      </p>
+    </div>
+  `;
+
+  return {
+    to: proposal.contactEmail,
+    subject: `⚡ We received your Hackathon Proposal: "${proposal.hackathonTitle}" [Ref: ${proposal.refNumber}]`,
+    html: shell(`Proposal Received — ${proposal.hackathonTitle}`, body),
+  };
+}
+
 
 
