@@ -131,14 +131,17 @@
       .event-name { display: block; margin-top: 5px; color: var(--ink); font-weight: 700; }
       .distinction { display: none; margin: 12px auto 0; color: var(--accent); font: 600 10px var(--sans); letter-spacing: .12em; text-transform: uppercase; }
 
-      .bottomline { align-items: end; padding: 0 2.5% 1.3%; }
-      .signature { width: 25%; min-width: 120px; text-align: center; }
-      .signature-logo { display: block; width: min(100%, 124px); height: 27px; margin: 0 auto 3px; object-fit: contain; mix-blend-mode: multiply; }
-      .signature-space { height: 27px; }
-      .signature-rule { width: 100%; height: 1px; margin: 4px 0 6px; background: var(--ink); }
+      .bottomline { display: flex; width: 100%; justify-content: space-between; align-items: end; padding: 4px 2.5% 1.3%; border-top: 1px solid rgba(215, 211, 234, 0.6); }
+      .signature { width: 28%; min-width: 110px; text-align: center; }
+      .signature-logo { display: block; width: min(100%, 110px); height: 26px; margin: 0 auto 2px; object-fit: contain; mix-blend-mode: multiply; }
+      .signature-rule { width: 100%; height: 1px; margin: 3px 0 4px; background: var(--ink); }
       .signature-title { color: var(--muted); font-size: 8px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-      .issued { padding-bottom: 3px; color: var(--muted); font-size: 9px; line-height: 1.5; text-align: center; }
-      .issued strong { color: var(--ink); font-weight: 700; }
+      .issued { padding-bottom: 2px; color: var(--muted); font-size: 9px; line-height: 1.4; text-align: center; }
+      .issued strong { color: var(--ink); font-weight: 700; font-size: 10px; }
+      .issued-title { color: var(--accent); font-size: 8px; font-weight: 500; }
+      .qr-verify-block { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+      .qr-box { padding: 3px; background: #fff; border: 1px solid var(--rule); border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; }
+      .qr-label { font-size: 7px; font-family: var(--mono); color: var(--muted); letter-spacing: -0.02em; font-weight: 600; }
       .verification { position: absolute; right: 5.5%; bottom: 4.8%; color: #79867c; font-size: 7px; letter-spacing: .04em; }
 
       .certificate[data-kind="winner"], .certificate[data-kind="runner"] { --accent: #5B3EE8; }
@@ -242,11 +245,59 @@
               <div class="signature-rule"></div>
               <div class="signature-title">Hackathon Director</div>
             </div>
-            <div class="issued">Awarded <strong>12 October 2026</strong><br />Global Shipathon</div>
-            <div class="signature">
-              <div class="signature-space" aria-hidden="true"></div>
-              <div class="signature-rule"></div>
-              <div class="signature-title" id="second-signature-title">Jury Chair</div>
+            <div class="issued">
+              <div>Issued on</div>
+              <strong id="certificate-date">12 October 2026</strong>
+              <div class="issued-title" id="certificate-event-sub">Global Shipathon 2026</div>
+            </div>
+            <div class="qr-verify-block">
+              <div class="qr-box">
+                <svg width="40" height="40" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="33" height="33" fill="white"/>
+                  <rect x="2" y="2" width="7" height="7" fill="#1A1440"/>
+                  <rect x="3" y="3" width="5" height="5" fill="white"/>
+                  <rect x="4" y="4" width="3" height="3" fill="#1A1440"/>
+                  <rect x="24" y="2" width="7" height="7" fill="#1A1440"/>
+                  <rect x="25" y="3" width="5" height="5" fill="white"/>
+                  <rect x="26" y="4" width="3" height="3" fill="#1A1440"/>
+                  <rect x="2" y="24" width="7" height="7" fill="#1A1440"/>
+                  <rect x="3" y="25" width="5" height="5" fill="white"/>
+                  <rect x="4" y="26" width="3" height="3" fill="#1A1440"/>
+                  <rect x="11" y="3" width="2" height="2" fill="#1A1440"/>
+                  <rect x="15" y="3" width="2" height="2" fill="#1A1440"/>
+                  <rect x="19" y="3" width="2" height="2" fill="#1A1440"/>
+                  <rect x="11" y="7" width="2" height="2" fill="#1A1440"/>
+                  <rect x="17" y="7" width="2" height="2" fill="#1A1440"/>
+                  <rect x="3" y="11" width="2" height="2" fill="#1A1440"/>
+                  <rect x="7" y="11" width="2" height="2" fill="#1A1440"/>
+                  <rect x="11" y="11" width="2" height="2" fill="#1A1440"/>
+                  <rect x="15" y="11" width="2" height="2" fill="#1A1440"/>
+                  <rect x="19" y="11" width="2" height="2" fill="#1A1440"/>
+                  <rect x="23" y="11" width="2" height="2" fill="#1A1440"/>
+                  <rect x="27" y="11" width="2" height="2" fill="#1A1440"/>
+                  <rect x="5" y="15" width="2" height="2" fill="#1A1440"/>
+                  <rect x="9" y="15" width="2" height="2" fill="#1A1440"/>
+                  <rect x="13" y="15" width="2" height="2" fill="#1A1440"/>
+                  <rect x="17" y="15" width="2" height="2" fill="#1A1440"/>
+                  <rect x="21" y="15" width="2" height="2" fill="#1A1440"/>
+                  <rect x="25" y="15" width="2" height="2" fill="#1A1440"/>
+                  <rect x="3" y="19" width="2" height="2" fill="#1A1440"/>
+                  <rect x="7" y="19" width="2" height="2" fill="#1A1440"/>
+                  <rect x="11" y="19" width="2" height="2" fill="#1A1440"/>
+                  <rect x="15" y="19" width="2" height="2" fill="#1A1440"/>
+                  <rect x="21" y="19" width="2" height="2" fill="#1A1440"/>
+                  <rect x="27" y="19" width="2" height="2" fill="#1A1440"/>
+                  <rect x="11" y="23" width="2" height="2" fill="#1A1440"/>
+                  <rect x="15" y="23" width="2" height="2" fill="#1A1440"/>
+                  <rect x="19" y="23" width="2" height="2" fill="#1A1440"/>
+                  <rect x="23" y="23" width="2" height="2" fill="#1A1440"/>
+                  <rect x="11" y="27" width="2" height="2" fill="#1A1440"/>
+                  <rect x="17" y="27" width="2" height="2" fill="#1A1440"/>
+                  <rect x="23" y="27" width="2" height="2" fill="#1A1440"/>
+                  <rect x="27" y="27" width="2" height="2" fill="#1A1440"/>
+                </svg>
+              </div>
+              <div class="qr-label">SCAN TO VERIFY</div>
             </div>
           </div>
         </div>
@@ -304,7 +355,6 @@
         document.querySelector("#certificate-kicker").textContent = content.kicker;
         document.querySelector("#certificate-statement").innerHTML = `${content.statement}<span class="event-name">GoHackerz Global Shipathon 2026</span>`;
         document.querySelector("#certificate-distinction").textContent = content.distinction;
-        document.querySelector("#second-signature-title").textContent = content.secondSigner;
         document.querySelector("#certificate-recipient").textContent = nameInput.value.trim() || "Recipient Name";
       }
 
