@@ -16,6 +16,7 @@ const PARTICIPANTS_FILE = path.join(DATA_DIR, "participants.json");
 const TEAMS_FILE = path.join(DATA_DIR, "teams.json");
 const CERTIFICATES_FILE = path.join(DATA_DIR, "certificates.json");
 const SUBMISSIONS_FILE = path.join(DATA_DIR, "submissions.json");
+const STATUS_FILE = path.join(DATA_DIR, "hackathon-status.json");
 
 // Fallback hackathon ID used when DB is not seeded
 const FALLBACK_HACKATHON_ID = "gh-shipathon-2026";
@@ -37,6 +38,7 @@ export const memoryStore =
       participants: Map<string, HackathonParticipant>;
       teams: Map<string, HackathonTeam>;
       certificates: Map<string, HackathonCertificate>;
+      statuses?: Map<string, string>;
     };
   })._ghMemStore ||
   (() => {
@@ -44,6 +46,7 @@ export const memoryStore =
       participants: new Map<string, HackathonParticipant>(),
       teams: new Map<string, HackathonTeam>(),
       certificates: new Map<string, HackathonCertificate>(),
+      statuses: new Map<string, string>(),
     };
     (
       globalThis as unknown as {
@@ -52,6 +55,55 @@ export const memoryStore =
     )._ghMemStore = store;
     return store;
   })();
+
+export function getPersistedHackathonStatus(hackathonSlug = "shipathon-2026"): string | null {
+  const clean = hackathonSlug.replace(/^gh-/, "");
+  if (memoryStore.statuses?.has(clean)) {
+    return memoryStore.statuses.get(clean)!;
+  }
+  try {
+    ensureDirectoryExists();
+    if (fs.existsSync(STATUS_FILE)) {
+      const raw = fs.readFileSync(STATUS_FILE, "utf-8");
+      if (raw.trim()) {
+        const parsed = JSON.parse(raw);
+        const val = parsed[clean] || parsed[hackathonSlug] || parsed["shipathon-2026"];
+        if (val) {
+          if (!memoryStore.statuses) memoryStore.statuses = new Map();
+          memoryStore.statuses.set(clean, val);
+          return val;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[getPersistedHackathonStatus] Disk read error:", e);
+  }
+  return null;
+}
+
+export function persistHackathonStatus(hackathonSlug: string, newStatus: string): void {
+  const clean = hackathonSlug.replace(/^gh-/, "");
+  if (!memoryStore.statuses) memoryStore.statuses = new Map();
+  memoryStore.statuses.set(clean, newStatus);
+  memoryStore.statuses.set(hackathonSlug, newStatus);
+  memoryStore.statuses.set("shipathon-2026", newStatus);
+  try {
+    ensureDirectoryExists();
+    let data: Record<string, string> = {};
+    if (fs.existsSync(STATUS_FILE)) {
+      try {
+        data = JSON.parse(fs.readFileSync(STATUS_FILE, "utf-8"));
+      } catch {}
+    }
+    data[clean] = newStatus;
+    data[hackathonSlug] = newStatus;
+    data["shipathon-2026"] = newStatus;
+    data["gh-shipathon-2026"] = newStatus;
+    fs.writeFileSync(STATUS_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("[persistHackathonStatus] Disk write error:", e);
+  }
+}
 
 let _tablesEnsured = false;
 export async function ensureTablesExist(): Promise<void> {
@@ -1773,6 +1825,10 @@ export async function updateHackathonStatus(
 ): Promise<{ status: string; autoIssuedCount?: number }> {
   let autoIssuedCount = 0;
 
+  // 1. Immediately persist to disk JSON and memory store
+  persistHackathonStatus(hackathonIdOrSlug, newStatus);
+
+  // 2. Persist to PostgreSQL database if available
   if (isDbAvailable()) {
     try {
       await ensureTablesExist();

@@ -4,6 +4,9 @@ import { getAllHackathons } from "@/lib/hackathons";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
 import { Trophy, Users, Sparkles, ArrowRight, Zap, Flame, Shield, Code, CheckCircle2 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Hackathons — GoHackerz",
   description:
@@ -13,6 +16,8 @@ export const metadata: Metadata = {
 export default async function HackathonsPage() {
   const hackathons = await getAllHackathons();
   const activeHackathon = hackathons.find((h) => h.status === "ACTIVE") || hackathons[0];
+  const isCompleted = activeHackathon.status === "COMPLETED";
+  const isJudging = activeHackathon.status === "JUDGING";
 
   return (
     <div className="min-h-screen py-8 sm:py-14">
@@ -29,8 +34,16 @@ export default async function HackathonsPage() {
           />
           <div className="relative z-10 max-w-3xl space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-lime/15 border border-lime text-lime font-mono text-[12px] font-bold tracking-wider">
-              <span className="w-2.5 h-2.5 rounded-full bg-lime animate-ping" />
-              <span>OFFICIAL GOHACKERZ ARENA</span>
+              {!isCompleted && !isJudging && (
+                <span className="w-2.5 h-2.5 rounded-full bg-lime animate-ping" />
+              )}
+              <span>
+                {isCompleted
+                  ? "🏆 ARENA CONCLUDED · CERTIFICATES ISSUED"
+                  : isJudging
+                  ? "⚖️ JUDGING IN PROGRESS"
+                  : "OFFICIAL GOHACKERZ ARENA"}
+              </span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.08] text-white">
@@ -47,20 +60,58 @@ export default async function HackathonsPage() {
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                href={`/hackathons/${activeHackathon.slug}`}
-                className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2 group"
-              >
-                <span>ENTER ACTIVE HACKATHON</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              {isCompleted ? (
+                <>
+                  <Link
+                    href={`/hackathons/${activeHackathon.slug}/submissions`}
+                    className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2 group"
+                  >
+                    <span>VIEW SHOWCASE & WINNERS</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
 
-              <Link
-                href={`/hackathons/${activeHackathon.slug}/register`}
-                className="btn bg-purple text-white hover:bg-purple-dark font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
-              >
-                CLAIM HACKER PASSPORT 🎫
-              </Link>
+                  <Link
+                    href="/passport"
+                    className="btn bg-purple text-white hover:bg-purple-dark font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
+                  >
+                    MY PASSPORT & CERTIFICATE 📜
+                  </Link>
+                </>
+              ) : isJudging ? (
+                <>
+                  <Link
+                    href={`/hackathons/${activeHackathon.slug}/submissions`}
+                    className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2 group"
+                  >
+                    <span>VIEW SUBMISSIONS GALLERY</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+
+                  <Link
+                    href="/passport"
+                    className="btn bg-purple text-white hover:bg-purple-dark font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
+                  >
+                    MY HACKER PASSPORT 🎫
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`/hackathons/${activeHackathon.slug}`}
+                    className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2 group"
+                  >
+                    <span>ENTER ACTIVE HACKATHON</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+
+                  <Link
+                    href={`/hackathons/${activeHackathon.slug}/register`}
+                    className="btn bg-purple text-white hover:bg-purple-dark font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
+                  >
+                    CLAIM HACKER PASSPORT 🎫
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -71,11 +122,11 @@ export default async function HackathonsPage() {
             <div className="flex items-center gap-2.5">
               <Flame className="w-6 h-6 text-purple" />
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
-                Active Flagship Hackathon
+                {isCompleted ? "Concluded Flagship Hackathon" : "Active Flagship Hackathon"}
               </h2>
             </div>
             <span className="font-mono text-xs font-bold text-muted uppercase">
-              STATUS: LIVE SPRINT
+              STATUS: {isCompleted ? "COMPLETED & ARCHIVED" : isJudging ? "JUDGING IN EVALUATION" : "LIVE SPRINT"}
             </span>
           </div>
 
@@ -83,8 +134,16 @@ export default async function HackathonsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-[1.8fr_1fr] gap-8 items-center">
               <div className="space-y-5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="px-3 py-1 bg-lime text-brand-dark font-mono text-xs font-extrabold rounded-md shadow-sm">
-                    ● ACTIVE NOW
+                  <span
+                    className={`px-3 py-1 font-mono text-xs font-extrabold rounded-md shadow-sm ${
+                      isCompleted
+                        ? "bg-purple text-white"
+                        : isJudging
+                        ? "bg-amber-400 text-brand-dark"
+                        : "bg-lime text-brand-dark"
+                    }`}
+                  >
+                    {isCompleted ? "🏆 COMPLETED" : isJudging ? "⚖️ JUDGING" : "● ACTIVE NOW"}
                   </span>
                   <span className="px-3 py-1 bg-purple/15 text-purple font-mono text-xs font-bold rounded-md border border-purple/30">
                     PRIZE POOL: {activeHackathon.prizePool}
@@ -126,28 +185,52 @@ export default async function HackathonsPage() {
               <div className="bg-brand-dark text-white p-6 sm:p-8 rounded-2xl border-2 border-ink space-y-4 shadow-pop text-center lg:text-left">
                 <div className="space-y-1">
                   <span className="font-mono text-xs text-lime font-bold uppercase tracking-wider">
-                    REGISTRATION OPEN
+                    {isCompleted ? "EVENT CONCLUDED" : isJudging ? "JUDGING UNDERWAY" : "REGISTRATION OPEN"}
                   </span>
-                  <h4 className="text-xl font-bold text-white">48-Hour Ship Sprint</h4>
+                  <h4 className="text-xl font-bold text-white">
+                    {isCompleted ? "Certificates & Results Live" : "48-Hour Ship Sprint"}
+                  </h4>
                   <p className="text-xs text-[#D4CEF5]">
-                    Solo or squad up to 4 members. Get your verified animated ticket with custom QR.
+                    {isCompleted
+                      ? "Official participation certificates and podium credentials have been minted."
+                      : "Solo or squad up to 4 members. Get your verified animated ticket with custom QR."}
                   </p>
                 </div>
 
                 <div className="space-y-2.5 pt-2">
-                  <Link
-                    href={`/hackathons/${activeHackathon.slug}/register`}
-                    className="w-full btn btn-lime text-brand-dark font-extrabold py-3 rounded-xl shadow-pop text-center block text-sm"
-                  >
-                    REGISTER & GET PASSPORT ⚡
-                  </Link>
+                  {isCompleted ? (
+                    <>
+                      <Link
+                        href={`/hackathons/${activeHackathon.slug}/submissions`}
+                        className="w-full btn btn-lime text-brand-dark font-extrabold py-3 rounded-xl shadow-pop text-center block text-sm"
+                      >
+                        VIEW SHOWCASE GALLERY 🚀
+                      </Link>
 
-                  <Link
-                    href={`/hackathons/${activeHackathon.slug}`}
-                    className="w-full btn bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 rounded-xl border border-white/20 text-center block text-xs font-mono"
-                  >
-                    VIEW TRACKS & SCHEDULE →
-                  </Link>
+                      <Link
+                        href="/passport"
+                        className="w-full btn bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 rounded-xl border border-white/20 text-center block text-xs font-mono"
+                      >
+                        ACCESS MY PASSPORT & CERTS →
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href={`/hackathons/${activeHackathon.slug}/register`}
+                        className="w-full btn btn-lime text-brand-dark font-extrabold py-3 rounded-xl shadow-pop text-center block text-sm"
+                      >
+                        REGISTER & GET PASSPORT ⚡
+                      </Link>
+
+                      <Link
+                        href={`/hackathons/${activeHackathon.slug}`}
+                        className="w-full btn bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 rounded-xl border border-white/20 text-center block text-xs font-mono"
+                      >
+                        VIEW TRACKS & SCHEDULE →
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

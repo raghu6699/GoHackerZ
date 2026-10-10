@@ -337,6 +337,8 @@ import {
   syncTeamParticipants,
   persistSubmission,
   loadPersistedSubmissions,
+  getPersistedHackathonStatus,
+  persistHackathonStatus,
   memoryStore,
 } from "./participant-store";
 
@@ -414,6 +416,13 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
   const cleanSlug = slug.replace(/^gh-/, "");
   let liveStatus = FLAGSHIP_HACKATHON.status;
 
+  // 1. Check local disk / memory store first
+  const persisted = getPersistedHackathonStatus(slug) || getPersistedHackathonStatus(cleanSlug);
+  if (persisted) {
+    liveStatus = persisted as any;
+  }
+
+  // 2. Query Postgres DB when available
   if (isDbAvailable()) {
     try {
       const dbH = await prisma.hackathon.findFirst({

@@ -6,6 +6,9 @@ import { getHackathonBySlug } from "@/lib/hackathons";
 import { CertificateCard } from "@/components/CertificateCard";
 import { ShieldCheck, ArrowLeft, Award, Sparkles } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface ParticipantCertificatePageProps {
   params: Promise<{ slug: string; ticketNumber: string }>;
 }

@@ -4,6 +4,9 @@ import type { Metadata } from "next";
 import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
 import { Trophy, Code2, ExternalLink, Video, Presentation, Sparkles, ArrowLeft } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function generateMetadata({
   params,
 }: {

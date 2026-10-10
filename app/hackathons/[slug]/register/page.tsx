@@ -5,6 +5,9 @@ import { getHackathonBySlug, getParticipantByEmail, FLAGSHIP_HACKATHON } from "@
 import { HackathonRegisterClient } from "@/components/HackathonRegisterClient";
 import { Lock, Ticket, Trophy, UserCheck, ArrowRight } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Register for Hackathon — GoHackerz",
   description: "Register for GoHackerz hackathons, form a squad, and mint your 3D Holographic Hacker Passport.",
