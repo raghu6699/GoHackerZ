@@ -225,46 +225,64 @@ export async function ensureTablesExist(): Promise<void> {
   }
 }
 
-/** Ensure the flagship hackathon row exists in DB. Returns the real DB cuid. */
+/** Ensure the hackathon row exists in DB. Returns the real DB cuid. */
 export async function ensureHackathonInDb(hackathonIdOrSlug?: string): Promise<string> {
   if (!isDbAvailable()) return FALLBACK_HACKATHON_ID;
   try {
     await ensureTablesExist();
     const target = (hackathonIdOrSlug || "shipathon-2026").trim();
     const cleanSlug = target.replace(/^gh-/, "");
+    const isFlagship = cleanSlug === "shipathon-2026" || cleanSlug === "shipathon" || target === "active" || target === "current";
 
     // 1. Try finding by id or slug
     const existing = await prisma.hackathon.findFirst({
-      where: {
-        OR: [
-          { id: target },
-          { slug: target },
-          { slug: cleanSlug },
-          { slug: "shipathon-2026" },
-        ],
-      },
+      where: isFlagship
+        ? {
+            OR: [
+              { id: target },
+              { slug: target },
+              { slug: cleanSlug },
+              { slug: "shipathon-2026" },
+              { id: "gh-shipathon-2026" },
+            ],
+          }
+        : {
+            OR: [
+              { id: target },
+              { slug: target },
+              { slug: cleanSlug },
+              { id: `gh-${cleanSlug}` },
+            ],
+          },
       select: { id: true, slug: true },
     });
     if (existing) return existing.id;
 
-    // 2. If any hackathon exists at all in the DB, use it
-    const anyHackathon = await prisma.hackathon.findFirst({
-      select: { id: true },
-    });
-    if (anyHackathon) return anyHackathon.id;
+    // 2. If it's flagship and any flagship exists, use it
+    if (isFlagship) {
+      const anyHackathon = await prisma.hackathon.findFirst({
+        where: { OR: [{ slug: "shipathon-2026" }, { id: "gh-shipathon-2026" }] },
+        select: { id: true },
+      });
+      if (anyHackathon) return anyHackathon.id;
+    }
 
-    // 3. Create flagship hackathon if table is completely empty
+    // 3. Create hackathon if doesn't exist
+    const title = isFlagship
+      ? "GoHackerz Global Shipathon 2026"
+      : cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
     const created = await prisma.hackathon.create({
       data: {
         slug: cleanSlug || "shipathon-2026",
-        title: "GoHackerz Global Shipathon 2026",
-        tagline: "Build with Edge & AI. Ship in 48 hours.",
-        description: "The premier hackathon for the builders who ship.",
+        title: title || "GoHackerz Hackathon",
+        tagline: isFlagship ? "Build with Edge & AI. Ship in 48 hours." : "Official GoHackerz Hackathon Arena",
+        description: isFlagship ? "The premier hackathon for the builders who ship." : "Official event instance.",
         status: "ACTIVE",
-        startDate: new Date("2026-10-10T00:00:00Z"),
-        endDate: new Date("2026-10-12T23:59:59Z"),
-        submissionDeadline: new Date("2026-10-12T20:00:00Z"),
-        prizePool: "Cash Grants + Trophy + Cloud Credits",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 48 * 3600 * 1000),
+        submissionDeadline: new Date(Date.now() + 48 * 3600 * 1000),
+        prizePool: "$10,000 Cash Grants",
         tracks: [],
         rules: [],
       },
@@ -280,12 +298,8 @@ export async function ensureHackathonInDb(hackathonIdOrSlug?: string): Promise<s
   }
 }
 
-// Cache the real hackathon DB id per process
-let _cachedHackathonDbId: string | null = null;
 export async function getHackathonDbId(hackathonIdOrSlug?: string): Promise<string> {
-  if (_cachedHackathonDbId && !hackathonIdOrSlug) return _cachedHackathonDbId;
   const id = await ensureHackathonInDb(hackathonIdOrSlug);
-  if (!hackathonIdOrSlug) _cachedHackathonDbId = id;
   return id;
 }
 
@@ -610,29 +624,52 @@ export async function getParticipantByTicket(ticketNumber: string): Promise<Hack
 
 /**
  * Get all registered participants for a given hackathon.
- * Queries Postgres/Supabase DB first and merges with disk and in-memory caches.
+ * Queries Postgres/Supabase DB first and merges with disk and in-memory caches,
+ * strictly filtering so only participants of the requested hackathon are returned.
  */
 export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): Promise<HackathonParticipant[]> {
   const map = new Map<string, HackathonParticipant>();
   const allSubsMap = new Map<string, HackathonSubmission>();
+
+  const target = (hackathonIdOrSlug || "shipathon-2026").trim();
+  const cleanSlug = target.replace(/^gh-/, "");
+  const isFlagship = cleanSlug === "shipathon-2026" || cleanSlug === "shipathon" || target === "active" || target === "current";
+
+  function matchesHackathon(pHackId?: string | null): boolean {
+    if (!pHackId) return isFlagship;
+    const cleanP = pHackId.replace(/^gh-/, "").toLowerCase();
+    if (isFlagship) {
+      return cleanP === "shipathon-2026" || cleanP === "shipathon" || cleanP === "active" || cleanP === "current";
+    }
+    return cleanP === cleanSlug.toLowerCase();
+  }
 
   // 1. Fetch from Postgres DB first if available
   if (isDbAvailable()) {
     try {
       await ensureTablesExist();
       const realHackathonId = await getHackathonDbId(hackathonIdOrSlug);
-      const cleanSlug = (hackathonIdOrSlug || "shipathon-2026").replace(/^gh-/, "");
 
-      // 1a. Query all participants
+      // 1a. Query participants for THIS hackathon only
       const dbParts = await prisma.hackathonParticipant.findMany({
-        where: {
-          OR: [
-            { hackathonId: realHackathonId },
-            { hackathon: { slug: cleanSlug } },
-            { hackathonId: "gh-shipathon-2026" },
-            { hackathonId: "shipathon-2026" },
-          ],
-        },
+        where: isFlagship
+          ? {
+              OR: [
+                { hackathonId: realHackathonId },
+                { hackathon: { slug: cleanSlug } },
+                { hackathon: { slug: "shipathon-2026" } },
+                { hackathonId: "gh-shipathon-2026" },
+                { hackathonId: "shipathon-2026" },
+              ],
+            }
+          : {
+              OR: [
+                { hackathonId: realHackathonId },
+                { hackathon: { slug: cleanSlug } },
+                { hackathonId: cleanSlug },
+                { hackathonId: `gh-${cleanSlug}` },
+              ],
+            },
         include: {
           team: {
             include: {
@@ -652,17 +689,27 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
         orderBy: { createdAt: "desc" },
       });
 
-      // 1b. Query all submissions directly from DB to catch team & standalone submissions
+      // 1b. Query submissions for THIS hackathon only
       try {
         const dbAllSubs = await prisma.hackathonSubmission.findMany({
-          where: {
-            OR: [
-              { hackathonId: realHackathonId },
-              { hackathon: { slug: cleanSlug } },
-              { hackathonId: "gh-shipathon-2026" },
-              { hackathonId: "shipathon-2026" },
-            ],
-          },
+          where: isFlagship
+            ? {
+                OR: [
+                  { hackathonId: realHackathonId },
+                  { hackathon: { slug: cleanSlug } },
+                  { hackathon: { slug: "shipathon-2026" } },
+                  { hackathonId: "gh-shipathon-2026" },
+                  { hackathonId: "shipathon-2026" },
+                ],
+              }
+            : {
+                OR: [
+                  { hackathonId: realHackathonId },
+                  { hackathon: { slug: cleanSlug } },
+                  { hackathonId: cleanSlug },
+                  { hackathonId: `gh-${cleanSlug}` },
+                ],
+              },
           include: {
             participant: true,
             team: true,
@@ -798,17 +845,17 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
     }
   }
 
-  // 2. Merge with disk participants (sync)
+  // 2. Merge with disk participants (strictly for this specific hackathon only)
   const diskList = loadPersistedParticipants();
   for (const p of diskList) {
-    if (!map.has(p.ticketNumber.toUpperCase())) {
+    if (matchesHackathon(p.hackathonId) && !map.has(p.ticketNumber.toUpperCase())) {
       map.set(p.ticketNumber.toUpperCase(), p);
     }
   }
 
-  // 3. Merge with in-memory store
+  // 3. Merge with in-memory store (strictly for this specific hackathon only)
   for (const p of memoryStore.participants.values()) {
-    if (!map.has(p.ticketNumber.toUpperCase())) {
+    if (matchesHackathon(p.hackathonId) && !map.has(p.ticketNumber.toUpperCase())) {
       map.set(p.ticketNumber.toUpperCase(), p);
     }
   }
@@ -820,8 +867,9 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
       const match =
         allSubs.find(
           (s) =>
-            s.ticketNumber?.toUpperCase() === p.ticketNumber.toUpperCase() ||
-            (p.teamName && s.teamName && s.teamName.toLowerCase() === p.teamName.toLowerCase())
+            matchesHackathon(s.hackathonId) &&
+            (s.ticketNumber?.toUpperCase() === p.ticketNumber.toUpperCase() ||
+              (p.teamName && s.teamName && s.teamName.toLowerCase() === p.teamName.toLowerCase()))
         ) ||
         allSubsMap.get(`ticket:${p.ticketNumber.toUpperCase()}`) ||
         (p.teamId ? allSubsMap.get(`teamId:${p.teamId}`) : undefined) ||
@@ -1658,43 +1706,86 @@ export async function getCertificateByTicket(ticketNumber: string): Promise<Hack
  * Get all certificates issued for a hackathon.
  */
 export async function getCertificatesForHackathon(hackathonIdOrSlug: string): Promise<HackathonCertificate[]> {
-  const diskList = loadPersistedCertificates();
-  if (diskList.length > 0) return diskList;
+  const target = (hackathonIdOrSlug || "shipathon-2026").trim();
+  const cleanSlug = target.replace(/^gh-/, "");
+  const isFlagship = cleanSlug === "shipathon-2026" || cleanSlug === "shipathon" || target === "active" || target === "current";
+
+  function matchesHackathon(cHackId?: string | null): boolean {
+    if (!cHackId) return isFlagship;
+    const cleanC = cHackId.replace(/^gh-/, "").toLowerCase();
+    if (isFlagship) {
+      return cleanC === "shipathon-2026" || cleanC === "shipathon" || cleanC === "active" || cleanC === "current";
+    }
+    return cleanC === cleanSlug.toLowerCase();
+  }
+
+  const map = new Map<string, HackathonCertificate>();
 
   if (isDbAvailable()) {
     try {
       await ensureTablesExist();
       const realHackathonId = await getHackathonDbId(hackathonIdOrSlug);
       const dbCerts = await prisma.hackathonCertificate.findMany({
-        where: { hackathonId: realHackathonId },
+        where: isFlagship
+          ? {
+              OR: [
+                { hackathonId: realHackathonId },
+                { hackathon: { slug: cleanSlug } },
+                { hackathon: { slug: "shipathon-2026" } },
+              ],
+            }
+          : {
+              OR: [
+                { hackathonId: realHackathonId },
+                { hackathon: { slug: cleanSlug } },
+                { hackathonId: cleanSlug },
+                { hackathonId: `gh-${cleanSlug}` },
+              ],
+            },
         include: { participant: true, hackathon: true },
         orderBy: { issuedAt: "desc" },
       });
-      return dbCerts.map((c) => ({
-        id: c.id,
-        certNumber: c.certNumber,
-        hackathonId: c.hackathon?.slug || c.hackathonId,
-        participantId: c.participantId,
-        ticketNumber: c.participant?.ticketNumber || "",
-        userId: c.userId || undefined,
-        type: c.type as CertificateType,
-        title: c.title,
-        awardTitle: c.awardTitle,
-        recipientName: c.recipientName,
-        roleTitle: c.participant?.roleTitle || undefined,
-        projectName: c.projectName || undefined,
-        teamName: c.teamName || undefined,
-        trackName: c.trackName || undefined,
-        rank: c.rank || undefined,
-        issuedAt: c.issuedAt.toISOString(),
-        verificationUrl: `/verify/${c.certNumber}`,
-      }));
+
+      for (const c of dbCerts) {
+        map.set(c.certNumber, {
+          id: c.id,
+          certNumber: c.certNumber,
+          hackathonId: c.hackathon?.slug || c.hackathonId,
+          participantId: c.participantId,
+          ticketNumber: c.participant?.ticketNumber || "",
+          userId: c.userId || undefined,
+          type: c.type as CertificateType,
+          title: c.title,
+          awardTitle: c.awardTitle,
+          recipientName: c.recipientName,
+          roleTitle: c.participant?.roleTitle || undefined,
+          projectName: c.projectName || undefined,
+          teamName: c.teamName || undefined,
+          trackName: c.trackName || undefined,
+          rank: c.rank || undefined,
+          issuedAt: c.issuedAt.toISOString(),
+          verificationUrl: `/verify/${c.certNumber}`,
+        });
+      }
     } catch (e) {
       console.warn("[getCertificatesForHackathon] DB error:", e);
     }
   }
 
-  return diskList;
+  const diskList = loadPersistedCertificates();
+  for (const c of diskList) {
+    if (matchesHackathon(c.hackathonId) && !map.has(c.certNumber)) {
+      map.set(c.certNumber, c);
+    }
+  }
+
+  for (const c of memoryStore.certificates.values()) {
+    if (matchesHackathon(c.hackathonId) && !map.has(c.certNumber)) {
+      map.set(c.certNumber, c);
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 /**
