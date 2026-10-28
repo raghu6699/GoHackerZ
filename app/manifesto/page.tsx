@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Manifesto",
-  description: "The principles behind GoHackerz and the engineering writing we believe in.",
+  description: "The principles behind RepoRally and the engineering writing we believe in.",
 };
 
 export default function ManifestoPage() {

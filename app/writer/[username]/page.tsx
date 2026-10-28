@@ -22,10 +22,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const author = await getAuthor(username);
-  if (!author) return { title: "Not found — GoHackerz" };
+  if (!author) return { title: "Not found — RepoRally" };
 
   const writerUrl = `${SITE_URL}/writer/${author.username}`;
-  const title = `${author.name} (${author.role} @ ${author.company}) — GoHackerz`;
+  const title = `${author.name} (${author.role} @ ${author.company}) — RepoRally`;
   const description = author.bio;
 
   return {
@@ -37,7 +37,7 @@ export async function generateMetadata({
       title,
       description,
       url: writerUrl,
-      siteName: "GoHackerz",
+      siteName: "RepoRally",
       type: "profile",
     },
     twitter: {

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 /**
- * GoHackerz Hackathons Domain Layer
+ * RepoRally Hackathons Domain Layer
  * Handles events, registrations, team formations, tickets, and lightweight link submissions.
  */
 
@@ -139,10 +139,10 @@ export type HackathonCertificate = {
 export const FLAGSHIP_HACKATHON: HackathonData = {
   id: "gh-shipathon-2026",
   slug: "shipathon-2026",
-  title: "GoHackerz Global Shipathon 2026",
+  title: "RepoRally Global Shipathon 2026",
   tagline: "Build with Edge & AI. Ship in 48 hours. Win Cash Grants & Prestige.",
   description:
-    "The premier hackathon for the builders who ship. Assemble a team or ride solo, build bleeding-edge apps using AI Agents, Edge Infrastructure, and High-Performance Web systems. Every participant earns their official Holographic Hacker Passport.",
+    "The premier hackathon for the builders who ship. Assemble a team or ride solo, build bleeding-edge apps using AI Agents, Edge Infrastructure, and High-Performance Web systems. Every participant earns their official Holographic Builder Passport.",
   status: "ACTIVE",
   startDate: "2026-10-10T00:00:00Z",
   endDate: "2026-10-12T23:59:59Z",
@@ -186,7 +186,7 @@ export const FLAGSHIP_HACKATHON: HackathonData = {
     {
       time: "Day 1 · 18:00 UTC",
       title: "Mentor Office Hours & Team Pitch Check-in",
-      description: "Get feedback on architecture from GoHackerz engineering leads.",
+      description: "Get feedback on architecture from RepoRally engineering leads.",
       status: "upcoming",
     },
     {
@@ -210,9 +210,9 @@ export const FLAGSHIP_HACKATHON: HackathonData = {
   ],
   rules: [
     "All code must be fresh and written during the hackathon window. Open-source libraries and APIs are permitted.",
-    "Teams can consist of 1 to 4 hackers.",
+    "Teams can consist of 1 to 4 builders.",
     "Submissions must include a GitHub repository, working demo or video, and pitch deck (Gamma / PPT / Google Slides).",
-    "Respect the hacker code of conduct: share knowledge, respect fellow builders, and have fun!",
+    "Respect the builder code of conduct: share knowledge, respect fellow builders, and have fun!",
   ],
   sponsors: [
     { name: "Supabase", tier: "Title", perk: "Free Pro tier + Vector DB credits", logoText: "⚡ Supabase" },
@@ -226,8 +226,8 @@ export const FLAGSHIP_HACKATHON: HackathonData = {
       a: "Both! You can hack completely solo or form a team of up to 4 members. You can generate a team invite code to invite friends at any time.",
     },
     {
-      q: "How does the animated Hacker Passport work?",
-      a: "Once you register, you receive an interactive 3D holographic Hacker Passport with your unique Ticket ID and scannable QR code. You can download it as an image, share it to Twitter/X, and show off your team credentials.",
+      q: "How does the animated Builder Passport work?",
+      a: "Once you register, you receive an interactive 3D holographic Builder Passport with your unique Ticket ID and scannable QR code. You can download it as an image, share it to Twitter/X, and show off your team credentials.",
     },
     {
       q: "What do I need to submit when finished?",
@@ -235,7 +235,7 @@ export const FLAGSHIP_HACKATHON: HackathonData = {
     },
     {
       q: "Is there any registration fee?",
-      a: "Zero fee. GoHackerz hackathons are 100% free and open to all passionate developers, students, and engineers worldwide.",
+      a: "Zero fee. RepoRally hackathons are 100% free and open to all passionate developers, students, and engineers worldwide.",
     },
   ],
 };
@@ -247,7 +247,7 @@ const SEED_PARTICIPANTS: HackathonParticipant[] = [
     hackathonId: "gh-shipathon-2026",
     ticketNumber: "GH-2026-X89B",
     name: "Alex Vance",
-    email: "alex@gohackerz.dev",
+    email: "alex@reporally.dev",
     roleTitle: "Lead Systems Architect",
     bio: "Obsessed with CRDTs, Rust edge workers, and distributed state machines.",
     discordHandle: "alexvance#404",
@@ -273,8 +273,8 @@ const SEED_PARTICIPANTS: HackathonParticipant[] = [
       tagline: "Multi-agent swarm that stress-tests, reproduces race conditions, and drafts PR fixes automatically.",
       description:
         "PulseFlow connects to your GitHub repository and spins up a swarm of specialized agent personas (Security Auditor, Performance Benchmark, and Spec Verifier) to review PRs in seconds.",
-      repoUrl: "https://github.com/gohackerz/pulseflow-ai",
-      demoUrl: "https://pulseflow.gohackerz.dev",
+      repoUrl: "https://github.com/reporally/pulseflow-ai",
+      demoUrl: "https://pulseflow.reporally.dev",
       pitchDeckUrl: "https://gamma.app/docs/pulseflow-ai-pitch",
       videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       gammaUrl: "https://gamma.app/docs/pulseflow-ai-pitch",
@@ -313,7 +313,7 @@ const SEED_PARTICIPANTS: HackathonParticipant[] = [
       tagline: "Ultra-fast voice-to-structured-data engine running 100% inside WebAssembly on Edge.",
       description:
         "Transforms long voice memos into actionable Linear tickets and architectural docs with zero cloud latency and total privacy.",
-      repoUrl: "https://github.com/gohackerz/edgewhisper",
+      repoUrl: "https://github.com/reporally/edgewhisper",
       demoUrl: "https://edgewhisper.dev",
       pitchDeckUrl: "https://gamma.app/docs/edgewhisper-deck",
       videoUrl: "https://youtube.com",
@@ -998,7 +998,7 @@ export async function getParticipantByEmail(
   return null;
 }
 
-export async function registerHacker(params: {
+export async function registerBuilder(params: {
   hackathonId: string;
   name: string;
   email: string;
@@ -1020,9 +1020,9 @@ export async function registerHacker(params: {
     id: existing ? existing.id : `part-${Date.now()}`,
     hackathonId: params.hackathonId,
     ticketNumber,
-    name: params.name.trim() || (existing ? existing.name : "Hacker"),
+    name: params.name.trim() || (existing ? existing.name : "Builder"),
     email: params.email.trim().toLowerCase(),
-    roleTitle: params.roleTitle.trim() || (existing ? existing.roleTitle : "Fullstack Hacker"),
+    roleTitle: params.roleTitle.trim() || (existing ? existing.roleTitle : "Fullstack Builder"),
     bio: params.bio?.trim() ?? existing?.bio,
     discordHandle: params.discordHandle?.trim() ?? existing?.discordHandle,
     twitterHandle: params.twitterHandle?.trim() ?? existing?.twitterHandle,

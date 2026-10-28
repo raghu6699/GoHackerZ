@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Learn what GoHackerz is, who we are, and why we publish engineering writing.",
+  description: "Learn what RepoRally is, who we are, and why we publish engineering writing.",
 };
 
 export default function AboutPage() {
@@ -11,7 +11,7 @@ export default function AboutPage() {
       <article className="rounded-3xl border-2 border-ink bg-card p-6 shadow-pop-lg sm:p-10">
         <div className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-purple">About</div>
         <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">
-          GoHackerz publishes the essays that engineering teams actually need.
+          RepoRally publishes the essays that engineering teams actually need.
         </h1>
 
         <p className="mt-6 text-lg leading-relaxed text-muted">
@@ -37,13 +37,13 @@ export default function AboutPage() {
         <div className="mt-10 rounded-2xl border-2 border-ink bg-[#f3f0ff] dark:bg-[#1a1533] p-6 text-[#1A1440] dark:text-white shadow-pop-sm">
           <h2 className="text-2xl font-bold">The Team</h2>
           <p className="mt-3 text-base sm:text-lg leading-relaxed text-body dark:text-[#E3DEFB]">
-            GoHackerz is driven by a passionate team of techies obsessed with craft, software architecture, and engineering excellence. We are dedicated to bringing you the best content possible—deep-dives, post-mortems, and technical breakdowns—to make everyone fall in love with tech.
+            RepoRally is driven by a passionate team of techies obsessed with craft, software architecture, and engineering excellence. We are dedicated to bringing you the best content possible—deep-dives, post-mortems, and technical breakdowns—to make everyone fall in love with tech.
           </p>
         </div>
 
         <div className="mt-8 rounded-2xl border-2 border-ink bg-card p-5">
           <h2 className="text-2xl font-bold">Contact</h2>
-          <p className="mt-3 text-muted">hello@gohackerz.com</p>
+          <p className="mt-3 text-muted">hello@reporally.com</p>
           <p className="mt-2 text-muted">For pitches, partnerships, and corrections.</p>
         </div>
       </article>

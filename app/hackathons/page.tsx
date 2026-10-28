@@ -22,9 +22,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Hackathons Directory — GoHackerz",
+  title: "Hackathons Directory — RepoRally",
   description:
-    "Explore and compete in premier engineering hackathons on GoHackerz. Build bleeding-edge software, earn your animated Holographic Hacker Passport, and win cash prizes.",
+    "Explore and compete in premier engineering hackathons on RepoRally. Build bleeding-edge software, earn your animated Holographic Builder Passport, and win cash prizes.",
 };
 
 export default async function HackathonsPage() {
@@ -57,7 +57,7 @@ export default async function HackathonsPage() {
               <span>
                 {liveCount > 0
                   ? `⚡ ${liveCount} LIVE SPRINT${liveCount > 1 ? "S" : ""} ACTIVE IN ARENA`
-                  : "OFFICIAL GOHACKERZ ARENA"}
+                  : "OFFICIAL REPORALLY ARENA"}
               </span>
             </div>
 
@@ -70,7 +70,7 @@ export default async function HackathonsPage() {
 
             <p className="text-lg sm:text-xl text-[#D4CEF5] leading-relaxed max-w-2xl">
               Welcome to the premier platform for software engineers who ship. Form a squad, earn
-              your 3D holographic Hacker Passport, submit lightweight project links, and compete in
+              your 3D holographic Builder Passport, submit lightweight project links, and compete in
               flagship and partner hackathons.
             </p>
 
@@ -123,7 +123,7 @@ export default async function HackathonsPage() {
                   All Hackathon Arenas
                 </h2>
                 <p className="text-xs sm:text-sm text-muted">
-                  Discover active sprints, partner hackathons, and past showcases on GoHackerz
+                  Discover active sprints, partner hackathons, and past showcases on RepoRally
                 </p>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default async function HackathonsPage() {
                             ? "● LIVE SPRINT"
                             : "📅 UPCOMING"}
                         </span>
-                        {sponsorName && sponsorName !== "GoHackerz" && (
+                        {sponsorName && sponsorName !== "RepoRally" && (
                           <span className="px-2 py-0.5 bg-[#141030] text-[#ded8ff] font-mono text-[11px] font-bold rounded-md border border-purple/30">
                             Partner: {sponsorName}
                           </span>
@@ -299,7 +299,7 @@ export default async function HackathonsPage() {
               </div>
               <h3 className="font-bold text-lg text-ink">Community Credential</h3>
               <p className="text-sm text-body leading-relaxed">
-                Winners and shippers receive permanent verified badges on their GoHackerz profile,
+                Winners and shippers receive permanent verified badges on their RepoRally profile,
                 plus direct introductions to sponsors and dev funds.
               </p>
             </div>

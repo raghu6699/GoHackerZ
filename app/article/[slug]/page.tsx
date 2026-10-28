@@ -31,7 +31,7 @@ import { DeleteArticleButton } from "@/components/DeleteArticleButton";
 import { SITE_URL } from "@/lib/site";
 
 function formatMetaTitle(rawTitle: string): string {
-  const brand = " — GoHackerz";
+  const brand = " — RepoRally";
   const clean = (rawTitle || "").trim();
   if (clean.length + brand.length <= 60) {
     return `${clean}${brand}`;
@@ -44,7 +44,7 @@ function formatMetaTitle(rawTitle: string): string {
 
 function formatMetaDescription(rawDek: string): string {
   const clean = (rawDek || "").trim().replace(/\s+/g, " ");
-  if (!clean) return "Honest engineering essays and post-mortems on GoHackerz.";
+  if (!clean) return "Honest engineering essays and post-mortems on RepoRally.";
   if (clean.length <= 120) return clean;
   return `${clean.slice(0, 117).replace(/\s+\S*$/, "")}…`;
 }
@@ -56,7 +56,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const article = await getArticle(slug);
-  if (!article) return { title: "Not found — GoHackerz" };
+  if (!article) return { title: "Not found — RepoRally" };
 
   const ogImageUrl = `${SITE_URL}/api/og/cover?slug=${encodeURIComponent(article.slug)}`;
 
@@ -77,7 +77,7 @@ export async function generateMetadata({
       title,
       description,
       url: articleUrl,
-      siteName: "GoHackerz",
+      siteName: "RepoRally",
       type: "article",
       publishedTime: new Date(article.publishedAt).toISOString(),
       images: [
@@ -146,7 +146,7 @@ export default async function ArticlePage({
       },
       publisher: {
         "@type": "Organization",
-        name: "GoHackerz",
+        name: "RepoRally",
         url: SITE_URL,
       },
     },

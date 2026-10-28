@@ -5,8 +5,8 @@ import { SearchResultsView } from "@/components/SearchResultsView";
 import type { Author, Topic } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "Search — GoHackerz",
-  description: "Search essays, technical topics, and engineering writers across GoHackerz.",
+  title: "Search — RepoRally",
+  description: "Search essays, technical topics, and engineering writers across RepoRally.",
 };
 
 const SUGGESTED_SEARCHES = [
@@ -39,7 +39,7 @@ export default async function SearchPage({
       <header className="mb-8">
         <h1 className="text-[34px] sm:text-[40px] font-bold mb-3">Search</h1>
         <p className="text-muted text-base">
-          Find topics, in-depth essays, and engineering writers across GoHackerz.
+          Find topics, in-depth essays, and engineering writers across RepoRally.
         </p>
       </header>
 
@@ -92,7 +92,7 @@ export default async function SearchPage({
       ) : (
         <div className="rounded-3xl border-2 border-ink bg-card p-8 sm:p-12 text-center shadow-pop max-w-xl mx-auto my-6">
           <div className="text-4xl mb-3">💡</div>
-          <h2 className="text-xl font-bold mb-2">Search across GoHackerz</h2>
+          <h2 className="text-xl font-bold mb-2">Search across RepoRally</h2>
           <p className="text-muted text-sm mb-6">
             Type a keyword above to find engineering topics like AI, databases, systems architecture, or individual writers and essays.
           </p>

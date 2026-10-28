@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Hackathon Admin Control & Awards Studio | GoHackerz",
+  title: "Hackathon Admin Control & Awards Studio | RepoRally",
 };
 
 export default async function HackathonAdminPage({ params, searchParams }: AdminPageProps) {
@@ -46,7 +46,7 @@ export default async function HackathonAdminPage({ params, searchParams }: Admin
         </h1>
         <p className="text-sm text-body max-w-md mb-6 leading-relaxed">
           The Admin & Judging Studio for <strong>{hackathon.title}</strong> is restricted to verified event organizers (
-          <code className="text-purple font-mono">{hackathon.hostEmail || "GoHackerz Directors"}</code>).
+          <code className="text-purple font-mono">{hackathon.hostEmail || "RepoRally Directors"}</code>).
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link

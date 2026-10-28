@@ -3,8 +3,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 
-const connectionString =
-  "postgresql://postgres.wyqxfarmyygwzejvswwx:GoHackerZ%402026@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres";
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL is not set");
 
 const pool = new Pool({ connectionString, max: 1 });
 const adapter = new PrismaPg(pool);

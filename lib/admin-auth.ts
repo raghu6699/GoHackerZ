@@ -1,11 +1,11 @@
 /**
- * Centralized Admin Verification for GoHackerz
+ * Centralized Admin Verification for RepoRally
  */
 
 export const DEFAULT_ADMIN_EMAILS = [
   "ud.ai.journey@gmail.com",
-  "raghu@gohackerz.com",
-  "admin@gohackerz.com",
+  "raghu@reporally.com",
+  "admin@reporally.com",
 ];
 
 export function getAdminEmails(): string[] {

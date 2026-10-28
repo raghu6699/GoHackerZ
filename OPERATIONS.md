@@ -1,4 +1,4 @@
-# GoHackerz — Operations Blueprint
+# RepoRally — Operations Blueprint
 
 *Replicating exactly how HackerNoon operates, feature by feature.*
 
@@ -16,7 +16,7 @@ HackerNoon is not just software. It's **five interlocking operations**:
 4. **Monetization Machine** — ads, sponsorships, and "Brand as Author" business publishing.
 5. **Trust & Safety** — plagiarism/AI screening, moderation, takedown handling.
 
-Below: what HackerNoon does in each, and exactly how GoHackerz replicates it.
+Below: what HackerNoon does in each, and exactly how RepoRally replicates it.
 
 ---
 
@@ -30,7 +30,7 @@ Below: what HackerNoon does in each, and exactly how GoHackerz replicates it.
 - Established writers earn **trust tiers**: fewer review gates, faster turnaround.
 - Stories are never paywalled; editors optimize headlines for search intent.
 
-### GoHackerz replication (build these)
+### RepoRally replication (build these)
 
 | Operation | Feature to build | Where |
 |---|---|---|
@@ -58,7 +58,7 @@ Below: what HackerNoon does in each, and exactly how GoHackerz replicates it.
 - Direct line to editors via dashboard notifications.
 - Writing contests/monthly prompts to keep supply flowing.
 
-### GoHackerz replication
+### RepoRally replication
 
 | Operation | Feature to build |
 |---|---|
@@ -66,7 +66,7 @@ Below: what HackerNoon does in each, and exactly how GoHackerz replicates it.
 | Portfolio profile | `/writer/[username]` (already scaffolded) + add lifetime stats: views, claps, streak |
 | Notifications | In-app + email: "your story moved to In Review", "published", "editor left feedback" |
 | Leaderboards | `/top-writers` computed weekly from denormalized counters |
-| Contests/Prompts | Admin-created "prompt" topics (e.g., #gohackerz-ai-contest); tagged stories enter the contest; winner banner on home |
+| Contests/Prompts | Admin-created "prompt" topics (e.g., #reporally-ai-contest); tagged stories enter the contest; winner banner on home |
 | Writer dashboard | `/dashboard` — my drafts, my published, per-story analytics, submission status timeline |
 
 ---
@@ -81,7 +81,7 @@ Below: what HackerNoon does in each, and exactly how GoHackerz replicates it.
 - **Homepage programming:** featured headliner, trending, fresh drops — refreshed continuously.
 - **Evergreen recycling:** old stories resurfaced via topic pages and "from the archive" slots.
 
-### GoHackerz replication
+### RepoRally replication
 
 | Operation | Feature to build |
 |---|---|
@@ -103,7 +103,7 @@ Below: what HackerNoon does in each, and exactly how GoHackerz replicates it.
 3. **Sponsored topics/contests:** brands sponsor a tag or writing contest.
 4. **Newsletter sponsorships:** paid slots in the daily digest.
 
-### GoHackerz replication
+### RepoRally replication
 
 | Revenue stream | Feature to build |
 |---|---|
@@ -141,7 +141,7 @@ First-party event pipeline backing the future `/dashboard`:
 - Community reporting + editor takedown powers.
 - Contributor agreement at signup (licensing terms).
 
-### GoHackerz replication
+### RepoRally replication
 
 | Operation | Feature to build |
 |---|---|

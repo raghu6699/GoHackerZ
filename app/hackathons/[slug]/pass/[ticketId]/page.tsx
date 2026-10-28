@@ -19,11 +19,11 @@ export async function generateMetadata({
     getHackathonBySlug(slug),
   ]);
   const title = participant?.name
-    ? `${participant.name}'s Hacker Passport #${participant.ticketNumber} — GoHackerz`
-    : `Hacker Passport #${ticketId.toUpperCase()} — GoHackerz`;
+    ? `${participant.name}'s Builder Passport #${participant.ticketNumber} — RepoRally`
+    : `Builder Passport #${ticketId.toUpperCase()} — RepoRally`;
   const description = participant?.name
-    ? `Official verified Hacker Passport for ${participant.name} (${participant.roleTitle}) on ${hackathon?.title || "GoHackerz Hackathon"}.`
-    : `Official verified Hacker Passport #${ticketId.toUpperCase()} on ${hackathon?.title || "GoHackerz Hackathon"}.`;
+    ? `Official verified Builder Passport for ${participant.name} (${participant.roleTitle}) on ${hackathon?.title || "RepoRally Hackathon"}.`
+    : `Official verified Builder Passport #${ticketId.toUpperCase()} on ${hackathon?.title || "RepoRally Hackathon"}.`;
 
   return {
     title,
@@ -35,7 +35,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function HackerPassportPage({
+export default async function BuilderPassportPage({
   params,
 }: {
   params: Promise<{ slug: string; ticketId: string }>;
@@ -85,7 +85,7 @@ export default async function HackerPassportPage({
                   Ticket #{ticketId.toUpperCase()} Belongs to a Different Event
                 </h1>
                 <p className="text-sm sm:text-base text-muted leading-relaxed">
-                  This Hacker Passport is registered for <strong className="text-ink dark:text-white">{participant.hackathonId || "another hackathon"}</strong>, not for <strong className="text-ink dark:text-white">{hackathon?.title || slug}</strong>. Passports are isolated to each hackathon.
+                  This Builder Passport is registered for <strong className="text-ink dark:text-white">{participant.hackathonId || "another hackathon"}</strong>, not for <strong className="text-ink dark:text-white">{hackathon?.title || slug}</strong>. Passports are isolated to each hackathon.
                 </p>
               </div>
 
@@ -148,7 +148,7 @@ export default async function HackerPassportPage({
         {/* Client component: resolves real name from localStorage and handles isOwner logic */}
         <PassPortPageClient
           serverParticipant={participant}
-          hackathonTitle={hackathon?.title || "GoHackerz Hackathon"}
+          hackathonTitle={hackathon?.title || "RepoRally Hackathon"}
           slug={slug}
           ticketId={ticketId}
         />

@@ -1,4 +1,4 @@
-# GoHackerz — Platform Architecture
+# RepoRally — Platform Architecture
 
 *A HackerNoon-style tech publishing platform.*
 
@@ -26,7 +26,7 @@ HackerNoon is a **contributor-driven tech publication** — not a traditional ne
 
 ---
 
-## 2. Recommended architecture for GoHackerz
+## 2. Recommended architecture for RepoRally
 
 ```
                         ┌──────────────────────────────┐

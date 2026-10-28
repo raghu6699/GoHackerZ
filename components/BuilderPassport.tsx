@@ -23,7 +23,7 @@ import type { HackathonParticipant, HackathonTheme } from "@/lib/hackathons";
 /* ------------------------------------------------------------------ */
 /*  Props                                                               */
 /* ------------------------------------------------------------------ */
-interface HackerPassportProps {
+interface BuilderPassportProps {
   participant: HackathonParticipant;
   hackathonTitle: string;
   isOwner: boolean;
@@ -177,16 +177,16 @@ export function normalizeTheme(theme?: string): ThemeKey {
 }
 
 /* ================================================================== */
-/*  Main Hacker Boarding Pass Component                               */
+/*  Main Builder Boarding Pass Component                               */
 /* ================================================================== */
-export function HackerPassport({
+export function BuilderPassport({
   participant,
   hackathonTitle,
   isOwner,
   slug,
   ticketId,
   onThemeChange,
-}: HackerPassportProps) {
+}: BuilderPassportProps) {
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTheme, setActiveTheme] = useState<ThemeKey>(
@@ -223,7 +223,7 @@ export function HackerPassport({
 
   const passportUrl = useMemo(() => {
     const origin =
-      typeof window !== "undefined" ? window.location.origin : "https://gohackerz.com";
+      typeof window !== "undefined" ? window.location.origin : "https://reporally.com";
     return `${origin}/hackathons/${activeSlug}/pass/${activeTicketId}`;
   }, [activeSlug, activeTicketId]);
 
@@ -247,7 +247,7 @@ export function HackerPassport({
 
   const handleShareX = () => {
     const text = encodeURIComponent(
-      `⚡ BOARDING PASS CONFIRMED: Heading to ${hackathonTitle} on @GoHackerz!\n\n🎫 Ticket: #${activeTicketId}\n🚀 Track / Role: ${
+      `⚡ BOARDING PASS CONFIRMED: Heading to ${hackathonTitle} on @reporally!\n\n🎫 Ticket: #${activeTicketId}\n🚀 Track / Role: ${
         participant.roleTitle || "Fullstack & AI Engineer"
       }\n👥 Squad: ${
         participant.teamName || "Solo Competitor"
@@ -280,7 +280,7 @@ export function HackerPassport({
 <html>
 <head>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>GoHackerz Boarding Pass</title>
+  <title>RepoRally Boarding Pass</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #08090c; min-height: 100vh; display: flex; flex-direction: column;
@@ -352,9 +352,9 @@ export function HackerPassport({
           try {
             if (!result) throw new Error("Could not render the complete boarding pass. Please try again.");
             const blob = await (await fetch(result)).blob();
-            const file = new File([blob], `GoHackerz-BoardingPass-${activeTicketId}.png`, { type: "image/png" });
+            const file = new File([blob], `RepoRally-BoardingPass-${activeTicketId}.png`, { type: "image/png" });
             if (navigator.canShare?.({ files: [file] })) {
-              await navigator.share({ files: [file], title: "GoHackerz Boarding Pass" });
+              await navigator.share({ files: [file], title: "RepoRally Boarding Pass" });
             } else {
               alert("Pop-up blocked. Please allow pop-ups for this site, then try again.");
             }
@@ -386,7 +386,7 @@ export function HackerPassport({
       const a = document.createElement("a");
       a.style.display = "none";
       a.href = blobUrl;
-      a.download = `GoHackerz-BoardingPass-${activeTicketId}.png`;
+      a.download = `RepoRally-BoardingPass-${activeTicketId}.png`;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -474,7 +474,7 @@ export function HackerPassport({
                 </div>
                 <div>
                   <span className="font-mono text-[9px] sm:text-[10px] tracking-[0.25em] text-white/50 uppercase font-black block">
-                    GOHACKERZ AIRWAYS // SPACEPORT
+                    REPORALLY AIRWAYS // SPACEPORT
                   </span>
                   <span className="font-mono text-sm sm:text-base font-extrabold text-white tracking-wide">
                     {dynamicEventTitle.toUpperCase()}

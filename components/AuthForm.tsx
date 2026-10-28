@@ -243,7 +243,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         {done ? (
           <div className="text-center py-6">
             <div className="text-[56px] mb-3">⚡</div>
-            <h1 className="text-[26px] font-bold mb-2">You&apos;re into GoHackerz! 🎉</h1>
+            <h1 className="text-[26px] font-bold mb-2">You&apos;re into RepoRally! 🎉</h1>
             <p className="text-muted text-[15px] mb-6">
               Your account details have been saved and activated. A welcome email is on its way to{" "}
               <strong className="text-ink">{typedEmail}</strong>.
@@ -361,7 +361,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
             </form>
 
             <p className="text-center text-[14px] text-muted mt-6">
-              {isSignup ? "Already have an account? " : "New to GoHackerz? "}
+              {isSignup ? "Already have an account? " : "New to RepoRally? "}
               <Link
                 href={isSignup ? "/signin" : "/signup"}
                 className="font-semibold text-purple hover:underline"

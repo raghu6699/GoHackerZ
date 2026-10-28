@@ -22,7 +22,7 @@ export interface SendResult {
 
 function getFormattedMailFrom(): string {
   const raw = (process.env.MAIL_FROM ?? "").trim();
-  if (!raw) return "GoHackerz <onboarding@resend.dev>";
+  if (!raw) return "RepoRally <onboarding@resend.dev>";
   if (raw.includes("<") && !raw.endsWith(">")) {
     return `${raw}>`;
   }
@@ -60,7 +60,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
           subject: msg.subject,
           html: msg.html,
           text,
-          reply_to: "hello@gohackerz.com",
+          reply_to: "hello@reporally.com",
         }),
       });
 
@@ -69,7 +69,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
       // If domain was not verified, automatically retry with onboarding@resend.dev
       if (!res.ok && data?.message?.toLowerCase()?.includes("domain")) {
         console.warn("[Mailer] Custom domain unverified. Retrying via onboarding@resend.dev...");
-        from = "GoHackerz <onboarding@resend.dev>";
+        from = "RepoRally <onboarding@resend.dev>";
         res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -171,10 +171,10 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
 
 const shell = (title: string, body: string) => `
   <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px">
-    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#7c5cff">GOHACKERZ</div>
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#7c5cff">REPORALLY</div>
     <h1 style="font-size:22px;margin:12px 0">${title}</h1>
     ${body}
-    <p style="color:#8b84ad;font-size:12px;margin-top:28px">You're receiving this because someone subscribed this address at gohackerz.com.</p>
+    <p style="color:#8b84ad;font-size:12px;margin-top:28px">You're receiving this because someone subscribed this address at reporally.com.</p>
   </div>`;
 
 export function confirmEmail(to: string, token: string): EmailMessage {
@@ -182,7 +182,7 @@ export function confirmEmail(to: string, token: string): EmailMessage {
   const url = `${site}/api/newsletter/confirm?token=${encodeURIComponent(token)}`;
   return {
     to,
-    subject: "Confirm your GoHackerz subscription",
+    subject: "Confirm your RepoRally subscription",
     html: shell(
       "One click and you're in",
       `<p>Confirm your subscription to get the best engineering essays, teardowns and post-mortems.</p>
@@ -196,7 +196,7 @@ export function welcomeEmail(to: string): EmailMessage {
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   return {
     to,
-    subject: "You're in — welcome to GoHackerz",
+    subject: "You're in — welcome to RepoRally",
     html: shell(
       "Welcome aboard ⚡",
       `<p>You'll get new essays on engineering, systems and building software — no fluff, no growth-hack listicles.</p>
@@ -210,10 +210,10 @@ export function articleApprovedEmail(to: string, title: string, slug: string): E
   const url = `${site}/article/${slug}`;
   return {
     to,
-    subject: `Your article "${title}" is live on GoHackerz!`,
+    subject: `Your article "${title}" is live on RepoRally!`,
     html: shell(
       "Your article is published! 🎉",
-      `<p>Great news! Your submission <strong>"${title}"</strong> has been reviewed and published to GoHackerz.</p>
+      `<p>Great news! Your submission <strong>"${title}"</strong> has been reviewed and published to RepoRally.</p>
        <p><a href="${url}" style="display:inline-block;background:#7c5cff;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:700">View live article →</a></p>`
     ),
   };
@@ -225,7 +225,7 @@ export function articleRejectedEmail(to: string, title: string, feedback: string
     subject: `Editorial update on "${title}"`,
     html: shell(
       "Editorial review notes",
-      `<p>Thank you for submitting <strong>"${title}"</strong> to GoHackerz.</p>
+      `<p>Thank you for submitting <strong>"${title}"</strong> to RepoRally.</p>
        <p>Our editorial team reviewed your post and has suggested some updates before it can be published:</p>
        <blockquote style="border-left:4px solid #ff7b9c;padding-left:12px;margin:16px 0;color:#333;background:#fff5f7;padding-top:8px;padding-bottom:8px">
          ${feedback}
@@ -238,10 +238,10 @@ export function articleRejectedEmail(to: string, title: string, feedback: string
 export function passwordResetEmail(to: string, resetUrl: string): EmailMessage {
   return {
     to,
-    subject: "Reset your GoHackerz password",
+    subject: "Reset your RepoRally password",
     html: shell(
       "Reset your password",
-      `<p>We received a request to reset your GoHackerz password. Click the button below to set a new password:</p>
+      `<p>We received a request to reset your RepoRally password. Click the button below to set a new password:</p>
        <p><a href="${resetUrl}" style="display:inline-block;background:#7c5cff;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:700">Reset Password</a></p>
        <p style="font-size:12px;color:#8b84ad;margin-top:16px">Or paste this link into your browser: ${resetUrl}</p>
        <p style="font-size:12px;color:#8b84ad">If you didn't request a password reset, you can safely ignore this email.</p>`
@@ -252,17 +252,17 @@ export function passwordResetEmail(to: string, resetUrl: string): EmailMessage {
 export function accountConfirmationEmail(to: string, confirmUrl: string): EmailMessage {
   return {
     to,
-    subject: "Confirm your GoHackerz account",
+    subject: "Confirm your RepoRally account",
     html: shell(
       "Confirm your account ⚡",
-      `<p>Welcome to GoHackerz! Click the button below to confirm your email and activate your account:</p>
+      `<p>Welcome to RepoRally! Click the button below to confirm your email and activate your account:</p>
        <p><a href="${confirmUrl}" style="display:inline-block;background:#7c5cff;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:700">Confirm & Activate Account →</a></p>
        <p style="font-size:12px;color:#8b84ad;margin-top:16px">Or copy and paste this link into your browser:<br/>${confirmUrl}</p>`
     ),
   };
 }
 
-export function hackerPassportEmail(params: {
+export function builderPassportEmail(params: {
   to: string;
   name: string;
   ticketNumber: string;
@@ -282,7 +282,7 @@ export function hackerPassportEmail(params: {
   const body = `
     <div style="background-color:#0A071B;border:2px solid #7c5cff;border-radius:20px;padding:24px;color:#ffffff;margin:20px 0;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
       <div style="border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:#C6FF3D;text-transform:uppercase;">OFFICIAL HACKER CREDENTIAL</span>
+        <span style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:#C6FF3D;text-transform:uppercase;">OFFICIAL BUILDER CREDENTIAL</span>
         <span style="font-family:monospace;font-size:14px;font-weight:900;color:#C6FF3D;background:#1A1440;padding:2px 8px;border-radius:4px;border:1px solid rgba(198,255,61,0.4);">#${params.ticketNumber}</span>
       </div>
 
@@ -315,7 +315,7 @@ export function hackerPassportEmail(params: {
       </div>
 
       <div style="text-align:center;">
-        <a href="${passUrl}" style="display:inline-block;background:#C6FF3D;color:#0A071B;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:900;font-size:14px;font-family:monospace;letter-spacing:0.5px;">VIEW 3D HACKER PASSPORT →</a>
+        <a href="${passUrl}" style="display:inline-block;background:#C6FF3D;color:#0A071B;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:900;font-size:14px;font-family:monospace;letter-spacing:0.5px;">VIEW 3D BUILDER PASSPORT →</a>
       </div>
     </div>
 
@@ -332,7 +332,7 @@ export function hackerPassportEmail(params: {
 
   return {
     to: params.to,
-    subject: `⚡ Your Hacker Passport: #${params.ticketNumber} — ${params.hackathonTitle}`,
+    subject: `⚡ Your Builder Passport: #${params.ticketNumber} — ${params.hackathonTitle}`,
     html: shell(`Welcome to the Arena, ${params.name}! 🚀`, body),
   };
 }
@@ -438,7 +438,7 @@ export function hostProposalAdminNotificationEmail(proposal: {
       }
 
       <div style="text-align:center;padding-top:8px;">
-        <a href="mailto:${proposal.contactEmail}?subject=Re:%20GoHackerz%20Hackathon%20Partnership%20-%20${encodeURIComponent(
+        <a href="mailto:${proposal.contactEmail}?subject=Re:%20RepoRally%20Hackathon%20Partnership%20-%20${encodeURIComponent(
     proposal.hackathonTitle
   )}" style="display:inline-block;background:#C6FF3D;color:#0A071B;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:900;font-size:13px;font-family:monospace;">REPLY TO ORGANIZER →</a>
       </div>
@@ -471,13 +471,13 @@ export function hostProposalReceiptEmail(proposal: {
 
       <h2 style="font-size:22px;margin:0 0 6px 0;color:#ffffff;font-weight:800;">Hi ${proposal.contactName},</h2>
       <p style="font-size:14px;color:#D4CEF5;line-height:1.6;margin:0 0 16px 0;">
-        Thank you for submitting your proposal to host <strong>${proposal.hackathonTitle}</strong> on GoHackerz! We have received your application and our events team is reviewing the details.
+        Thank you for submitting your proposal to host <strong>${proposal.hackathonTitle}</strong> on RepoRally! We have received your application and our events team is reviewing the details.
       </p>
 
       <div style="background:#130E29;border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.1);margin-bottom:20px;">
-        <h3 style="font-size:14px;color:#C6FF3D;margin:0 0 10px 0;font-family:monospace;text-transform:uppercase;">What GoHackerz provides your Hackathon:</h3>
+        <h3 style="font-size:14px;color:#C6FF3D;margin:0 0 10px 0;font-family:monospace;text-transform:uppercase;">What RepoRally provides your Hackathon:</h3>
         <ul style="padding-left:20px;margin:0;color:#ded8ff;font-size:13px;line-height:1.6;">
-          <li><strong>3D Holographic Hacker Passports:</strong> Customized animated tickets with tamper-proof QR check-in codes.</li>
+          <li><strong>3D Holographic Builder Passports:</strong> Customized animated tickets with tamper-proof QR check-in codes.</li>
           <li><strong>Lightweight Link Submissions:</strong> Zero heavy uploads — supports GitHub repos, live demos, and Gamma/Loom presentations.</li>
           <li><strong>Automated Verifiable Certificates:</strong> Instant cryptographically-signed digital credentials with public verification.</li>
           <li><strong>Built-in Admin & Judging Studio:</strong> Track management, team formations, and score evaluations.</li>
@@ -485,7 +485,7 @@ export function hostProposalReceiptEmail(proposal: {
       </div>
 
       <p style="font-size:13px;color:#8B84AD;line-height:1.5;">
-        A GoHackerz Partner Specialist will reach out to you at <code style="color:#C6FF3D;font-family:monospace;">${proposal.contactEmail}</code> within 24–48 business hours to discuss timeline, tracks, and platform onboarding.
+        A RepoRally Partner Specialist will reach out to you at <code style="color:#C6FF3D;font-family:monospace;">${proposal.contactEmail}</code> within 24–48 business hours to discuss timeline, tracks, and platform onboarding.
       </p>
     </div>
   `;
@@ -511,7 +511,7 @@ export function hostProposalApprovedEmail(params: {
   hackathonUrl?: string;
   adminStudioUrl?: string;
 }): EmailMessage {
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://gohackerz.com";
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://reporally.com";
   const hackathonUrl = params.hackathonUrl || `${origin}/hackathons/${params.hackathonSlug}`;
   const registerUrl = `${origin}/hackathons/${params.hackathonSlug}/register`;
   const adminStudioUrl =
@@ -527,7 +527,7 @@ export function hostProposalApprovedEmail(params: {
 
       <h2 style="font-size:24px;margin:0 0 6px 0;color:#ffffff;font-weight:800;">Congratulations, ${params.contactName}!</h2>
       <p style="font-size:14px;color:#D4CEF5;line-height:1.6;margin:0 0 18px 0;">
-        Your proposal for <strong>${params.hackathonTitle}</strong> (${params.orgName}) has been approved by the GoHackerz Event Committee. Your official event arena and director studio have been provisioned and are ready for launch!
+        Your proposal for <strong>${params.hackathonTitle}</strong> (${params.orgName}) has been approved by the RepoRally Event Committee. Your official event arena and director studio have been provisioned and are ready for launch!
       </p>
 
       <div style="background:#130E29;border-radius:14px;padding:18px;border:1px solid rgba(255,255,255,0.15);margin-bottom:20px;">
@@ -566,7 +566,7 @@ export function hostProposalApprovedEmail(params: {
 
   return {
     to: params.contactEmail,
-    subject: `🚀 Approved: Your Hackathon "${params.hackathonTitle}" is Ready on GoHackerz! [Ref: ${params.refNumber}]`,
+    subject: `🚀 Approved: Your Hackathon "${params.hackathonTitle}" is Ready on RepoRally! [Ref: ${params.refNumber}]`,
     html: shell(`Congratulations! ${params.hackathonTitle} is Approved 🚀`, body),
   };
 }

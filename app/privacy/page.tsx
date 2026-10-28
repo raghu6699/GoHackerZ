@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Shield, Eye, Lock, Database, UserCheck, Mail, ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — GoHackerz",
-  description: "Learn how GoHackerz collects, uses, and protects your personal information and developer data.",
+  title: "Privacy Policy — RepoRally",
+  description: "Learn how RepoRally collects, uses, and protects your personal information and developer data.",
 };
 
 export default function PrivacyPage() {
@@ -30,7 +30,7 @@ export default function PrivacyPage() {
         </p>
 
         <p className="mt-4 text-lg leading-relaxed text-muted">
-          At GoHackerz, we respect the privacy of developers, writers, and hackers. We believe in privacy by design, minimal data collection, and absolute transparency about how your data is handled.
+          At RepoRally, we respect the privacy of developers, writers, and builders. We believe in privacy by design, minimal data collection, and absolute transparency about how your data is handled.
         </p>
 
         {/* Highlight Grid */}
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
             <div className="p-4 rounded-xl border-2 border-ink/15 bg-bg/50 dark:bg-[#1a1533]">
               <h3 className="font-bold text-ink dark:text-white text-base">Content & Submissions</h3>
               <p className="text-sm text-muted mt-1 leading-relaxed">
-                Articles, technical breakdowns, draft posts, guestbook signatures, hackathon tickets, and comments you publish or submit to GoHackerz are stored securely on our database servers.
+                Articles, technical breakdowns, draft posts, guestbook signatures, hackathon tickets, and comments you publish or submit to RepoRally are stored securely on our database servers.
               </p>
             </div>
 
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
             <div className="flex gap-3">
               <span className="font-mono font-bold text-purple">01.</span>
               <div>
-                <strong className="text-ink dark:text-white">Platform Operation:</strong> Delivering core services, rendering writer profiles, processing article submissions, and generating Hacker Passports for events.
+                <strong className="text-ink dark:text-white">Platform Operation:</strong> Delivering core services, rendering writer profiles, processing article submissions, and generating Builder Passports for events.
               </div>
             </div>
             <div className="flex gap-3">
@@ -137,10 +137,10 @@ export default function PrivacyPage() {
             For account deletion requests, data export requests, or privacy inquiries, contact our team at:
           </p>
           <a
-            href="mailto:hello@gohackerz.com"
+            href="mailto:hello@reporally.com"
             className="mt-4 btn btn-lime text-[#1A1440] font-mono font-bold"
           >
-            hello@gohackerz.com
+            hello@reporally.com
           </a>
         </div>
       </article>

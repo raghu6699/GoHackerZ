@@ -37,7 +37,7 @@ export default async function ParticipantCertificatePage({
             className="px-5 py-2.5 rounded-xl bg-[#7C5CFF] hover:bg-[#6c48ff] text-white font-medium text-sm transition-colors flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            View Hacker Passport
+            View Builder Passport
           </Link>
         </div>
       </div>
@@ -53,7 +53,7 @@ export default async function ParticipantCertificatePage({
           className="inline-flex items-center gap-2 text-sm text-[#a59fcf] hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to My Hacker Passport</span>
+          <span>Back to My Builder Passport</span>
         </Link>
       </div>
 

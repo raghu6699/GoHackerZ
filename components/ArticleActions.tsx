@@ -73,11 +73,11 @@ export function ArticleActions({
 
     // Auto-apply pending reactions or bookmarks stored before sign-in
     try {
-      const rawPending = localStorage.getItem("gohackerz_pending_action");
+      const rawPending = localStorage.getItem("reporally_pending_action");
       if (rawPending) {
         const pending = JSON.parse(rawPending);
         if (pending?.slug === slug && Date.now() - (pending.timestamp || 0) < 15 * 60 * 1000) {
-          localStorage.removeItem("gohackerz_pending_action");
+          localStorage.removeItem("reporally_pending_action");
           if (pending.type === "react") {
             fetch(`/api/articles/${slug}/react`, { method: "POST" })
               .then((r) => (r.ok ? r.json() : null))
@@ -140,7 +140,7 @@ export function ArticleActions({
         setSaved(!nextSaved);
         try {
           localStorage.setItem(
-            "gohackerz_pending_action",
+            "reporally_pending_action",
             JSON.stringify({ type: "bookmark", slug, timestamp: Date.now() })
           );
         } catch {
@@ -185,7 +185,7 @@ export function ArticleActions({
         setReactions(reactions);
         try {
           localStorage.setItem(
-            "gohackerz_pending_action",
+            "reporally_pending_action",
             JSON.stringify({ type: "react", slug, timestamp: Date.now() })
           );
         } catch {
@@ -218,7 +218,7 @@ export function ArticleActions({
   const getArticleUrl = () =>
     typeof window !== "undefined"
       ? window.location.href
-      : `https://go-hacker.vercel.app/article/${slug}`;
+      : `https://reporally.com/article/${slug}`;
 
   const copyToClipboard = async () => {
     try {
@@ -238,7 +238,7 @@ export function ArticleActions({
 
   const openShare = () => {
     const url = getArticleUrl();
-    const shareTitle = title || "Check out this engineering essay on GoHackerz";
+    const shareTitle = title || "Check out this engineering essay on RepoRally";
 
     // Native Web Share API on mobile devices
     if (typeof navigator !== "undefined" && navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
@@ -254,7 +254,7 @@ export function ArticleActions({
 
   const shareToPlatform = (platform: "twitter" | "whatsapp" | "facebook" | "linkedin" | "instagram") => {
     const url = getArticleUrl();
-    const shareTitle = title || "Check out this engineering essay on GoHackerz";
+    const shareTitle = title || "Check out this engineering essay on RepoRally";
 
     if (platform === "twitter") {
       const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(

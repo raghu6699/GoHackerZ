@@ -36,7 +36,7 @@ export async function getCurrentDbUser() {
       // Auto-sync real name, email & avatarUrl from Supabase Auth / Gmail
       if (
         byAuthId.name === "Test User" ||
-        byAuthId.email === "testuser@gohackerz.com" ||
+        byAuthId.email === "testuser@reporally.com" ||
         (metaName && byAuthId.name !== metaName) ||
         (user.email && byAuthId.email !== user.email)
       ) {

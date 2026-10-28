@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("gohackerz-theme") as Theme | null;
+      const stored = localStorage.getItem("reporally-theme") as Theme | null;
       if (stored === "dark" || stored === "light") {
         setThemeState(stored);
         if (stored === "dark") {
@@ -43,7 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     try {
-      localStorage.setItem("gohackerz-theme", newTheme);
+      localStorage.setItem("reporally-theme", newTheme);
     } catch {
       // ignore storage errors
     }

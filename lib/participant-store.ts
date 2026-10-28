@@ -269,14 +269,14 @@ export async function ensureHackathonInDb(hackathonIdOrSlug?: string): Promise<s
 
     // 3. Create hackathon if doesn't exist
     const title = isFlagship
-      ? "GoHackerz Global Shipathon 2026"
+      ? "RepoRally Global Shipathon 2026"
       : cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
     const created = await prisma.hackathon.create({
       data: {
         slug: cleanSlug || "shipathon-2026",
-        title: title || "GoHackerz Hackathon",
-        tagline: isFlagship ? "Build with Edge & AI. Ship in 48 hours." : "Official GoHackerz Hackathon Arena",
+        title: title || "RepoRally Hackathon",
+        tagline: isFlagship ? "Build with Edge & AI. Ship in 48 hours." : "Official RepoRally Hackathon Arena",
         description: isFlagship ? "The premier hackathon for the builders who ship." : "Official event instance.",
         status: "ACTIVE",
         startDate: new Date(),
@@ -739,7 +739,7 @@ export async function getParticipantsForHackathon(hackathonIdOrSlug?: string): P
             videoUrl: s.videoUrl || undefined,
             gammaUrl: s.gammaUrl || undefined,
             techStack: (s.techStack as string[]) || [],
-            authorName: s.participant?.name || "GoHackerz Builder",
+            authorName: s.participant?.name || "RepoRally Builder",
             createdAt: s.createdAt.toISOString(),
           };
 
@@ -1606,7 +1606,7 @@ export async function resolveDynamicCertTitle(
     clean === "current";
 
   if (isFlagship) {
-    return "GoHackerz Global Shipathon 2026";
+    return "RepoRally Global Shipathon 2026";
   }
 
   if (dbHackathonTitle && !dbHackathonTitle.toLowerCase().includes("global shipathon")) {
@@ -1896,14 +1896,14 @@ export async function getCertificatesForHackathon(hackathonIdOrSlug: string): Pr
  * Resolve the dynamic display title for a hackathon.
  */
 export async function getHackathonTitle(hackathonIdOrSlug?: string): Promise<string> {
-  if (!hackathonIdOrSlug) return "GoHackerz Global Shipathon 2026";
+  if (!hackathonIdOrSlug) return "RepoRally Global Shipathon 2026";
   const cleanSlug = hackathonIdOrSlug.trim().toLowerCase().replace(/^gh-/, "");
   const isFlagship =
     cleanSlug === "shipathon-2026" ||
     cleanSlug === "shipathon" ||
     hackathonIdOrSlug === "active" ||
     hackathonIdOrSlug === "current";
-  if (isFlagship) return "GoHackerz Global Shipathon 2026";
+  if (isFlagship) return "RepoRally Global Shipathon 2026";
 
   // 1. Check PostgreSQL database
   if (isDbAvailable()) {
@@ -1986,7 +1986,7 @@ export async function autoGenerateParticipationCertificates(
       type: "PARTICIPATION",
       title: eventTitle,
       awardTitle: "Certificate of Participation",
-      recipientName: p.name || "GoHackerz Builder",
+      recipientName: p.name || "RepoRally Builder",
       roleTitle: p.roleTitle || "Builder",
       projectName: p.submission?.title || undefined,
       teamName: p.teamName || undefined,
@@ -2047,7 +2047,7 @@ export async function issueSpecialAward(params: {
     type: params.type,
     title: eventTitle,
     awardTitle: params.awardTitle,
-    recipientName: participant.name || "GoHackerz Winner",
+    recipientName: participant.name || "RepoRally Winner",
     roleTitle: participant.roleTitle || "Lead Builder",
     projectName: participant.submission?.title || undefined,
     teamName: participant.teamName || undefined,
@@ -2235,7 +2235,7 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
           try {
             const fallbackEmail =
               persistedPart?.email?.trim().toLowerCase() ||
-              `${cleanTicket.toLowerCase()}@gohackerz.dev`;
+              `${cleanTicket.toLowerCase()}@reporally.dev`;
 
             pDb = await prisma.hackathonParticipant.upsert({
               where: { ticketNumber: cleanTicket },
@@ -2289,8 +2289,8 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
             participantDbId,
             realHackathonId,
             cleanTicket,
-            submission.authorName || "GoHackerz Builder",
-            `${cleanTicket.toLowerCase()}@gohackerz.dev`,
+            submission.authorName || "RepoRally Builder",
+            `${cleanTicket.toLowerCase()}@reporally.dev`,
             "Fullstack & AI Engineer",
             "lime",
             false

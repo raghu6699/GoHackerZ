@@ -10,24 +10,24 @@ export const metadata: Metadata = {
   title: "Deep Dives",
   description: "Long-form essays on systems, architecture, distributed work, and engineering craft.",
   openGraph: {
-    title: "Deep Dives — Long-Form Essays on GoHackerz",
+    title: "Deep Dives — Long-Form Essays on RepoRally",
     description: "Long-form essays on systems, architecture, distributed work, and engineering craft.",
     url: `${SITE_URL}/deep-dives`,
-    siteName: "GoHackerz",
+    siteName: "RepoRally",
     images: [
       {
-        url: `${SITE_URL}/api/og?title=Deep%20Dives%20%E2%80%94%20Long-Form%20Essays&topic=Essays&author=GoHackerz`,
+        url: `${SITE_URL}/api/og?title=Deep%20Dives%20%E2%80%94%20Long-Form%20Essays&topic=Essays&author=RepoRally`,
         width: 1200,
         height: 630,
-        alt: "Deep Dives — Long-Form Essays on GoHackerz",
+        alt: "Deep Dives — Long-Form Essays on RepoRally",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deep Dives — Long-Form Essays on GoHackerz",
+    title: "Deep Dives — Long-Form Essays on RepoRally",
     description: "Long-form essays on systems, architecture, distributed work, and engineering craft.",
-    images: [`${SITE_URL}/api/og?title=Deep%20Dives%20%E2%80%94%20Long-Form%20Essays&topic=Essays&author=GoHackerz`],
+    images: [`${SITE_URL}/api/og?title=Deep%20Dives%20%E2%80%94%20Long-Form%20Essays&topic=Essays&author=RepoRally`],
   },
 };
 

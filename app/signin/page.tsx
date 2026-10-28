@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentDbUser } from "@/lib/profile";
 import { AuthForm } from "@/components/AuthForm";
 
-export const metadata: Metadata = { title: "Sign in — GoHackerz" };
+export const metadata: Metadata = { title: "Sign in — RepoRally" };
 
 export default async function SignInPage() {
   const user = await getCurrentDbUser();

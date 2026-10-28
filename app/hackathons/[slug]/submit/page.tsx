@@ -283,7 +283,7 @@ export default function HackathonSubmitPage() {
                 href={ticketNumber ? `/hackathons/${slug}/pass/${ticketNumber}` : "/passport"}
                 className="btn btn-purple font-mono font-bold text-sm px-6 py-3 rounded-xl"
               >
-                <span>Access Hacker Passport</span>
+                <span>Access Builder Passport</span>
               </Link>
               <Link
                 href={`/hackathons/${slug}`}
@@ -300,7 +300,7 @@ export default function HackathonSubmitPage() {
             </div>
             <h2 className="text-2xl font-extrabold text-ink">Project Successfully Submitted!</h2>
             <p className="text-sm text-body">
-              Your Hacker Passport has been updated with verified submission status. Redirecting to
+              Your Builder Passport has been updated with verified submission status. Redirecting to
               your passport...
             </p>
           </div>
@@ -321,7 +321,7 @@ export default function HackathonSubmitPage() {
                 <div className="flex items-center gap-2.5">
                   <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
                   <span className="text-xs font-bold">
-                    You must register for <strong>{hackathonTitle}</strong> to receive your verified Hacker Pass before submitting.
+                    You must register for <strong>{hackathonTitle}</strong> to receive your verified Builder Pass before submitting.
                   </span>
                 </div>
                 <Link
@@ -348,7 +348,7 @@ export default function HackathonSubmitPage() {
                 className="w-full px-4 py-3 bg-bg border-2 border-ink/20 focus:border-purple rounded-xl font-mono text-sm uppercase text-ink outline-none transition-all"
               />
               <span className="font-mono text-[11px] text-muted block">
-                Found on your official Hacker Passport for {hackathonTitle}.
+                Found on your official Builder Passport for {hackathonTitle}.
               </span>
             </div>
 

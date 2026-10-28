@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { HackerPassport } from "@/components/HackerPassport";
+import { BuilderPassport } from "@/components/BuilderPassport";
 import { getMyPassport, getActiveTicketNumber, saveMyPassport, cleanHackathonId } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme, HackathonCertificate } from "@/lib/hackathons";
 import { Sparkles, ArrowRight, ShieldCheck, Loader2, RefreshCw, Trophy, Award, Printer, ExternalLink, CheckCircle, Code2 } from "lucide-react";
@@ -247,7 +247,7 @@ export function PassPortPageClient({
 
   const handleCopySquadLink = () => {
     if (!participant.teamCode) return;
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://gohackerz.com";
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://reporally.com";
     const url = `${origin}/hackathons/${slug}/register?team=${participant.teamCode}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
@@ -372,10 +372,10 @@ export function PassPortPageClient({
       {/* Header */}
       <div className="text-center space-y-2 max-w-xl mx-auto">
         <span className="font-mono text-xs text-purple font-extrabold uppercase tracking-widest block">
-          GOHACKERZ ARENA // TICKET VERIFICATION
+          REPORALLY ARENA // TICKET VERIFICATION
         </span>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-ink tracking-tight">
-          Official Hacker Passport
+          Official Builder Passport
         </h1>
         <p className="text-sm sm:text-base text-body">
           {isLoading ? (
@@ -393,7 +393,7 @@ export function PassPortPageClient({
       </div>
 
       {/* 3D Interactive Holographic Passport */}
-      <HackerPassport
+      <BuilderPassport
         participant={participant}
         hackathonTitle={hackathonTitle}
         isOwner={isOwner}
@@ -408,7 +408,7 @@ export function PassPortPageClient({
           <div className="flex items-center gap-2">
             <Award className="w-5 h-5 text-purple" />
             <h3 className="font-mono text-sm font-black text-ink uppercase tracking-wider">
-              OFFICIAL HACKER CREDENTIAL & VISA
+              OFFICIAL BUILDER CREDENTIAL & VISA
             </h3>
           </div>
           {certificate ? (
@@ -487,14 +487,14 @@ export function PassPortPageClient({
               <a
                 href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
                   `${certificate.awardTitle} - ${certificate.title}`
-                )}&organizationName=GoHackerz&issueYear=${new Date(
+                )}&organizationName=RepoRally&issueYear=${new Date(
                   certificate.issuedAt
                 ).getFullYear()}&issueMonth=${
                   new Date(certificate.issuedAt).getMonth() + 1
                 }&certUrl=${encodeURIComponent(
                   typeof window !== "undefined"
                     ? `${window.location.origin}/verify/${certificate.certNumber}`
-                    : `https://gohackerz.com/verify/${certificate.certNumber}`
+                    : `https://reporally.com/verify/${certificate.certNumber}`
                 )}&certId=${encodeURIComponent(certificate.certNumber)}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -514,13 +514,13 @@ export function PassPortPageClient({
               <span>Project &quot;{participant.submission.title}&quot; Shipped & Recorded</span>
             </div>
             <p>
-              Your project submission is verified and queued for judging. Once the hackathon concludes and judging closes, your official <strong>Hacker Certificate & Stamped Visa</strong> will automatically mint here.
+              Your project submission is verified and queued for judging. Once the hackathon concludes and judging closes, your official <strong>Builder Certificate & Stamped Visa</strong> will automatically mint here.
             </p>
           </div>
         ) : (
           <div className="p-4 rounded-2xl bg-bg border border-ink/15 text-xs text-body leading-relaxed space-y-3">
             <p>
-              You are admitted with boarding pass <strong>#{participant.ticketNumber}</strong>. To unlock your verified <strong>Hacker Certificate & Stamped Visa</strong>, you must build and submit your project before the deadline.
+              You are admitted with boarding pass <strong>#{participant.ticketNumber}</strong>. To unlock your verified <strong>Builder Certificate & Stamped Visa</strong>, you must build and submit your project before the deadline.
             </p>
             {isOwner && (
               <div className="pt-1">
@@ -834,12 +834,12 @@ export function PassPortPageClient({
       {/* Option A Viral Banner for Visitors / Scanners */}
       <div className="bg-brand-dark text-white rounded-3xl p-8 sm:p-10 border-2 border-ink shadow-pop-xl text-center space-y-4 max-w-[620px] mx-auto">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lime/20 border border-lime text-lime font-mono text-xs font-bold">
-          <Sparkles className="w-3.5 h-3.5" /> BUILD WITH GOHACKERZ
+          <Sparkles className="w-3.5 h-3.5" /> BUILD WITH REPORALLY
         </div>
 
         <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
           {isOwner
-            ? "Share your Hacker Passport on socials! 🚀"
+            ? "Share your Builder Passport on socials! 🚀"
             : "Want to compete or challenge this team?"}
         </h3>
 
@@ -855,7 +855,7 @@ export function PassPortPageClient({
               href={`/hackathons/${slug}/register`}
               className="btn btn-lime text-brand-dark font-extrabold text-sm px-6 py-3.5 rounded-xl shadow-pop inline-flex items-center gap-2"
             >
-              <span>CLAIM YOUR OWN HACKER PASSPORT</span>
+              <span>CLAIM YOUR OWN BUILDER PASSPORT</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

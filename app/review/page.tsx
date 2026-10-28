@@ -5,7 +5,7 @@ import { getCurrentDbUser } from "@/lib/profile";
 import { getReviewQueue } from "@/lib/queries";
 import { ReviewActions } from "@/components/ReviewActions";
 
-export const metadata: Metadata = { title: "Review queue — GoHackerz" };
+export const metadata: Metadata = { title: "Review queue — RepoRally" };
 
 export default async function ReviewPage() {
   const user = await getCurrentDbUser();

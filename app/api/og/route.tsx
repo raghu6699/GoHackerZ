@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 // Load logo buffer from filesystem once at module level for zero latency
 let logoBase64 = "";
 try {
-  const logoPath = path.join(process.cwd(), "public/logo/neon-terminal-logo-sm.png");
+  const logoPath = path.join(process.cwd(), "public/logo/lockup-on-dark.png");
   if (fs.existsSync(logoPath)) {
     const logoBuf = fs.readFileSync(logoPath);
     logoBase64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
@@ -17,7 +17,7 @@ try {
 }
 
 export function generateSatoriOGCard({
-  title = "GoHackerz",
+  title = "RepoRally",
   author = "Community Contributor",
   topic = "Engineering",
   readingTime = "5",
@@ -102,7 +102,7 @@ export function generateSatoriOGCard({
                 borderRadius: "12px",
               }}
             >
-              GoHackerz
+              RepoRally
             </div>
           )}
           <div
@@ -179,7 +179,7 @@ export function generateSatoriOGCard({
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const title = searchParams.get("title")?.slice(0, 110) ?? "GoHackerz";
+    const title = searchParams.get("title")?.slice(0, 110) ?? "RepoRally";
     const author = searchParams.get("author") ?? "Community Contributor";
     const topic = searchParams.get("topic") ?? "Engineering";
     const readingTime = searchParams.get("time") ?? "5";

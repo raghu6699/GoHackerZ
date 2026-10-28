@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Auth error — GoHackerz" };
+export const metadata: Metadata = { title: "Auth error — RepoRally" };
 
 export default function AuthErrorPage() {
   return (

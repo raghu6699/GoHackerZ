@@ -1,5 +1,5 @@
 /**
- * GoHackerz — real database query layer.
+ * RepoRally — real database query layer.
  * Supabase Postgres via Prisma. Returns live database records without mock data.
  */
 import { prisma, isDbAvailable } from "./prisma";

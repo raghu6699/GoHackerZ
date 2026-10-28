@@ -13,7 +13,7 @@ export const runtime = "nodejs";
  * - ZERO 302 REDIRECTS to ensure 100% compliance with social crawlers (Facebook, X, LinkedIn).
  */
 export async function GET(req: Request) {
-  let title = "GoHackerz";
+  let title = "RepoRally";
   let author = "Community Contributor";
   let topic = "Engineering";
   let readingTime = "5";
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
       try {
         const res = await fetch(imageUrl, {
           headers: {
-            "User-Agent": "GoHackerz-OGFetcher/1.0",
+            "User-Agent": "RepoRally-OGFetcher/1.0",
           },
         });
         if (res.ok) {

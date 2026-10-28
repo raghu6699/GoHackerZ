@@ -17,7 +17,7 @@ export async function generateMetadata({
   if (!hackathon) return { title: "Submissions Not Found" };
 
   return {
-    title: `Project Showcase — ${hackathon.title} — GoHackerz`,
+    title: `Project Showcase — ${hackathon.title} — RepoRally`,
     description: `Explore all projects and technical submissions for the ${hackathon.title}.`,
   };
 }

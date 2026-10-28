@@ -36,7 +36,7 @@ export async function POST(
       participant,
       ticketNumber: participant.ticketNumber,
       passportUrl: `/hackathons/${slug}/pass/${participant.ticketNumber}`,
-      message: `Found your official Hacker Passport #${participant.ticketNumber}!`,
+      message: `Found your official Builder Passport #${participant.ticketNumber}!`,
     });
   } catch (error) {
     console.error("Hackathon lookup error:", error);

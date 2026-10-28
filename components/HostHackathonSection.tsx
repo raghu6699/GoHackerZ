@@ -118,7 +118,7 @@ export function HostHackathonSection() {
             </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white">
-              Host Your Next Hackathon on <span className="text-[#C6FF3D]">GoHackerz</span>
+              Host Your Next Hackathon on <span className="text-[#C6FF3D]">RepoRally</span>
             </h2>
 
             <p className="text-base text-[#D4CEF5] leading-relaxed">
@@ -192,7 +192,7 @@ export function HostHackathonSection() {
                     Proposal Received!
                   </h3>
                   <p className="text-sm text-[#D4CEF5] leading-relaxed">
-                    Thank you for applying to host with GoHackerz. An official notification has been sent
+                    Thank you for applying to host with RepoRally. An official notification has been sent
                     to our event directors, and a confirmation receipt was delivered to{" "}
                     <strong className="text-white">{contactEmail}</strong>.
                   </p>

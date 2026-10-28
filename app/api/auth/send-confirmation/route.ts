@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gohackerz.com";
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://reporally.com";
     const redirectTo = `${site}/auth/callback`;
 
     const admin = createAdminClient();

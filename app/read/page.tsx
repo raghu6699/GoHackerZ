@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Read",
-  description: "Browse the latest practical essays from GoHackerz.",
+  description: "Browse the latest practical essays from RepoRally.",
 };
 
 export default async function ReadPage() {

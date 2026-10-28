@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { registerHacker, getHackathonBySlug, getParticipantByEmail } from "@/lib/hackathons";
-import { sendEmail, hackerPassportEmail } from "@/lib/mailer";
+import { registerBuilder, getHackathonBySlug, getParticipantByEmail } from "@/lib/hackathons";
+import { sendEmail, builderPassportEmail } from "@/lib/mailer";
 import { getCurrentDbUser } from "@/lib/profile";
 
 export async function POST(
@@ -47,12 +47,12 @@ export async function POST(
       teamInviteCode,
     } = body;
 
-    const hackerName = name?.trim() || user.name || "Anonymous Builder";
+    const builderName = name?.trim() || user.name || "Anonymous Builder";
     const cleanEmail = user.email.trim().toLowerCase();
 
-    const participant = await registerHacker({
+    const participant = await registerBuilder({
       hackathonId: hackathon.id,
-      name: hackerName,
+      name: builderName,
       email: cleanEmail,
       roleTitle: roleTitle || "Fullstack Builder",
       bio,
@@ -65,9 +65,9 @@ export async function POST(
       teamInviteCode,
     });
 
-    // Send the official Hacker Passport confirmation email
+    // Send the official Builder Passport confirmation email
     try {
-      const emailMsg = hackerPassportEmail({
+      const emailMsg = builderPassportEmail({
         to: participant.email,
         name: participant.name,
         ticketNumber: participant.ticketNumber,

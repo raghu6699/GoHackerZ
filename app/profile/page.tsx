@@ -18,7 +18,7 @@ import { DeleteArticleButton } from "@/components/DeleteArticleButton";
 import { Avatar } from "@/components/Avatar";
 import type { AvatarColor } from "@/lib/data";
 
-export const metadata: Metadata = { title: "Your profile — GoHackerz" };
+export const metadata: Metadata = { title: "Your profile — RepoRally" };
 
 const TABS = [
   { key: "edit", label: "Edit profile", emoji: "👤" },
@@ -140,9 +140,9 @@ export default async function ProfilePage({
         <div className="anim space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Hacker Passports & Verified Credentials</h2>
+              <h2 className="text-2xl font-bold tracking-tight">Builder Passports & Verified Credentials</h2>
               <p className="text-sm text-muted">
-                Official digital boarding passes, competition standings, and verifiable certificates from GoHackerz hackathons.
+                Official digital boarding passes, competition standings, and verifiable certificates from RepoRally hackathons.
               </p>
             </div>
             <Link href="/hackathons" className="btn btn-purple btn-sm">
@@ -251,12 +251,12 @@ export default async function ProfilePage({
                             <a
                               href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
                                 `${cert.awardTitle} - ${cert.title}`
-                              )}&organizationName=GoHackerz&issueYear=${new Date(
+                              )}&organizationName=RepoRally&issueYear=${new Date(
                                 cert.issuedAt
                               ).getFullYear()}&issueMonth=${
                                 new Date(cert.issuedAt).getMonth() + 1
                               }&certUrl=${encodeURIComponent(
-                                `https://gohackerz.com/verify/${cert.certNumber}`
+                                `https://reporally.com/verify/${cert.certNumber}`
                               )}&certId=${encodeURIComponent(cert.certNumber)}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -291,7 +291,7 @@ export default async function ProfilePage({
               </div>
               <h3 className="font-bold text-xl mb-2">No Hackathon Passports Yet</h3>
               <p className="text-sm text-muted max-w-md mx-auto mb-6 leading-relaxed">
-                You haven&apos;t registered for a GoHackerz hackathon yet. Join our flagship hackathon to build with edge & AI tools, earn your official 3D Holographic Hacker Passport, and win cash grants.
+                You haven&apos;t registered for a RepoRally hackathon yet. Join our flagship hackathon to build with edge & AI tools, earn your official 3D Holographic Builder Passport, and win cash grants.
               </p>
               <Link href="/hackathons/shipathon-2026/register" className="btn btn-lime text-[#1A1440] font-bold">
                 Register for Shipathon 2026 🚀

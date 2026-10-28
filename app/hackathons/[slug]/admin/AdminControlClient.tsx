@@ -343,7 +343,7 @@ export function AdminControlClient({
                 Hackathon Lifecycle Control
               </h2>
               <p className="text-xs text-[#8e88b8] mt-0.5">
-                Control the sprint phase. Closing the hackathon automatically issues official certificates to all {participants.length} hackers.
+                Control the sprint phase. Closing the hackathon automatically issues official certificates to all {participants.length} builders.
               </p>
             </div>
 
@@ -851,7 +851,7 @@ export function AdminControlClient({
           </div>
         </div>
 
-        {/* Section 5: Partner Host Applications & Hackathon Inquiries (GoHackerz Super Admins Only) */}
+        {/* Section 5: Partner Host Applications & Hackathon Inquiries (RepoRally Super Admins Only) */}
         {isSuperAdmin && (
           <div id="host-proposals-section" className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -975,7 +975,7 @@ export function AdminControlClient({
 
                             {/* Direct Web Gmail Composer */}
                             <a
-                              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(prop.contactEmail)}&su=${encodeURIComponent(`Re: GoHackerz Hackathon Hosting Proposal [${prop.refNumber}]`)}&body=${encodeURIComponent(`Hi ${prop.contactName},\n\nThank you for reaching out regarding the ${prop.hackathonTitle} hosting proposal on GoHackerz [${prop.refNumber}].\n\nBest regards,\nGoHackerz Team`)}`}
+                              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(prop.contactEmail)}&su=${encodeURIComponent(`Re: RepoRally Hackathon Hosting Proposal [${prop.refNumber}]`)}&body=${encodeURIComponent(`Hi ${prop.contactName},\n\nThank you for reaching out regarding the ${prop.hackathonTitle} hosting proposal on RepoRally [${prop.refNumber}].\n\nBest regards,\nRepoRally Team`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] font-mono text-[10px] font-bold transition-colors"

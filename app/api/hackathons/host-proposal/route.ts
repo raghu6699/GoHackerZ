@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 
     // 1. Dispatch notification email to Admin(s)
     const adminEmails = getAdminEmails();
-    const primaryAdmin = adminEmails[0] || "admin@gohackerz.com";
+    const primaryAdmin = adminEmails[0] || "admin@reporally.com";
 
     try {
       const adminMailMsg = hostProposalAdminNotificationEmail({

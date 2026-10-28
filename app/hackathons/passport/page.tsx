@@ -5,10 +5,10 @@ import { prisma, isDbAvailable } from "@/lib/prisma";
 import { PassportRedirectClient } from "@/components/PassportRedirectClient";
 
 export const metadata = {
-  title: "Redirecting to Hacker Passport | GoHackerz",
+  title: "Redirecting to Builder Passport | RepoRally",
 };
 
-export default async function HackerPassportRedirectPage() {
+export default async function BuilderPassportRedirectPage() {
   const user = await getCurrentDbUser();
 
   if (!user || !user.email) {
@@ -30,7 +30,7 @@ export default async function HackerPassportRedirectPage() {
         redirect(`/hackathons/${hackSlug}/pass/${pDb.ticketNumber}`);
       }
     } catch (e) {
-      console.warn("[HackerPassportRedirect] DB lookup notice:", e);
+      console.warn("[BuilderPassportRedirect] DB lookup notice:", e);
     }
   }
 

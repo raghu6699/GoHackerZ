@@ -36,7 +36,7 @@ export async function GET(
   if (!participant) return new Response("Ticket not found", { status: 404 });
 
   const cleanSlug = slug.replace(/^gh-/, "");
-  const eventTitle = hackathon?.title || (cleanSlug ? cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "GoHackerz Hackathon");
+  const eventTitle = hackathon?.title || (cleanSlug ? cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "RepoRally Hackathon");
   const flightNo = `GH-${cleanSlug ? cleanSlug.toUpperCase().slice(0, 8) : "2026"}`;
   
   let formattedDate = "12 OCT 2026";
@@ -73,7 +73,7 @@ export async function GET(
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "12px", background: accent, color: "#090d0b", fontSize: "24px", fontWeight: 900 }}>GH</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span style={{ color: "#ffffff88", fontSize: "11px", letterSpacing: "2px", fontWeight: 700 }}>GOHACKERZ AIRWAYS // SPACEPORT</span>
+              <span style={{ color: "#ffffff88", fontSize: "11px", letterSpacing: "2px", fontWeight: 700 }}>REPORALLY AIRWAYS // SPACEPORT</span>
               <span style={{ color: "#fff", fontSize: "21px", fontWeight: 900 }}>{eventTitle.toUpperCase()}</span>
             </div>
           </div>
@@ -163,7 +163,7 @@ export async function GET(
       width: 1200,
       height: 620,
       headers: {
-        "Content-Disposition": `attachment; filename="GoHackerz-BoardingPass-${ticket}.png"`,
+        "Content-Disposition": `attachment; filename="RepoRally-BoardingPass-${ticket}.png"`,
         "Cache-Control": "public, max-age=3600",
       },
     }

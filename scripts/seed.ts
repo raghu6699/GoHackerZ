@@ -8,7 +8,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  console.log("Seeding GoHackerz...");
+  console.log("Seeding RepoRally...");
 
   for (const t of topics) {
     await prisma.topic.upsert({
@@ -31,9 +31,9 @@ async function main() {
       trustLevel: 2,
     };
     const user = await prisma.user.upsert({
-      where: { email: a.username + "@gohackerz.com" },
+      where: { email: a.username + "@reporally.com" },
       update: data,
-      create: { email: a.username + "@gohackerz.com", ...data },
+      create: { email: a.username + "@reporally.com", ...data },
     });
     userIds.set(a.username, user.id);
   }

@@ -42,7 +42,7 @@ export default async function HomePage({
         <div className="wrap py-6">
           <div className="rounded-3xl border-2 border-ink bg-card p-8 sm:p-12 text-center shadow-pop-lg max-w-3xl mx-auto my-6">
             <div className="text-[56px] mb-4">✍️</div>
-            <h2 className="text-3xl font-bold tracking-tight mb-3">Be the first author on GoHackerz</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-3">Be the first author on RepoRally</h2>
             <p className="text-muted text-lg max-w-xl mx-auto mb-8">
               No articles have been published yet. Share your architecture decisions, incident write-ups, or technical teardowns with our growing community.
             </p>

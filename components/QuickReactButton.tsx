@@ -23,7 +23,7 @@ export function QuickReactButton({
 
     // Check for pending reaction stored before sign in
     try {
-      const rawPending = localStorage.getItem("gohackerz_pending_action");
+      const rawPending = localStorage.getItem("reporally_pending_action");
       if (rawPending) {
         const pending = JSON.parse(rawPending);
         if (
@@ -31,7 +31,7 @@ export function QuickReactButton({
           pending?.slug === slug &&
           Date.now() - (pending.timestamp || 0) < 15 * 60 * 1000
         ) {
-          localStorage.removeItem("gohackerz_pending_action");
+          localStorage.removeItem("reporally_pending_action");
           fetch(`/api/articles/${slug}/react`, { method: "POST" })
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
@@ -81,7 +81,7 @@ export function QuickReactButton({
         setCount(count);
         try {
           localStorage.setItem(
-            "gohackerz_pending_action",
+            "reporally_pending_action",
             JSON.stringify({ type: "react", slug, timestamp: Date.now() })
           );
         } catch {

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GoHackerz Certificate Design Preview</title>
+    <title>RepoRally Certificate Design Preview</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -191,7 +191,7 @@
       <header class="toolbar">
         <div class="toolbar-copy">
           <span class="eyebrow">Certificate · Design Preview</span>
-          <h1>GoHackerz Global Shipathon 2026</h1>
+          <h1>RepoRally Global Shipathon 2026</h1>
         </div>
         <div class="controls">
           <div class="field">
@@ -224,26 +224,26 @@
           <div class="topline">
             <div class="brand">
               <span class="brand-mark" aria-hidden="true">GH</span>
-              <span><span class="brand-name">GoHackerz</span><span class="brand-caption">Build · Ship · Share</span></span>
+              <span><span class="brand-name">RepoRally</span><span class="brand-caption">Build · Ship · Share</span></span>
             </div>
             <div class="cert-number">SAMPLE CERTIFICATE ID<strong>GH26-7K4P-92MX</strong></div>
           </div>
 
           <section class="main-copy">
-            <p class="kicker" id="certificate-kicker">GoHackerz · Global Shipathon 2026</p>
+            <p class="kicker" id="certificate-kicker">RepoRally · Global Shipathon 2026</p>
             <h2 class="title" id="certificate-title">Certificate of<br />Participation</h2>
             <div class="ornament" aria-hidden="true"><span>✦</span></div>
             <p class="recipient" id="certificate-recipient">Maya Chen</p>
             <p class="statement" id="certificate-statement">
               is awarded this certificate in recognition of their participation in
-              <span class="event-name">GoHackerz Global Shipathon 2026</span>
+              <span class="event-name">RepoRally Global Shipathon 2026</span>
             </p>
             <p class="distinction" id="certificate-distinction">First Place · AI Agents Track</p>
           </section>
 
           <div class="bottomline">
             <div class="signature">
-              <img class="signature-logo" src="../public/logo/header-logo.png" alt="GoHackerz" />
+              <img class="signature-logo" src="../public/logo/header-logo.png" alt="RepoRally" />
               <div class="signature-rule"></div>
               <div class="signature-title">Hackathon Director</div>
             </div>
@@ -311,35 +311,35 @@
       const certificateContent = {
         participation: {
           title: "Certificate of<br />Participation",
-          kicker: "GoHackerz · Global Shipathon 2026",
+          kicker: "RepoRally · Global Shipathon 2026",
           statement: "is awarded this certificate in recognition of their participation in",
           distinction: "",
           secondSigner: "Jury Chair",
         },
         winner: {
           title: "Certificate of<br />Achievement",
-          kicker: "GoHackerz · Award of Excellence",
+          kicker: "RepoRally · Award of Excellence",
           statement: "is awarded this certificate in recognition of outstanding achievement at",
           distinction: "First Place · AI Agents Track",
           secondSigner: "Jury Chair",
         },
         runner: {
           title: "Certificate of<br />Achievement",
-          kicker: "GoHackerz · Award of Excellence",
+          kicker: "RepoRally · Award of Excellence",
           statement: "is awarded this certificate in recognition of exceptional achievement at",
           distinction: "Second Place · AI Agents Track",
           secondSigner: "Jury Chair",
         },
         judge: {
           title: "Certificate of<br />Appreciation",
-          kicker: "GoHackerz · With Gratitude",
+          kicker: "RepoRally · With Gratitude",
           statement: "is awarded this certificate in appreciation of their service as a judge at",
           distinction: "",
           secondSigner: "Organising Committee",
         },
         panel: {
           title: "Certificate of<br />Appreciation",
-          kicker: "GoHackerz · With Gratitude",
+          kicker: "RepoRally · With Gratitude",
           statement: "is awarded this certificate in appreciation of their contribution as a panel member at",
           distinction: "",
           secondSigner: "Organising Committee",
@@ -355,7 +355,7 @@
         certificate.dataset.kind = kindInput.value;
         document.querySelector("#certificate-title").innerHTML = content.title;
         document.querySelector("#certificate-kicker").textContent = content.kicker;
-        document.querySelector("#certificate-statement").innerHTML = `${content.statement}<span class="event-name">GoHackerz Global Shipathon 2026</span>`;
+        document.querySelector("#certificate-statement").innerHTML = `${content.statement}<span class="event-name">RepoRally Global Shipathon 2026</span>`;
         document.querySelector("#certificate-distinction").textContent = content.distinction;
         document.querySelector("#certificate-recipient").textContent = nameInput.value.trim() || "Recipient Name";
       }

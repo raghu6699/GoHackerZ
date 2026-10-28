@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   }
 
   const apiKeySet = Boolean(process.env.RESEND_API_KEY);
-  const mailFrom = process.env.MAIL_FROM ?? "GoHackerz <onboarding@resend.dev>";
+  const mailFrom = process.env.MAIL_FROM ?? "RepoRally <onboarding@resend.dev>";
 
   const emailResult = await sendEmail(welcomeEmail(to));
 

@@ -22,9 +22,9 @@ describe("bucketReferrer", () => {
 
   it("marks same-site and localhost navigation as internal", () => {
     const prev = process.env.NEXT_PUBLIC_SITE_URL;
-    process.env.NEXT_PUBLIC_SITE_URL = "https://gohackerz.com";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://reporally.com";
     try {
-      expect(bucketReferrer("https://gohackerz.com/topic/ai")).toBe("internal");
+      expect(bucketReferrer("https://reporally.com/topic/ai")).toBe("internal");
       expect(bucketReferrer("http://localhost:3000/article/foo")).toBe("internal");
     } finally {
       process.env.NEXT_PUBLIC_SITE_URL = prev;

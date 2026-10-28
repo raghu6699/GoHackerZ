@@ -67,7 +67,7 @@ function formDataReq(url: string, fieldName: string, fileData: Buffer, fileName:
   });
 }
 
-d("GoHackerz Complete System Audit & Negative Scenario Suite", () => {
+d("RepoRally Complete System Audit & Negative Scenario Suite", () => {
   beforeAll(async () => {
     await prisma.topic.upsert({
       where: { slug: `${RUN}-topic` },

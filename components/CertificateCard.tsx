@@ -33,7 +33,7 @@ export function CertificateCard({
     }
   }, []);
 
-  const verifyUrl = `${origin || "https://gohackerz.com"}/verify/${certificate.certNumber}`;
+  const verifyUrl = `${origin || "https://reporally.com"}/verify/${certificate.certNumber}`;
 
   const isWinner =
     certificate.type === "WINNER_FIRST" ||
@@ -63,8 +63,8 @@ export function CertificateCard({
     : certificate.awardTitle || "Certificate of Participation";
 
   const kicker = isWinner
-    ? "GoHackerz · Award of Excellence"
-    : `GoHackerz · ${certificate.title || "Engineering Hackathon"}`;
+    ? "RepoRally · Award of Excellence"
+    : `RepoRally · ${certificate.title || "Engineering Hackathon"}`;
 
   const formattedDate = new Date(certificate.issuedAt).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -88,7 +88,7 @@ export function CertificateCard({
 
   const linkedInUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
     `${certificate.awardTitle} - ${certificate.title}`
-  )}&organizationName=GoHackerz&issueYear=${new Date(
+  )}&organizationName=RepoRally&issueYear=${new Date(
     certificate.issuedAt
   ).getFullYear()}&issueMonth=${
     new Date(certificate.issuedAt).getMonth() + 1
@@ -96,7 +96,7 @@ export function CertificateCard({
     certificate.certNumber
   )}`;
 
-  const tweetText = `Proud to receive my official ${certificate.awardTitle} for the ${certificate.title} on @GoHackerz! 🚀⚡ Check out my verified credential: ${verifyUrl}`;
+  const tweetText = `Proud to receive my official ${certificate.awardTitle} for the ${certificate.title} on @reporally! 🚀⚡ Check out my verified credential: ${verifyUrl}`;
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
     tweetText
   )}`;
@@ -207,7 +207,7 @@ export function CertificateCard({
                 </div>
                 <div>
                   <div className="text-[11px] sm:text-[12px] font-bold tracking-tight text-[#1A1440] leading-none">
-                    GoHackerz
+                    RepoRally
                   </div>
                   <div className="text-[7px] sm:text-[8px] font-semibold tracking-widest text-[#5B3EE8] uppercase mt-0.5">
                     Build · Ship · Share
@@ -277,7 +277,7 @@ export function CertificateCard({
               <div className="w-24 sm:w-36 text-center flex flex-col items-center justify-end">
                 <img
                   src="/logo/header-logo.png"
-                  alt="GoHackerz"
+                  alt="RepoRally"
                   className="h-5 sm:h-7 w-auto object-contain mix-blend-multiply mb-0.5"
                 />
                 <div className="w-full h-px bg-[#1A1440] my-0.5 sm:my-1" />
@@ -290,7 +290,7 @@ export function CertificateCard({
               <div className="text-center text-[8px] sm:text-[9px] text-[#4A4473] leading-tight px-1">
                 <div>Issued on</div>
                 <strong className="text-[#1A1440] text-[9px] sm:text-[10px] block">{formattedDate}</strong>
-                <div className="text-[7px] sm:text-[8px] text-[#7C5CFF] font-medium truncate max-w-[90px] sm:max-w-[140px]">{certificate.title || "GoHackerz Arena"}</div>
+                <div className="text-[7px] sm:text-[8px] text-[#7C5CFF] font-medium truncate max-w-[90px] sm:max-w-[140px]">{certificate.title || "RepoRally Arena"}</div>
               </div>
 
               {/* QR Verification Code */}
@@ -307,7 +307,7 @@ export function CertificateCard({
 
           {/* Tamper Seal watermark */}
           <div className="hidden sm:block absolute right-[32px] bottom-[28px] text-[7px] font-mono text-[#4A4473]/60 tracking-wider pointer-events-none print:hidden">
-            SECURE VERIFIABLE HASH · GOHACKERZ ORG
+            SECURE VERIFIABLE HASH · REPORALLY ORG
           </div>
         </article>
       </div>

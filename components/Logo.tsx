@@ -30,10 +30,10 @@ export function Logo({
   const currentHeight = heights[size] || heights.md;
 
   const logoSrc = isFooter
-    ? "/logo/footer-logo.png" // GoHackerz footer logo lockup (LOCKED)
+    ? "/logo/footer-logo.png" // RepoRally footer logo lockup (LOCKED)
     : isMark
-    ? "/logo/mark-logo.png" // GoHackerz neon terminal icon
-    : "/logo/header-logo.png"; // GoHackerz website header logo
+    ? "/logo/mark-logo.png" // RepoRally "R" mark
+    : "/logo/header-logo.png"; // RepoRally website header logo
 
   const logoContent = (
     <div
@@ -41,7 +41,7 @@ export function Logo({
     >
       <img
         src={logoSrc}
-        alt="GoHackerz"
+        alt="RepoRally"
         className={`${currentHeight} w-auto object-contain rounded-lg`}
       />
     </div>

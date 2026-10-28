@@ -100,7 +100,7 @@ export function Footer() {
             ))}
           </div>
           <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4 sm:pt-6 border-t border-[#392E6B] font-mono text-[11px] sm:text-[12px] text-[#A69ECB]">
-            <span>© 2026 gohackerz.com</span>
+            <span>© 2026 reporally.com</span>
             <div className="flex items-center gap-3">
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
               <span>·</span>

@@ -18,9 +18,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const topic = await getTopic(slug);
-  if (!topic) return { title: "Not found — GoHackerz" };
+  if (!topic) return { title: "Not found — RepoRally" };
   const topicUrl = `${SITE_URL}/topic/${topic.slug}`;
-  const title = `${topic.name} Essays & Engineering Teardowns — GoHackerz`;
+  const title = `${topic.name} Essays & Engineering Teardowns — RepoRally`;
   const description = topic.description;
 
   return {
@@ -32,7 +32,7 @@ export async function generateMetadata({
       title,
       description,
       url: topicUrl,
-      siteName: "GoHackerz",
+      siteName: "RepoRally",
       type: "website",
     },
     twitter: {
@@ -70,7 +70,7 @@ export default async function TopicPage({
       url: topicUrl,
       publisher: {
         "@type": "Organization",
-        name: "GoHackerz",
+        name: "RepoRally",
         url: SITE_URL,
       },
     },

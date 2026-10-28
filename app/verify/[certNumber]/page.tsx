@@ -17,12 +17,12 @@ export async function generateMetadata({ params }: VerifyPageProps) {
   }
 
   if (!cert) {
-    return { title: "Certificate Verification | GoHackerz" };
+    return { title: "Certificate Verification | RepoRally" };
   }
 
   return {
-    title: `${cert.recipientName} - ${cert.awardTitle} | GoHackerz Credential`,
-    description: `Official verified ${cert.awardTitle} awarded to ${cert.recipientName} for ${cert.title} on GoHackerz.`,
+    title: `${cert.recipientName} - ${cert.awardTitle} | RepoRally Credential`,
+    description: `Official verified ${cert.awardTitle} awarded to ${cert.recipientName} for ${cert.title} on RepoRally.`,
   };
 }
 
@@ -64,13 +64,13 @@ export default async function VerifyCertificatePage({ params }: VerifyPageProps)
           className="inline-flex items-center gap-2 text-sm text-[#a59fcf] hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to GoHackerz</span>
+          <span>Back to RepoRally</span>
         </Link>
 
         {/* Verification Status Pill */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
           <CheckCircle className="w-4 h-4" />
-          <span>Officially Verified GoHackerz Credential</span>
+          <span>Officially Verified RepoRally Credential</span>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 /**
- * Content pipeline — the single source of truth for how GoHackerz articles are
+ * Content pipeline — the single source of truth for how RepoRally articles are
  * parsed, serialized and rendered inline. Used by the API route (storage),
  * the TipTap editor (load + save) and ArticleBody (render), and unit-tested.
  */

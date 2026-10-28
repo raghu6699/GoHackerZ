@@ -31,7 +31,7 @@ export async function generateMetadata({
   if (!hackathon) return { title: "Hackathon Not Found" };
 
   return {
-    title: `${hackathon.title} — GoHackerz`,
+    title: `${hackathon.title} — RepoRally`,
     description: hackathon.tagline,
   };
 }
@@ -161,7 +161,7 @@ export default async function HackathonDetailPage({
                     href="/passport"
                     className="btn bg-card text-ink hover:bg-white font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
                   >
-                    MY HACKER PASSPORT
+                    MY BUILDER PASSPORT
                   </Link>
                 </>
               ) : (
@@ -170,7 +170,7 @@ export default async function HackathonDetailPage({
                     href={`/hackathons/${hackathon.slug}/register`}
                     className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2"
                   >
-                    <span>GET HACKER PASSPORT</span>
+                    <span>GET BUILDER PASSPORT</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
 
@@ -282,7 +282,7 @@ export default async function HackathonDetailPage({
           <div className="flex items-center gap-2">
             <Gift className="w-6 h-6 text-purple" />
             <h2 className="text-2xl sm:text-3xl font-extrabold text-ink">
-              Sponsors & Hacker Perks
+              Sponsors & Builder Perks
             </h2>
           </div>
 
@@ -329,7 +329,7 @@ export default async function HackathonDetailPage({
         {/* Bottom CTA Card */}
         <div className="bg-brand-dark text-white rounded-3xl p-8 sm:p-12 border-2 border-ink shadow-pop-xl text-center space-y-4">
           <h3 className="text-2xl sm:text-4xl font-extrabold text-white">
-            Ready to claim your Hacker Passport?
+            Ready to claim your Builder Passport?
           </h3>
           <p className="text-sm sm:text-base text-[#D4CEF5] max-w-xl mx-auto">
             Registration takes less than 60 seconds. Form your team, get your scannable passport,

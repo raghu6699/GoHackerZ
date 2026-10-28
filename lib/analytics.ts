@@ -1,5 +1,5 @@
 /**
- * GoHackerz — writer analytics engine (first-party).
+ * RepoRally — writer analytics engine (first-party).
  *
  * Design:
  *  - Hot path: API routes record raw `ArticleEvent` rows via `after()` so

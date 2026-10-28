@@ -1,4 +1,4 @@
-// GoHackerz - database schema
+// RepoRally - database schema
 
 generator client {
   provider = "prisma-client-js"
@@ -350,7 +350,7 @@ model HackathonCertificate {
   participantId   String
   userId          String?
   type            CertificateType @default(PARTICIPATION)
-  title           String          // e.g. "GoHackerz Shipathon 2026"
+  title           String          // e.g. "RepoRally Shipathon 2026"
   awardTitle      String          // e.g. "Certificate of Participation" or "1st Place Grand Champion"
   recipientName   String
   projectName     String?

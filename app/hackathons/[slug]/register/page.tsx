@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Register for Hackathon — GoHackerz",
-  description: "Register for GoHackerz hackathons, form a squad, and mint your 3D Holographic Hacker Passport.",
+  title: "Register for Hackathon — RepoRally",
+  description: "Register for RepoRally hackathons, form a squad, and mint your 3D Holographic Builder Passport.",
 };
 
 export default async function HackathonRegisterPage({
@@ -51,10 +51,10 @@ export default async function HackathonRegisterPage({
 
           <div>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-ink dark:text-white">
-              Sign in to claim your Hacker Passport
+              Sign in to claim your Builder Passport
             </h1>
             <p className="mt-3 text-base sm:text-lg leading-relaxed text-muted max-w-2xl">
-              To participate in <strong className="text-ink dark:text-white">{hackathon.title}</strong>, build with a squad, and mint your official 3D Holographic Hacker Passport, you must be signed in to your GoHackerz account.
+              To participate in <strong className="text-ink dark:text-white">{hackathon.title}</strong>, build with a squad, and mint your official 3D Holographic Builder Passport, you must be signed in to your RepoRally account.
             </p>
           </div>
 

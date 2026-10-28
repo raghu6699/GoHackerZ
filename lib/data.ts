@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// GOHACKERZ · Data Types & Core Topic Metadata
+// REPORALLY · Data Types & Core Topic Metadata
 // ─────────────────────────────────────────────────────────────
 
 export type AvatarColor =

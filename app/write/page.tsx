@@ -4,7 +4,7 @@ import { getCurrentDbUser } from "@/lib/profile";
 import { getEditableArticle, getAllTopics } from "@/lib/queries";
 import { WriteEditor } from "@/components/WriteEditor";
 
-export const metadata: Metadata = { title: "Write — GoHackerz" };
+export const metadata: Metadata = { title: "Write — RepoRally" };
 
 export default async function WritePage({
   searchParams,
@@ -21,7 +21,7 @@ export default async function WritePage({
     return (
       <div className="wrap max-w-5xl py-12">
         <div className="rounded-3xl border-2 border-ink bg-card p-6 sm:p-10 shadow-pop-lg">
-          <div className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-purple">Write for GoHackerz</div>
+          <div className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-purple">Write for RepoRally</div>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">Write the kind of engineering essay people actually save.</h1>
           <p className="mt-5 max-w-2xl text-lg text-muted">
             We publish practical, field-tested writing: architecture decisions, incident reviews, database trade-offs, AI systems, Rust, and the messy realities of shipping complicated software.

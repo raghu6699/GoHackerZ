@@ -56,7 +56,7 @@ export function PassportRedirectClient({ userEmail }: PassportRedirectClientProp
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-8 h-8 animate-spin text-purple" />
         <p className="font-mono text-xs font-bold text-muted uppercase tracking-widest">
-          Resolving Verified Hacker Passport...
+          Resolving Verified Builder Passport...
         </p>
       </div>
     );
@@ -75,7 +75,7 @@ export function PassportRedirectClient({ userEmail }: PassportRedirectClientProp
               Select Your Event Passport
             </h1>
             <p className="text-sm text-muted">
-              You are registered across {passports.length} GoHackerz engineering hackathons.
+              You are registered across {passports.length} RepoRally engineering hackathons.
             </p>
           </div>
 
@@ -133,10 +133,10 @@ export function PassportRedirectClient({ userEmail }: PassportRedirectClientProp
         </div>
         <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
-            No Hacker Passports Found
+            No Builder Passports Found
           </h1>
           <p className="text-sm text-muted leading-relaxed">
-            You haven&apos;t minted a 3D Holographic Passport for any active hackathon yet. Join an active event in the GoHackerz Arena to build, compete, and claim your verified credentials.
+            You haven&apos;t minted a 3D Holographic Passport for any active hackathon yet. Join an active event in the RepoRally Arena to build, compete, and claim your verified credentials.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">

@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Scale, FileText, Code, Trophy, AlertTriangle, CheckCircle2, ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — GoHackerz",
-  description: "Terms and conditions governing the use of GoHackerz platform, publication, hackathons, and developer tools.",
+  title: "Terms of Service — RepoRally",
+  description: "Terms and conditions governing the use of RepoRally platform, publication, hackathons, and developer tools.",
 };
 
 export default function TermsPage() {
@@ -30,7 +30,7 @@ export default function TermsPage() {
         </p>
 
         <p className="mt-4 text-lg leading-relaxed text-muted">
-          Welcome to GoHackerz. By accessing our platform, creating an account, publishing engineering content, or participating in GoHackerz hackathons, you agree to comply with and be bound by these Terms of Service.
+          Welcome to RepoRally. By accessing our platform, creating an account, publishing engineering content, or participating in RepoRally hackathons, you agree to comply with and be bound by these Terms of Service.
         </p>
 
         {/* Core Terms Grid */}
@@ -41,7 +41,7 @@ export default function TermsPage() {
               <span>Author Ownership</span>
             </div>
             <p className="mt-2.5 text-sm leading-relaxed text-[#ded8ff]">
-              You retain full ownership and copyright of the original code, essays, and diagrams you write and publish on GoHackerz.
+              You retain full ownership and copyright of the original code, essays, and diagrams you write and publish on RepoRally.
             </p>
           </div>
 
@@ -73,7 +73,7 @@ export default function TermsPage() {
             <div className="p-4 rounded-xl border-2 border-ink/15 bg-bg/50 dark:bg-[#1a1533]">
               <h3 className="font-bold text-ink dark:text-white text-base">Acceptable Use</h3>
               <p className="text-sm text-muted mt-1 leading-relaxed">
-                You agree not to use GoHackerz to distribute malware, post spam, perform unauthorized automated scraping, harass community members, or violate intellectual property rights.
+                You agree not to use RepoRally to distribute malware, post spam, perform unauthorized automated scraping, harass community members, or violate intellectual property rights.
               </p>
             </div>
           </div>
@@ -89,13 +89,13 @@ export default function TermsPage() {
             <div className="flex gap-3">
               <CheckCircle2 className="w-5 h-5 text-purple shrink-0 mt-0.5" />
               <div>
-                <strong className="text-ink dark:text-white">Non-Exclusive License:</strong> By publishing on GoHackerz, you grant us a non-exclusive, worldwide, royalty-free license to host, display, index, and distribute your content across our web platform and RSS feeds.
+                <strong className="text-ink dark:text-white">Non-Exclusive License:</strong> By publishing on RepoRally, you grant us a non-exclusive, worldwide, royalty-free license to host, display, index, and distribute your content across our web platform and RSS feeds.
               </div>
             </div>
             <div className="flex gap-3">
               <CheckCircle2 className="w-5 h-5 text-purple shrink-0 mt-0.5" />
               <div>
-                <strong className="text-ink dark:text-white">Editorial Quality & Moderation:</strong> GoHackerz reserves the right to unpublish, edit formatting of, or refuse content that fails our editorial standards or violates community rules.
+                <strong className="text-ink dark:text-white">Editorial Quality & Moderation:</strong> RepoRally reserves the right to unpublish, edit formatting of, or refuse content that fails our editorial standards or violates community rules.
               </div>
             </div>
             <div className="flex gap-3">
@@ -111,14 +111,14 @@ export default function TermsPage() {
         <section className="mt-10">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Trophy className="w-6 h-6 text-purple" />
-            <span>3. Hackathons & Hacker Passports</span>
+            <span>3. Hackathons & Builder Passports</span>
           </h2>
           <p className="mt-3 text-muted leading-relaxed">
-            GoHackerz hosts virtual and in-person hackathons. By registering for a hackathon:
+            RepoRally hosts virtual and in-person hackathons. By registering for a hackathon:
           </p>
           <ul className="mt-3 list-disc list-inside space-y-2 text-sm text-muted">
             <li>You agree to submit original projects built within the event timeframe.</li>
-            <li>GoHackerz issues digital Hacker Passports and tickets for verified participants. Passports are non-transferable certificates of participation or victory.</li>
+            <li>RepoRally issues digital Builder Passports and tickets for verified participants. Passports are non-transferable certificates of participation or victory.</li>
             <li>Judge decisions on prize awards, track placements, and honorable mentions are final.</li>
           </ul>
         </section>
@@ -130,7 +130,7 @@ export default function TermsPage() {
             <span>4. Disclaimers & Limitation of Liability</span>
           </h2>
           <div className="mt-4 p-5 rounded-2xl border-2 border-ink bg-bg/50 dark:bg-[#1a1533] text-sm text-muted leading-relaxed">
-            GoHackerz is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis without warranties of any kind. Code samples and technical architectures published by authors are shared for educational purposes. GoHackerz is not liable for production downtime, code bugs, or lost data resulting from the implementation of technical advice contained in published essays.
+            RepoRally is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis without warranties of any kind. Code samples and technical architectures published by authors are shared for educational purposes. RepoRally is not liable for production downtime, code bugs, or lost data resulting from the implementation of technical advice contained in published essays.
           </div>
         </section>
 
@@ -141,10 +141,10 @@ export default function TermsPage() {
             For questions regarding these Terms of Service or copyright issues, please reach out to:
           </p>
           <a
-            href="mailto:hello@gohackerz.com"
+            href="mailto:hello@reporally.com"
             className="mt-4 btn btn-lime text-[#1A1440] font-mono font-bold"
           >
-            hello@gohackerz.com
+            hello@reporally.com
           </a>
         </div>
       </article>

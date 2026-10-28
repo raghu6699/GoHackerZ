@@ -11,12 +11,12 @@ function esc(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-/** RSS 2.0 feed — how aggregators and readers subscribe to GoHackerz. */
+/** RSS 2.0 feed — how aggregators and readers subscribe to RepoRally. */
 export async function GET() {
   const SITE_FALLBACK = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>GoHackerz — Where builders actually write</title>
+    <title>RepoRally — Where builders actually write</title>
     <link>${SITE_URL}</link>
     <description>Honest engineering essays, teardowns and post-mortems.</description>
     <language>en</language>
@@ -43,7 +43,7 @@ export async function GET() {
       <link>${SITE_URL}/article/${a.slug}</link>
       <guid isPermaLink="true">${SITE_URL}/article/${a.slug}</guid>
       <description>${esc(a.dek)}</description>
-      <author>${esc(a.authorUsername)}@gohackerz.com (${esc(a.authorUsername)})</author>
+      <author>${esc(a.authorUsername)}@reporally.com (${esc(a.authorUsername)})</author>
       <pubDate>${new Date(a.publishedAt).toUTCString()}</pubDate>
     </item>`
     )
@@ -52,7 +52,7 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>GoHackerz — Where builders actually write</title>
+    <title>RepoRally — Where builders actually write</title>
     <link>${SITE_URL}</link>
     <description>Honest engineering essays, teardowns and post-mortems.</description>
     <language>en</language>

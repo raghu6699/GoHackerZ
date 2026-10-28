@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { HackerPassport } from "@/components/HackerPassport";
+import { BuilderPassport } from "@/components/BuilderPassport";
 import { saveMyPassport, getMyPassport, cleanHackathonId } from "@/lib/passport-storage";
 import type { HackathonParticipant, HackathonTheme, HackathonData } from "@/lib/hackathons";
 import { Sparkles, Users, User, ArrowRight, ShieldCheck, Check, AlertCircle, RefreshCw, UserPlus, Lock } from "lucide-react";
@@ -196,7 +196,7 @@ export function HackathonRegisterClient({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Please provide your hacker name.");
+      setError("Please provide your builder name.");
       return;
     }
 
@@ -303,7 +303,7 @@ export function HackathonRegisterClient({
               </p>
             </div>
 
-            {/* Incoming Squad Invite Banner for Already Registered Hacker */}
+            {/* Incoming Squad Invite Banner for Already Registered Builder */}
             {teamInviteCode && invitedTeamInfo && registeredParticipant.teamCode !== teamInviteCode && (
               <div className="bg-lime/20 border-2 border-ink rounded-3xl p-6 shadow-pop text-ink max-w-2xl mx-auto space-y-3 anim-pop">
                 <div className="flex items-center justify-between flex-wrap gap-2">
@@ -319,7 +319,7 @@ export function HackathonRegisterClient({
                 </div>
                 <p className="text-xs text-ink leading-relaxed">
                   You have an invitation to join squad <strong>&quot;{invitedTeamInfo.name}&quot;</strong> ({invitedTeamInfo.count}/4 members).
-                  Click below to link your Hacker Passport to this squad:
+                  Click below to link your Builder Passport to this squad:
                 </p>
                 <div className="pt-1">
                   <button
@@ -357,7 +357,7 @@ export function HackathonRegisterClient({
                   </span>
                 </div>
                 <p className="text-xs text-[#D4CEF5] leading-relaxed">
-                  Share your squad invite code with up to 3 teammates so their Hacker Passports automatically link to your team roster:
+                  Share your squad invite code with up to 3 teammates so their Builder Passports automatically link to your team roster:
                 </p>
                 <div className="flex items-center gap-3 pt-1 flex-wrap">
                   <div className="font-mono font-black text-base text-lime bg-black/50 px-4 py-2 rounded-xl border border-lime/40 tracking-wider">
@@ -378,7 +378,7 @@ export function HackathonRegisterClient({
               </div>
             )}
 
-            <HackerPassport
+            <BuilderPassport
               participant={registeredParticipant}
               hackathonTitle={hackathon.title}
               isOwner={true}
@@ -400,10 +400,10 @@ export function HackathonRegisterClient({
           <div className="space-y-8">
             <div className="text-center space-y-3 max-w-xl mx-auto">
               <span className="font-mono text-xs text-purple font-extrabold uppercase tracking-widest block">
-                AUTHENTICATED HACKER REGISTRATION
+                AUTHENTICATED BUILDER REGISTRATION
               </span>
               <h1 className="text-3xl sm:text-5xl font-extrabold text-ink tracking-tight">
-                Claim Your Hacker Passport
+                Claim Your Builder Passport
               </h1>
               <p className="text-sm sm:text-base text-body">
                 Register as a solo builder or assemble a squad for <strong>{hackathon.title}</strong>. Your ticket will be linked directly to <strong>{user.email}</strong>.
@@ -428,7 +428,7 @@ export function HackathonRegisterClient({
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-lime" />
                   <h3 className="font-mono text-sm font-black text-lime uppercase tracking-wider">
-                    FIND MY HACKER PASSPORT
+                    FIND MY BUILDER PASSPORT
                   </h3>
                 </div>
                 <p className="font-sans text-xs text-white/80">
@@ -505,16 +505,16 @@ export function HackathonRegisterClient({
                 </div>
               )}
 
-              {/* 1. Hacker Identity */}
+              {/* 1. Builder Identity */}
               <div className="space-y-4">
                 <h3 className="font-mono text-xs font-black text-lime bg-brand-dark px-3 py-1.5 rounded-lg inline-block uppercase tracking-wider">
-                  01 // HACKER PROFILE
+                  01 // BUILDER PROFILE
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="font-mono text-xs font-bold text-ink block">
-                      HACKER / DISPLAY NAME <span className="text-pink">*</span>
+                      BUILDER / DISPLAY NAME <span className="text-pink">*</span>
                     </label>
                     <input
                       type="text"
@@ -618,7 +618,7 @@ export function HackathonRegisterClient({
 
                 <div className="space-y-1.5 pt-2">
                   <label className="font-mono text-xs font-bold text-ink block">
-                    BIO / HACKER TAGLINE (OPTIONAL)
+                    BIO / BUILDER TAGLINE (OPTIONAL)
                   </label>
                   <textarea
                     rows={2}
@@ -772,10 +772,10 @@ export function HackathonRegisterClient({
                   className="w-full btn btn-lg btn-purple font-mono font-black text-sm uppercase tracking-wider py-4 rounded-2xl shadow-pop flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <span>MINTING HACKER PASSPORT...</span>
+                    <span>MINTING BUILDER PASSPORT...</span>
                   ) : (
                     <>
-                      <span>MINT HACKER PASSPORT & ENTER ARENA</span>
+                      <span>MINT BUILDER PASSPORT & ENTER ARENA</span>
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}

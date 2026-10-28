@@ -4,7 +4,7 @@ import { TopicsExplorer } from "@/components/TopicsExplorer";
 
 export const metadata: Metadata = {
   title: "Topics",
-  description: "Browse the categories we write about at GoHackerz.",
+  description: "Browse the categories we write about at RepoRally.",
 };
 
 export default async function TopicsPage() {

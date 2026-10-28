@@ -10,14 +10,14 @@ import { SITE_URL } from "@/lib/site";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "GoHackerz — Software Engineering & Developer Publishing Platform",
-    template: "%s — GoHackerz",
+    default: "RepoRally — Software Engineering & Developer Publishing Platform",
+    template: "%s — RepoRally",
   },
   description:
     "Honest engineering essays, architecture teardowns, and post-mortems from the engineers who actually ship. No sludge, no listicles.",
   keywords: [
-    "GoHackerz",
-    "Go Hackerz",
+    "RepoRally",
+    "Repo Rally",
     "software engineering",
     "developer platform",
     "engineering essays",
@@ -40,25 +40,25 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "GoHackerz — Software Engineering & Developer Publishing Platform",
+    title: "RepoRally — Software Engineering & Developer Publishing Platform",
     description:
       "Honest engineering essays, architecture teardowns, and post-mortems from the engineers who actually ship.",
     url: SITE_URL,
-    siteName: "GoHackerz",
+    siteName: "RepoRally",
     locale: "en_US",
     images: [
       {
         url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "GoHackerz — Software Engineering & Developer Publishing Platform",
+        alt: "RepoRally — Software Engineering & Developer Publishing Platform",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "GoHackerz — Software Engineering & Developer Publishing Platform",
+    title: "RepoRally — Software Engineering & Developer Publishing Platform",
     description:
       "Honest engineering essays, architecture teardowns, and post-mortems from the engineers who actually ship.",
     images: [`${SITE_URL}/og-image.png`],
@@ -72,18 +72,18 @@ export const viewport: Viewport = {
 };
 
 /** Applied before first paint so dark-mode users never see a white flash. */
-const themeNoFlashScript = `(function(){try{var t=localStorage.getItem("gohackerz-theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})();`;
+const themeNoFlashScript = `(function(){try{var t=localStorage.getItem("reporally-theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})();`;
 
 const rootJsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "GoHackerz",
-    alternateName: ["Go Hackerz"],
+    name: "RepoRally",
+    alternateName: ["Repo Rally"],
     url: SITE_URL,
     logo: `${SITE_URL}/logo/header-logo.png`,
     description:
-      "GoHackerz is a software engineering publishing platform for developers, system architects, and technical writers.",
+      "RepoRally is a software engineering publishing platform for developers, system architects, and technical writers.",
     knowsAbout: [
       "Software Engineering",
       "System Architecture",
@@ -95,8 +95,8 @@ const rootJsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "GoHackerz",
-    alternateName: ["Go Hackerz"],
+    name: "RepoRally",
+    alternateName: ["Repo Rally"],
     url: SITE_URL,
     potentialAction: {
       "@type": "SearchAction",
@@ -120,7 +120,7 @@ export default function RootLayout({
         {/* Corporate Firewall & Classification Metadata */}
         <meta name="category" content="Technology & Software Development" />
         <meta name="rating" content="General" />
-        <meta name="publisher" content="GoHackerz Software Engineering Platform" />
+        <meta name="publisher" content="RepoRally Software Engineering Platform" />
 
         {/* Favicons & Apple Touch Icons */}
         <link rel="icon" href="/favicon.ico" sizes="any" />

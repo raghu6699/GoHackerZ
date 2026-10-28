@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "GoHackerz — Engineering Publishing Platform",
-    short_name: "GoHackerz",
+    name: "RepoRally — Engineering Publishing Platform",
+    short_name: "RepoRally",
     description:
       "Honest software engineering essays, architecture teardowns, and post-mortems from real builders.",
     start_url: "/",

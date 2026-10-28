@@ -458,7 +458,7 @@ export function buildHackathonFromProposal(proposal: HostHackathonProposal): Hac
     slug: slug,
     title: proposal.hackathonTitle,
     tagline: `Hosted by ${proposal.orgName}. Build, ship, and win cash grants & holographic credentials.`,
-    description: `Welcome to ${proposal.hackathonTitle}, organized by ${proposal.orgName} on the official GoHackerz Arena. Form a squad, earn your 3D holographic Hacker Passport, and submit lightweight project links.`,
+    description: `Welcome to ${proposal.hackathonTitle}, organized by ${proposal.orgName} on the official RepoRally Arena. Form a squad, earn your 3D holographic Builder Passport, and submit lightweight project links.`,
     hostEmail,
     hostKey,
     status: "ACTIVE",
@@ -484,7 +484,7 @@ export function buildHackathonFromProposal(proposal: HostHackathonProposal): Hac
 }
 
 /**
- * Convert an approved host proposal into an active, provisioned Hackathon on GoHackerz!
+ * Convert an approved host proposal into an active, provisioned Hackathon on RepoRally!
  * Dispatches approval email to organizer with their live arena & admin studio links.
  */
 export async function createHackathonFromProposal(proposalIdOrRef: string): Promise<{

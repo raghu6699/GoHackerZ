@@ -98,7 +98,7 @@ export function NavAuth() {
     ...(isAdmin
       ? [{ href: "/hackathons/shipathon-2026/admin", label: "Hackathon Admin Studio", emoji: "🏆" }]
       : []),
-    { href: "/hackathons/passport", label: "My Hacker Passport", emoji: "🎫" },
+    { href: "/hackathons/passport", label: "My Builder Passport", emoji: "🎫" },
     { href: "/profile", label: "Edit profile", emoji: "👤" },
     { href: "/profile?tab=posts", label: "Your posts", emoji: "📝" },
     { href: "/profile?tab=saved", label: "Saved articles", emoji: "★" },

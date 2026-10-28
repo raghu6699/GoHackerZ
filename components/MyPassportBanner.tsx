@@ -83,7 +83,7 @@ export function MyPassportBanner({
         <div>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
             <span className="font-mono text-[10px] bg-lime text-brand-dark font-black px-2 py-0.5 rounded uppercase">
-              REGISTERED HACKER
+              REGISTERED BUILDER
             </span>
             <span className="font-mono text-xs font-bold text-white/70">
               TICKET #{ticketNum}
@@ -97,7 +97,7 @@ export function MyPassportBanner({
           <h4 className="font-bold text-sm sm:text-base text-white mt-0.5">
             {passport?.name
               ? `${passport.name} · ${passport.teamName || "Solo Shipper"}`
-              : "Your Hacker Passport is Active & Verified"}
+              : "Your Builder Passport is Active & Verified"}
           </h4>
         </div>
       </div>

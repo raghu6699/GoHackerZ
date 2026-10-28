@@ -3,8 +3,8 @@ import Link from "next/link";
 import { BookOpen, CheckCircle2, ShieldCheck, PenTool, Sparkles, Terminal } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Writer Guidelines — GoHackerz",
-  description: "Editorial standards, topic scope, tone guidelines, and submission workflow for writing on GoHackerz.",
+  title: "Writer Guidelines — RepoRally",
+  description: "Editorial standards, topic scope, tone guidelines, and submission workflow for writing on RepoRally.",
 };
 
 export default function GuidelinesPage() {
@@ -21,10 +21,10 @@ export default function GuidelinesPage() {
         </div>
 
         <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-          GoHackerz Writer Guidelines
+          RepoRally Writer Guidelines
         </h1>
         <p className="mt-4 text-lg leading-relaxed text-muted">
-          GoHackerz is a platform for engineers who build and ship software in the real world. We publish essays that technical practitioners bookmark, share, and reference during architectural discussions.
+          RepoRally is a platform for engineers who build and ship software in the real world. We publish essays that technical practitioners bookmark, share, and reference during architectural discussions.
         </p>
 
         {/* Core Principles Grid */}
