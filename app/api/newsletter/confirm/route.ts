@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, welcomeEmail } from "@/lib/mailer";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * GET /api/newsletter/confirm?token=… — completes double opt-in.
@@ -8,7 +9,7 @@ import { sendEmail, welcomeEmail } from "@/lib/mailer";
  * can never be replayed.
  */
 export async function GET(req: Request) {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = SITE_URL;
   const token = new URL(req.url).searchParams.get("token");
 
   if (!token) {

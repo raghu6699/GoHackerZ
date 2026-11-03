@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { sendEmail, accountConfirmationEmail } from "@/lib/mailer";
+import { SITE_URL } from "@/lib/site";
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://reporally.com";
+    const site = SITE_URL;
     const redirectTo = `${site}/auth/callback`;
 
     const admin = createAdminClient();

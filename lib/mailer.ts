@@ -6,6 +6,8 @@
  * 3. Local Console Inspector (when keys are unset)
  */
 
+import { SITE_URL } from "@/lib/site";
+
 export interface EmailMessage {
   to: string;
   subject: string;
@@ -178,7 +180,7 @@ const shell = (title: string, body: string) => `
   </div>`;
 
 export function confirmEmail(to: string, token: string): EmailMessage {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = SITE_URL;
   const url = `${site}/api/newsletter/confirm?token=${encodeURIComponent(token)}`;
   return {
     to,
@@ -193,7 +195,7 @@ export function confirmEmail(to: string, token: string): EmailMessage {
 }
 
 export function welcomeEmail(to: string): EmailMessage {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = SITE_URL;
   return {
     to,
     subject: "You're in — welcome to RepoRally",
@@ -206,7 +208,7 @@ export function welcomeEmail(to: string): EmailMessage {
 }
 
 export function articleApprovedEmail(to: string, title: string, slug: string): EmailMessage {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = SITE_URL;
   const url = `${site}/article/${slug}`;
   return {
     to,
@@ -272,7 +274,7 @@ export function builderPassportEmail(params: {
   hackathonSlug: string;
   hackathonTitle: string;
 }): EmailMessage {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = SITE_URL;
   const passUrl = `${site}/hackathons/${params.hackathonSlug}/pass/${params.ticketNumber}`;
   const submitUrl = `${site}/hackathons/${params.hackathonSlug}/submit?ticket=${params.ticketNumber}`;
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
@@ -511,7 +513,7 @@ export function hostProposalApprovedEmail(params: {
   hackathonUrl?: string;
   adminStudioUrl?: string;
 }): EmailMessage {
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://reporally.com";
+  const origin = SITE_URL;
   const hackathonUrl = params.hackathonUrl || `${origin}/hackathons/${params.hackathonSlug}`;
   const registerUrl = `${origin}/hackathons/${params.hackathonSlug}/register`;
   const adminStudioUrl =
