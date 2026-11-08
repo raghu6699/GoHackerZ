@@ -138,54 +138,26 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         return;
       }
       
-      // Directly activate their account server-side & send confirmation email via Resend
+      // The account stays unconfirmed until the owner of the address clicks the
+      // one-time link we email them (sent via Resend).
       try {
-        await Promise.all([
-          fetch("/api/auth/send-confirmation", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-          }),
-          fetch("/api/auth/auto-confirm", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, userId: data.user?.id }),
-          }),
-        ]);
+        await fetch("/api/auth/send-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
       } catch {
-        // non-fatal
+        // non-fatal: the "resend confirmation" button covers this
       }
 
       setDone(true);
       setLoading(false);
       return;
     } else {
-      let { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
-      if (error && error.message.toLowerCase().includes("not confirmed")) {
-        // Auto-confirm unconfirmed account on sign in attempt
-        try {
-          const autoRes = await fetch("/api/auth/auto-confirm", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-          });
-          const autoData = await autoRes.json().catch(() => ({}));
-          if (autoData.confirmed) {
-            const retry = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            });
-            data = retry.data;
-            error = retry.error;
-          }
-        } catch {
-          // preserve original error if fallback fails
-        }
-      }
 
       if (error) {
         setError(
