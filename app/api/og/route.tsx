@@ -87,8 +87,8 @@ export function generateSatoriOGCard({
           {logoBase64 ? (
             <img
               src={logoBase64}
-              width="180"
-              height="56"
+              width={252}
+              height={56}
               style={{ objectFit: "contain" }}
             />
           ) : (
@@ -161,10 +161,10 @@ export function generateSatoriOGCard({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span>by @{author}</span>
+            <span>{`by @${author}`}</span>
           </div>
           <div style={{ color: "#C6FF3D", fontWeight: 700 }}>
-            {readingTime} min read ✦
+            {`${readingTime} min read •`}
           </div>
         </div>
       </div>
