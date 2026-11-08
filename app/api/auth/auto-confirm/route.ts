@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 export async function POST(req: Request) {
   try {
@@ -8,6 +9,15 @@ export async function POST(req: Request) {
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
+    // This route confirms an email without proof of ownership, so it must never
+    // apply to an address that carries admin rights.
+    if (isAdminEmail(email)) {
+      return NextResponse.json(
+        { error: "This account must confirm its email address." },
+        { status: 403 }
+      );
     }
 
     const admin = createAdminClient();

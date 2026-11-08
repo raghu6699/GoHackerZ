@@ -4,8 +4,6 @@
 
 export const DEFAULT_ADMIN_EMAILS = [
   "ud.ai.journey@gmail.com",
-  "raghu@reporally.com",
-  "admin@reporally.com",
 ];
 
 export function getAdminEmails(): string[] {
