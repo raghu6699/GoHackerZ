@@ -12,7 +12,7 @@ export default function ContactPage() {
         <div className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-purple">Contact</div>
         <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">Say hello.</h1>
         <p className="mt-4 text-lg text-muted">For pitches, partnerships, corrections, and anything worth sending.</p>
-        <a href="mailto:hello@reporally.com" className="mt-8 inline-flex rounded-full border-2 border-ink bg-lime px-5 py-3 font-bold text-[#1A1440]">hello@reporally.com</a>
+        <a href="mailto:hi@loratechsolutions.com" className="mt-8 inline-flex rounded-full border-2 border-ink bg-lime px-5 py-3 font-bold text-[#1A1440]">hi@loratechsolutions.com</a>
       </div>
     </div>
   );

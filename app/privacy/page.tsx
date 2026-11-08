@@ -137,10 +137,10 @@ export default function PrivacyPage() {
             For account deletion requests, data export requests, or privacy inquiries, contact our team at:
           </p>
           <a
-            href="mailto:hello@reporally.com"
+            href="mailto:hi@loratechsolutions.com"
             className="mt-4 btn btn-lime text-[#1A1440] font-mono font-bold"
           >
-            hello@reporally.com
+            hi@loratechsolutions.com
           </a>
         </div>
       </article>

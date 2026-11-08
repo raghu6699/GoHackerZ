@@ -62,7 +62,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
           subject: msg.subject,
           html: msg.html,
           text,
-          reply_to: "hello@reporally.com",
+          reply_to: "hi@loratechsolutions.com",
         }),
       });
 

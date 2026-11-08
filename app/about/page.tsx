@@ -43,7 +43,7 @@ export default function AboutPage() {
 
         <div className="mt-8 rounded-2xl border-2 border-ink bg-card p-5">
           <h2 className="text-2xl font-bold">Contact</h2>
-          <p className="mt-3 text-muted">hello@reporally.com</p>
+          <p className="mt-3 text-muted">hi@loratechsolutions.com</p>
           <p className="mt-2 text-muted">For pitches, partnerships, and corrections.</p>
         </div>
       </article>

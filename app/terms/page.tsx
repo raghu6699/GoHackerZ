@@ -141,10 +141,10 @@ export default function TermsPage() {
             For questions regarding these Terms of Service or copyright issues, please reach out to:
           </p>
           <a
-            href="mailto:hello@reporally.com"
+            href="mailto:hi@loratechsolutions.com"
             className="mt-4 btn btn-lime text-[#1A1440] font-mono font-bold"
           >
-            hello@reporally.com
+            hi@loratechsolutions.com
           </a>
         </div>
       </article>
