@@ -8,6 +8,9 @@
 
 import { SITE_URL } from "@/lib/site";
 
+// Replies to any email we send go to the real inbox; the From address is send-only.
+const REPLY_TO = "hi@loratechsolutions.com";
+
 export interface EmailMessage {
   to: string;
   subject: string;
@@ -62,7 +65,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
           subject: msg.subject,
           html: msg.html,
           text,
-          reply_to: "hi@loratechsolutions.com",
+          reply_to: REPLY_TO,
         }),
       });
 
@@ -84,6 +87,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
             subject: msg.subject,
             html: msg.html,
             text,
+            reply_to: REPLY_TO,
           }),
         });
         data = await res.json().catch(() => null);
@@ -141,6 +145,7 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
         subject: msg.subject,
         html: msg.html,
         text: stripHtmlToText(msg.html),
+        replyTo: REPLY_TO,
       });
 
       console.info(`[Mailer] Email sent successfully to ${msg.to} via SMTP (ID: ${info.messageId})`);
