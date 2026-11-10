@@ -29,9 +29,14 @@ export default async function HomePage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { page: pageParam } = await searchParams;
-  const allTopics = await getAllTopics();
-  const featured = await getFeatured();
-  const userCount = await getUserCount();
+  // Independent queries run in parallel; each round trip to the DB is costly.
+  const [allTopics, featured, userCount, allArticles, trendingRaw] = await Promise.all([
+    getAllTopics(),
+    getFeatured(),
+    getUserCount(),
+    getLatest(),
+    getTrending(6),
+  ]);
 
   // ── Clean Empty State when no articles exist yet ──
   if (!featured) {
@@ -92,23 +97,27 @@ export default async function HomePage({
     );
   }
 
-  const featuredAuthor = (await getAuthor(featured.authorUsername)) ?? {
+  const [featuredAuthorRow, featuredTopicRow] = await Promise.all([
+    getAuthor(featured.authorUsername),
+    getTopic(featured.topicSlug),
+  ]);
+
+  const featuredAuthor = featuredAuthorRow ?? {
     name: featured.authorUsername,
     initials: featured.authorUsername.slice(0, 2).toUpperCase(),
     username: featured.authorUsername,
     role: "Writer",
     company: "",
   };
-  const featuredTopic = (await getTopic(featured.topicSlug)) ?? {
+  const featuredTopic = featuredTopicRow ?? {
     name: featured.topicSlug,
     emoji: "📝",
     slug: featured.topicSlug,
   };
 
-  const allArticles = await getLatest();
   const feedArticles = allArticles.filter((a) => a.slug !== featured?.slug);
   const latest = feedArticles.slice(0, 3);
-  const trending = (await getTrending(6)).slice(0, 4);
+  const trending = trendingRaw.slice(0, 4);
 
   const PAGE_SIZE = 12;
   const pageNum = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);

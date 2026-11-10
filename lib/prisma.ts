@@ -56,7 +56,7 @@ function createPrisma() {
   // concurrent queries and the singleton above keeps the pool warm per instance.
   const pool = new Pool({
     connectionString,
-    max: 1,
+    max: 3, // lets parallel queries within one request overlap
     connectionTimeoutMillis: 5_000, // fail fast instead of queueing behind 15 slots
     idleTimeoutMillis: 5_000, // free the connection back to Supabase when idle
   });
