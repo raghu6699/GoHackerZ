@@ -26,6 +26,7 @@
     "@tiptap/pm": "^3.30.2",
     "@tiptap/react": "^3.30.2",
     "@tiptap/starter-kit": "^3.30.2",
+    "@vercel/functions": "^3.11.1",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "lowlight": "^3.3.0",

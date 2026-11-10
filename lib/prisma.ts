@@ -1,6 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
+import { attachDatabasePool } from "@vercel/functions";
 
 // Prisma singleton — avoids exhausting connections during dev hot-reload
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
@@ -57,8 +58,13 @@ function createPrisma() {
     connectionString,
     max: 1,
     connectionTimeoutMillis: 5_000, // fail fast instead of queueing behind 15 slots
-    idleTimeoutMillis: 30_000, // free the connection back to Supabase when idle
+    idleTimeoutMillis: 5_000, // free the connection back to Supabase when idle
   });
+
+  // Vercel freezes idle function instances without closing their sockets, so
+  // stale connections pile up until the pooler's client cap (EMAXCONN) is hit.
+  // This closes the pool's idle clients before an instance is suspended.
+  attachDatabasePool(pool);
 
   // Take over the pool: pass the instance + keep it alive on adapter dispose so
   // it is reused (disposeExternalPool defaults to false, but be explicit).
