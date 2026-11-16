@@ -383,7 +383,11 @@ function writeToDisk(participant: HackathonParticipant): void {
     }
     fs.writeFileSync(PARTICIPANTS_FILE, JSON.stringify(current, null, 2), "utf-8");
   } catch (error) {
-    console.error("Failed to write participant to disk:", error);
+    // Vercel's filesystem is read-only; Postgres is the source of truth there,
+    // so the disk cache failing is expected and not worth an error log.
+    if ((error as NodeJS.ErrnoException)?.code !== "EROFS") {
+      console.error("Failed to write participant to disk:", error);
+    }
   }
 }
 
