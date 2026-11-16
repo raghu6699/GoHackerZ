@@ -265,7 +265,7 @@ export function AdminControlClient({
     const q = participantSearch.toLowerCase();
     const matchesSearch =
       p.name.toLowerCase().includes(q) ||
-      p.email.toLowerCase().includes(q) ||
+      (p.email || "").toLowerCase().includes(q) ||
       p.ticketNumber.toLowerCase().includes(q) ||
       (p.teamName && p.teamName.toLowerCase().includes(q)) ||
       (p.roleTitle && p.roleTitle.toLowerCase().includes(q));
