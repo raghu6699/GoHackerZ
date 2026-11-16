@@ -41,6 +41,138 @@ function FlowWordmark({ className = "" }: { className?: string }) {
   );
 }
 
+
+/* ---------- Track visuals: spoken phrase on the left, the app it could become on the right ---------- */
+const TRACK_VIS: Record<string, { accent: string; bg: string; phrase: string }> = {
+  health: { accent: "#FF7A9A", bg: "radial-gradient(120% 90% at 85% 0%,#5a1a47 0%,#1c1038 60%)", phrase: "What is this tablet for?" },
+  farm: { accent: "#C6FF3D", bg: "radial-gradient(120% 90% at 85% 0%,#1f5a33 0%,#14213d 60%)", phrase: "Tomato price today?" },
+  learn: { accent: "#7CC4FF", bg: "radial-gradient(120% 90% at 85% 0%,#1d4a85 0%,#1c1038 60%)", phrase: "Explain fractions simply" },
+  shops: { accent: "#FFB84D", bg: "radial-gradient(120% 90% at 85% 0%,#6b4510 0%,#1c1038 60%)", phrase: "Two kilos rice, one tea" },
+  citizen: { accent: "#B9A7FF", bg: "radial-gradient(120% 90% at 85% 0%,#3d2a85 0%,#0f1a3a 60%)", phrase: "Which schemes can I get?" },
+};
+
+const TRACK_STYLES = `
+@keyframes bb-ripple { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(2.3); opacity: 0; } }
+@keyframes bb-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes bb-bar { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+.bb-ripple { animation: bb-ripple 2.4s ease-out infinite; }
+.bb-float { animation: bb-float 5s ease-in-out infinite; }
+.bb-bar { animation: bb-bar 900ms ease-in-out infinite alternate; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .bb-ripple, .bb-float, .bb-bar { animation: none; } }
+`;
+
+/** The mini app screen shown inside the phone, one per track. */
+function PhoneScreen({ id, accent }: { id: string; accent: string }) {
+  const row = "flex items-center justify-between rounded-md bg-white/10 px-1.5 py-1";
+  switch (id) {
+    case "health":
+      return (
+        <div className="space-y-1.5">
+          <div className="text-[8px] font-bold text-white/60">YOUR PRESCRIPTION</div>
+          <div className={row}>
+            <span className="text-[9px] font-bold text-white">Paracetamol</span>
+            <span className="h-2.5 w-5 rounded-full" style={{ background: accent }} />
+          </div>
+          <div className="text-[8px] text-white/70">1 morning · 1 night</div>
+          <div className="inline-block rounded-full px-1.5 py-0.5 text-[8px] font-bold text-[#1A1440]" style={{ background: accent }}>After food</div>
+          <div className="flex items-end gap-0.5 pt-1">
+            {[6, 10, 7, 12, 8].map((h, i) => (
+              <span key={i} className="w-1.5 rounded-sm bg-white/30" style={{ height: h * 1.4 }} />
+            ))}
+          </div>
+        </div>
+      );
+    case "farm":
+      return (
+        <div className="space-y-1.5">
+          <div className="text-[8px] font-bold text-white/60">TOMATO · TODAY</div>
+          <div className="text-[18px] font-black leading-none text-white">₹28<span className="text-[9px] font-bold text-white/60">/kg</span></div>
+          <svg viewBox="0 0 80 30" className="h-7 w-full">
+            <polyline points="0,24 14,20 28,22 42,14 56,16 70,6 80,8" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div className={row}>
+            <span className="text-[8px] text-white/80">Rain Thursday</span>
+            <span className="text-[9px]">🌧</span>
+          </div>
+        </div>
+      );
+    case "learn":
+      return (
+        <div className="space-y-1.5">
+          <div className="ml-auto w-fit max-w-full rounded-lg rounded-br-sm bg-white/15 px-1.5 py-1 text-[8px] text-white">Add 1/2 and 1/4</div>
+          <div className="w-fit max-w-full rounded-lg rounded-bl-sm px-1.5 py-1 text-[8px] font-semibold text-[#1A1440]" style={{ background: accent }}>1/2 + 1/4 = 3/4</div>
+          <svg viewBox="0 0 40 40" className="mx-auto h-9 w-9">
+            <circle cx="20" cy="20" r="16" fill="rgba(255,255,255,.15)" />
+            <path d="M20 20V4a16 16 0 1 1-16 16Z" fill={accent} />
+          </svg>
+        </div>
+      );
+    case "shops":
+      return (
+        <div className="space-y-1">
+          <div className="text-[8px] font-bold text-white/60">TODAY'S BILL</div>
+          <div className={row}><span className="text-[8px] text-white">Rice 2 kg</span><span className="text-[8px] font-bold text-white">₹120</span></div>
+          <div className={row}><span className="text-[8px] text-white">Tea 1</span><span className="text-[8px] font-bold text-white">₹10</span></div>
+          <div className="flex items-center justify-between rounded-md px-1.5 py-1.5 text-[#1A1440]" style={{ background: accent }}>
+            <span className="text-[8px] font-black">TOTAL</span>
+            <span className="text-[11px] font-black">₹130</span>
+          </div>
+        </div>
+      );
+    default:
+      return (
+        <div className="space-y-1.5">
+          <div className="text-[8px] font-bold text-white/60">YOU MAY QUALIFY FOR</div>
+          {["Pension scheme", "Ration card", "Scholarship"].map((t) => (
+            <div key={t} className={row}>
+              <span className="text-[8px] text-white">{t}</span>
+              <span className="flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-black text-[#1A1440]" style={{ background: accent }}>✓</span>
+            </div>
+          ))}
+        </div>
+      );
+  }
+}
+
+function TrackVisual({ id }: { id: string }) {
+  const v = TRACK_VIS[id] ?? TRACK_VIS.citizen;
+  return (
+    <div className="relative mb-4 h-52 overflow-hidden rounded-2xl border border-white/10" style={{ background: v.bg }} aria-hidden>
+      {/* soft glow */}
+      <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full opacity-30 blur-3xl" style={{ background: v.accent }} />
+
+      {/* left: someone speaking */}
+      <div className="absolute left-4 top-5 flex w-[52%] flex-col items-start gap-3">
+        <div className="relative flex h-12 w-12 items-center justify-center">
+          <span className="bb-ripple absolute inset-0 rounded-full" style={{ background: v.accent }} />
+          <span className="bb-ripple absolute inset-0 rounded-full" style={{ background: v.accent, animationDelay: "1.2s" }} />
+          <span className="relative flex h-12 w-12 items-center justify-center rounded-full" style={{ background: v.accent }}>
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="#1A1440">
+              <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" />
+            </svg>
+          </span>
+        </div>
+        <div className="flex h-6 items-center gap-[3px]">
+          {Array.from({ length: 11 }).map((_, i) => (
+            <span key={i} className="bb-bar h-6 w-[3px] rounded-full" style={{ background: v.accent, animationDelay: `${(i % 6) * 110}ms`, opacity: 0.9 }} />
+          ))}
+        </div>
+        <div className="rounded-2xl rounded-tl-sm border border-white/15 bg-black/45 px-3 py-2 text-[12px] font-semibold leading-snug text-white backdrop-blur-md">
+          &ldquo;{v.phrase}&rdquo;
+        </div>
+      </div>
+
+      {/* right: the app it could become, peeking up from the bottom */}
+      <div className="bb-float absolute -bottom-10 right-4 h-[188px] w-[112px] rounded-[22px] border-2 border-white/25 bg-[#0d0a22] p-2 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)]">
+        <div className="mx-auto mb-2 h-1 w-8 rounded-full bg-white/25" />
+        <PhoneScreen id={id} accent={v.accent} />
+      </div>
+
+      <span className="absolute right-2 top-2 rounded-full bg-black/40 px-2 py-0.5 font-mono text-[8px] font-bold uppercase tracking-wider text-white/50">Concept</span>
+    </div>
+  );
+}
+
 function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
   return (
     <div className="space-y-2">
@@ -205,11 +337,13 @@ export function BoloBuildPage({
 
       {/* TRACKS */}
       <section id="tracks" className="mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
+        <style>{TRACK_STYLES}</style>
         <SectionTitle kicker="Pick a problem" title="Five tracks. One real person in each." />
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {hackathon.tracks.map((t, i) => (
             <div key={t.id} className="group flex flex-col justify-between rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-6 transition hover:border-[#B9A7FF]/60">
               <div className="space-y-3">
+                <TrackVisual id={t.id} />
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold text-white/40">TRACK 0{i + 1}</span>
                   <span className="rounded-md bg-[#C6FF3D] px-2 py-0.5 font-mono text-[11px] font-black text-[#1A1440]">{t.prize}</span>
