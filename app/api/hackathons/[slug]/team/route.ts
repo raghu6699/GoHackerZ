@@ -9,6 +9,7 @@ import {
   syncTeamParticipants,
 } from "@/lib/participant-store";
 import { getHackathonBySlug, getParticipantByTicket } from "@/lib/hackathons";
+import { requireTicketOwner } from "@/lib/ticket-auth";
 
 export async function GET(
   req: Request,
@@ -66,14 +67,12 @@ export async function POST(
       return NextResponse.json({ error: "Ticket number is required" }, { status: 400 });
     }
 
-    // Ensure participant exists — query DB so we always get fresh team membership
-    const existing = await getParticipantByTicket(ticketNumber);
-    if (!existing) {
-      return NextResponse.json(
-        { error: `Participant with ticket #${ticketNumber} not found.` },
-        { status: 404 }
-      );
+    // Only the ticket's owner may change its squad.
+    const auth = await requireTicketOwner(String(ticketNumber));
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+    const existing = auth.participant;
 
     if (action === "join") {
       const code = (teamCode || "").trim().replace(/^#/, "").toUpperCase();

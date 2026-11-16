@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { submitProject, getHackathonBySlug, getAllSubmissions, getParticipantByTicket } from "@/lib/hackathons";
 import { prisma } from "@/lib/prisma";
+import { requireTicketOwner } from "@/lib/ticket-auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -50,7 +51,11 @@ export async function POST(
     }
 
     const cleanTicket = ticketNumber.trim().toUpperCase();
-    const participant = await getParticipantByTicket(cleanTicket);
+    const auth = await requireTicketOwner(cleanTicket);
+    if (!auth.ok && auth.status !== 404) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const participant = auth.ok ? auth.participant : null;
 
     if (!participant) {
       return NextResponse.json(

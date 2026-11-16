@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getHackathonBySlug, getParticipantByEmail } from "@/lib/hackathons";
+import { getCurrentDbUser } from "@/lib/profile";
 
 export async function POST(
   req: Request,
@@ -12,8 +13,13 @@ export async function POST(
       return NextResponse.json({ error: "Hackathon not found" }, { status: 404 });
     }
 
-    const body = await req.json();
-    const email = body.email?.trim().toLowerCase();
+    // Looking up a passport by email reveals who is registered, so it is only
+    // allowed for your own address.
+    const viewer = await getCurrentDbUser();
+    if (!viewer?.email) {
+      return NextResponse.json({ error: "Please sign in to find your passport." }, { status: 401 });
+    }
+    const email = viewer.email.trim().toLowerCase();
 
     if (!email) {
       return NextResponse.json({ error: "Email address is required" }, { status: 400 });

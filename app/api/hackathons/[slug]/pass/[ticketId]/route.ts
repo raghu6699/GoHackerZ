@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getParticipantByTicket } from "@/lib/hackathons";
+import { getCurrentDbUser } from "@/lib/profile";
+import { publicParticipant } from "@/lib/ticket-auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -35,7 +37,14 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ success: true, participant });
+    const viewer = await getCurrentDbUser();
+    const isOwner =
+      !!viewer?.email &&
+      (participant.email ?? "").trim().toLowerCase() === viewer.email.trim().toLowerCase();
+    return NextResponse.json({
+      success: true,
+      participant: isOwner ? participant : publicParticipant(participant),
+    });
   } catch (error) {
     console.error("Fetch ticket error:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch ticket" }, { status: 500 });

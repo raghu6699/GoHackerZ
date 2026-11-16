@@ -1,3 +1,4 @@
+import { getCurrentDbUser } from "@/lib/profile";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -129,6 +130,13 @@ export default async function BuilderPassportPage({
     };
   }
 
+  // Passports are public (shareable) — never ship the holder's email to other viewers.
+  const viewer = await getCurrentDbUser();
+  const viewerIsOwner =
+    !!viewer?.email &&
+    (participant.email ?? "").trim().toLowerCase() === viewer.email.trim().toLowerCase();
+  const participantForViewer = viewerIsOwner ? participant : { ...participant, email: "" };
+
   return (
     <div className="min-h-screen py-8 sm:py-14">
       <div className="wrap max-w-4xl mx-auto space-y-10">
@@ -147,7 +155,7 @@ export default async function BuilderPassportPage({
 
         {/* Client component: resolves real name from localStorage and handles isOwner logic */}
         <PassPortPageClient
-          serverParticipant={participant}
+          serverParticipant={participantForViewer}
           hackathonTitle={hackathon?.title || "RepoRally Hackathon"}
           slug={slug}
           ticketId={ticketId}

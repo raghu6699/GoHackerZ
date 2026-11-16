@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getParticipantsForHackathon } from "@/lib/participant-store";
+import { publicParticipant } from "@/lib/ticket-auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,7 +14,7 @@ export async function GET(
     const participants = await getParticipantsForHackathon(slug);
     return NextResponse.json({
       success: true,
-      participants,
+      participants: participants.map(publicParticipant),
       total: participants.length,
     });
   } catch (error: any) {
