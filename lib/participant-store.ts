@@ -1,4 +1,5 @@
 import fs from "fs";
+import { getCuratedEvent } from "./curated-events";
 import path from "path";
 import { prisma, isDbAvailable } from "./prisma";
 export { isDbAvailable };
@@ -271,6 +272,29 @@ export async function ensureHackathonInDb(hackathonIdOrSlug?: string): Promise<s
     const title = isFlagship
       ? "RepoRally Global Shipathon 2026"
       : cleanSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+    const curated = getCuratedEvent(cleanSlug);
+    if (curated) {
+      const createdCurated = await prisma.hackathon.create({
+        data: {
+          id: curated.id,
+          slug: curated.slug,
+          title: curated.title,
+          tagline: curated.tagline,
+          description: curated.description,
+          status: curated.status,
+          startDate: new Date(curated.startDate),
+          endDate: new Date(curated.endDate),
+          submissionDeadline: new Date(curated.submissionDeadline),
+          prizePool: curated.prizePool,
+          tracks: curated.tracks as any,
+          rules: curated.rules as any,
+          faqs: curated.faqs as any,
+          sponsors: curated.sponsors as any,
+        },
+      });
+      return createdCurated.id;
+    }
 
     const created = await prisma.hackathon.create({
       data: {

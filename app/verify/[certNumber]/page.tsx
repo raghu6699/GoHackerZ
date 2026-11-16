@@ -56,7 +56,7 @@ export default async function VerifyCertificatePage({ params }: VerifyPageProps)
   }
 
   return (
-    <div className="min-h-screen bg-[#070512] text-white selection:bg-[#7C5CFF] selection:text-white py-10 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#070512] text-white selection:bg-[#7C5CFF] selection:text-white py-10 px-4 sm:px-6 print:min-h-0 print:bg-white print:p-0">
       {/* Top Banner Navigation */}
       <div className="max-w-4xl mx-auto mb-8 flex flex-wrap items-center justify-between gap-4 print:hidden">
         <Link
@@ -75,7 +75,7 @@ export default async function VerifyCertificatePage({ params }: VerifyPageProps)
       </div>
 
       {/* Main Certificate Card Component */}
-      <main className="max-w-4xl mx-auto flex flex-col items-center">
+      <main className="max-w-4xl mx-auto flex flex-col items-center print:max-w-none print:m-0">
         <CertificateCard certificate={cert} showActions={true} />
 
         {/* Verification Details Box */}

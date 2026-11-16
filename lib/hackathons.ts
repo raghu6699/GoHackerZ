@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { getCuratedEvent, CURATED_EVENTS } from "./curated-events";
 
 /**
  * RepoRally Hackathons Domain Layer
@@ -491,6 +492,13 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
 
 async function loadHackathonBySlug(slug: string): Promise<HackathonData | null> {
   const cleanSlug = slug.replace(/^gh-/, "");
+
+  // Curated events we host ourselves are served straight from code.
+  const curated = getCuratedEvent(cleanSlug);
+  if (curated) {
+    const persistedStatus = getPersistedHackathonStatus(curated.slug);
+    return { ...curated, status: (persistedStatus as any) || curated.status };
+  }
   let liveStatus = FLAGSHIP_HACKATHON.status;
 
   // 1. Check local disk / memory store first
@@ -659,6 +667,12 @@ export async function getAllHackathons(): Promise<HackathonData[]> {
   if (SHOW_BUILTIN_FLAGSHIP) {
     const flagship = await getHackathonBySlug(FLAGSHIP_HACKATHON.slug);
     if (flagship) map.set(flagship.slug, flagship);
+  }
+
+  // 1b. Curated events hosted by RepoRally
+  for (const c of CURATED_EVENTS) {
+    const full = await getHackathonBySlug(c.slug);
+    if (full) map.set(full.slug, full);
   }
 
   // 2. Custom disk hackathons

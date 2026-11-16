@@ -46,7 +46,7 @@ export default async function ParticipantCertificatePage({
 
   // If certificate exists, redirect to canonical verify URL or render directly
   return (
-    <div className="min-h-screen bg-[#070512] text-white py-10 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#070512] text-white py-10 px-4 sm:px-6 print:min-h-0 print:bg-white print:p-0">
       <div className="max-w-4xl mx-auto mb-8 flex items-center justify-between print:hidden">
         <Link
           href={`/hackathons/${slug}/pass/${ticketNumber}`}
@@ -57,7 +57,7 @@ export default async function ParticipantCertificatePage({
         </Link>
       </div>
 
-      <main className="max-w-4xl mx-auto flex flex-col items-center">
+      <main className="max-w-4xl mx-auto flex flex-col items-center print:max-w-none print:m-0">
         <CertificateCard certificate={cert} showActions={true} />
       </main>
     </div>

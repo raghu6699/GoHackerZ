@@ -41,6 +41,11 @@ export function CertificateCard({
     certificate.type === "WINNER_THIRD" ||
     certificate.type === "TRACK_WINNER";
 
+  // Co-branded certificates for the RepoRally x Wispr Flow voice-build event.
+  const isBolo =
+    (certificate.hackathonId || "").includes("bolo-and-build") ||
+    (certificate.title || "").toLowerCase().includes("bolo & build");
+
   const isFirstPlace = certificate.type === "WINNER_FIRST";
   const isSecondPlace = certificate.type === "WINNER_SECOND";
   const isThirdPlace = certificate.type === "WINNER_THIRD";
@@ -62,7 +67,9 @@ export function CertificateCard({
     ? "Certificate of Achievement"
     : certificate.awardTitle || "Certificate of Participation";
 
-  const kicker = isWinner
+  const kicker = isBolo
+    ? `RepoRally × Wispr Flow · ${isWinner ? "Award of Excellence" : "Voice-Build Challenge"}`
+    : isWinner
     ? "RepoRally · Award of Excellence"
     : `RepoRally · ${certificate.title || "Engineering Hackathon"}`;
 
@@ -96,13 +103,27 @@ export function CertificateCard({
     certificate.certNumber
   )}`;
 
-  const tweetText = `Proud to receive my official ${certificate.awardTitle} for the ${certificate.title} on @reporally! 🚀⚡ Check out my verified credential: ${verifyUrl}`;
+  const tweetText = isBolo
+    ? `Built an app entirely by voice with Wispr Flow at ${certificate.title} on @reporally! 🎙️🚀 My verified credential: ${verifyUrl}`
+    : `Proud to receive my official ${certificate.awardTitle} for the ${certificate.title} on @reporally! 🚀⚡ Check out my verified credential: ${verifyUrl}`;
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
     tweetText
   )}`;
 
   return (
     <div className="w-full flex flex-col items-center">
+      {/* Print as a full A4 landscape page, edge to edge, no extra blank space */}
+      <style>{`
+        @media print {
+          @page { size: A4 landscape; margin: 0; }
+          html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+          .certificate-shell { width: 297mm !important; max-width: none !important; height: 210mm !important; margin: 0 !important; page-break-inside: avoid; break-inside: avoid; }
+          .certificate-shell article { width: 297mm !important; height: 210mm !important; min-height: 0 !important; aspect-ratio: auto !important; padding: 14mm 18mm !important; border-radius: 0 !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .certificate-shell article h1 { font-size: 44pt !important; }
+          .certificate-shell article p.italic { font-size: 30pt !important; }
+          .certificate-shell article p.max-w-xl { font-size: 13pt !important; max-width: 52rem !important; }
+        }
+      `}</style>
       {/* Action Toolbar */}
       {showActions && (
         <div className="w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 mb-6 p-4 rounded-2xl bg-[#131124] border border-[#2a244d] shadow-xl print:hidden">
@@ -193,6 +214,13 @@ export function CertificateCard({
           <div className="flex h-full flex-col items-center justify-between text-center relative z-10 gap-4 sm:gap-2">
             {/* Top Brand & Metadata Bar */}
             <div className="flex w-full items-center justify-between gap-2">
+              {isBolo ? (
+                <div className="flex items-center gap-2 sm:gap-3 text-left">
+                  <img src="/logo/header-logo.png" alt="RepoRally" className="h-7 sm:h-10 w-auto object-contain mix-blend-multiply" />
+                  <span className="text-[#7C5CFF] text-xs sm:text-sm font-bold">×</span>
+                  <img src="/events/flow-logo.png" alt="Wispr Flow" className="h-4 sm:h-6 w-auto object-contain" />
+                </div>
+              ) : (
               <div className="flex items-center gap-2 sm:gap-2.5 text-left">
                 <div
                   className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-serif text-sm sm:text-lg font-bold border shrink-0 ${
@@ -214,6 +242,7 @@ export function CertificateCard({
                   </div>
                 </div>
               </div>
+              )}
 
               <div className="text-right font-mono text-[8px] sm:text-[9px] text-[#4A4473]">
                 <span className="hidden xs:inline">OFFICIAL CREDENTIAL ID</span>
@@ -257,7 +286,9 @@ export function CertificateCard({
               )}
 
               <p className="max-w-xl mx-auto text-xs sm:text-sm text-[#4A4473] leading-relaxed mt-1.5 sm:mt-2 px-1">
-                is awarded this certificate in recognition of their active participation and contribution to
+                {isBolo
+                  ? "is awarded this certificate for building a working app by voice with Wispr Flow at"
+                  : "is awarded this certificate in recognition of their active participation and contribution to"}
                 <strong className="block text-[#1A1440] font-bold mt-0.5 text-xs sm:text-sm">
                   {certificate.title}
                 </strong>
@@ -306,8 +337,10 @@ export function CertificateCard({
           </div>
 
           {/* Tamper Seal watermark */}
-          <div className="hidden sm:block absolute right-[32px] bottom-[28px] text-[7px] font-mono text-[#4A4473]/60 tracking-wider pointer-events-none print:hidden">
-            SECURE VERIFIABLE HASH · REPORALLY ORG
+          <div className={`hidden sm:block absolute text-[7px] font-mono text-[#4A4473]/60 tracking-wider pointer-events-none print:hidden ${isBolo ? "left-1/2 -translate-x-1/2 bottom-[22px] whitespace-nowrap" : "right-[32px] bottom-[28px]"}`}>
+            {isBolo
+              ? "COMMUNITY EVENT BY REPORALLY · WISPR FLOW IS A TRADEMARK OF ITS OWNER"
+              : "SECURE VERIFIABLE HASH · REPORALLY ORG"}
           </div>
         </article>
       </div>

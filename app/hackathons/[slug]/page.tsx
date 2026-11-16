@@ -5,6 +5,8 @@ import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
 import { getCurrentDbUser } from "@/lib/profile";
 import { isUserAdmin, canUserManageHackathon } from "@/lib/admin-auth";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
+import { BoloBuildPage } from "@/components/events/BoloBuildPage";
+import { BOLO_SLUG } from "@/lib/curated-events";
 import {
   Trophy,
   Calendar,
@@ -52,6 +54,10 @@ export default async function HackathonDetailPage({
   // Platform admins AND the approved host of this hackathon get the studio link.
   const isAdmin = isUserAdmin(user) || canUserManageHackathon(user, { hostEmail: hackathon.hostEmail });
   const submissions = await getAllSubmissions(hackathon.id);
+
+  if (hackathon.slug === BOLO_SLUG) {
+    return <BoloBuildPage hackathon={hackathon} isAdmin={isAdmin} submissionsCount={submissions.length} />;
+  }
 
   return (
     <div className="min-h-screen py-8 sm:py-12">
