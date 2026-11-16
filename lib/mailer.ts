@@ -580,3 +580,41 @@ export function hostProposalApprovedEmail(params: {
 
 
 
+
+/**
+ * Certificate delivery: tells a builder their certificate is ready and links to the
+ * printable certificate page and the public verification page.
+ */
+export function certificateEmail(params: {
+  to: string;
+  name: string;
+  hackathonTitle: string;
+  awardTitle: string;
+  certNumber: string;
+  certUrl: string;
+}): EmailMessage {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const verifyUrl = `${SITE_URL}/verify/${encodeURIComponent(params.certNumber)}`;
+  const html = `
+  <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:#7c5cff">REPORALLY</div>
+    <h1 style="font-size:22px;margin:12px 0">Your certificate is ready, ${esc(params.name)}</h1>
+    <p style="font-size:14px;line-height:1.6;color:#333">Thank you for taking part in <strong>${esc(params.hackathonTitle)}</strong>. Your official certificate has been issued.</p>
+    <div style="background:#0A071B;border:2px solid #7c5cff;border-radius:16px;padding:20px;margin:18px 0;color:#fff">
+      <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;color:#C6FF3D;text-transform:uppercase">${esc(params.awardTitle)}</div>
+      <div style="font-size:20px;font-weight:800;margin:8px 0 2px">${esc(params.name)}</div>
+      <div style="font-family:monospace;font-size:12px;color:#D4CEF5">Certificate ID: ${esc(params.certNumber)}</div>
+      <div style="margin-top:16px">
+        <a href="${params.certUrl}" style="display:inline-block;background:#C6FF3D;color:#0A071B;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:900;font-size:14px">VIEW &amp; DOWNLOAD CERTIFICATE &rarr;</a>
+      </div>
+    </div>
+    <p style="font-size:13px;line-height:1.6;color:#555">You can print it or save it as a PDF from the certificate page (it prints on a single A4 landscape page), and share it on LinkedIn or X. Anyone can confirm it is genuine here: <a href="${verifyUrl}" style="color:#7c5cff;font-weight:700">${verifyUrl}</a></p>
+    <p style="color:#8b84ad;font-size:12px;margin-top:24px">You received this because you registered for ${esc(params.hackathonTitle)} on RepoRally. Reply to this email if you have questions.</p>
+  </div>`;
+  return {
+    to: params.to,
+    subject: `Your certificate: ${params.awardTitle} — ${params.hackathonTitle}`,
+    html,
+  };
+}

@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getHackathonBySlug } from "@/lib/hackathons";
+import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
 import { getParticipantsForHackathon, getCertificatesForHackathon } from "@/lib/participant-store";
 import { getCurrentDbUser } from "@/lib/profile";
 import { isUserAdmin, canUserManageHackathon } from "@/lib/admin-auth";
@@ -72,6 +72,33 @@ export default async function HackathonAdminPage({ params, searchParams }: Admin
 
   const participants = await getParticipantsForHackathon(slug);
   const certificates = await getCertificatesForHackathon(slug);
+  const submissions = await getAllSubmissions(hackathon.id);
+
+  // Every project, with the registrant's email and their squad's emails, so an
+  // organizer can always reach the people behind a project (even if the project
+  // is not linked to a registration).
+  const byTicket = new Map(participants.map((p) => [p.ticketNumber, p]));
+  const projectRows = submissions.map((sub) => {
+    const owner = sub.ticketNumber ? byTicket.get(sub.ticketNumber) : undefined;
+    const squad = owner?.teamCode ? participants.filter((p) => p.teamCode === owner.teamCode) : owner ? [owner] : [];
+    return {
+      id: sub.id,
+      title: sub.title,
+      tagline: sub.tagline,
+      repoUrl: sub.repoUrl,
+      demoUrl: sub.demoUrl,
+      videoUrl: sub.videoUrl,
+      pitchDeckUrl: sub.pitchDeckUrl || sub.gammaUrl,
+      trackId: sub.trackId,
+      teamName: sub.teamName || owner?.teamName,
+      createdAt: sub.createdAt,
+      ticketNumber: sub.ticketNumber,
+      submitterName: owner?.name || sub.authorName,
+      email: owner?.email,
+      memberEmails: squad.map((m) => m.email).filter(Boolean) as string[],
+      linked: !!owner,
+    };
+  });
 
   return (
     <AdminControlClient
@@ -80,6 +107,7 @@ export default async function HackathonAdminPage({ params, searchParams }: Admin
       hackathonTitle={hackathon.title}
       participants={participants}
       initialCertificates={certificates}
+      submissions={projectRows}
       isSuperAdmin={isSuper}
       hostEmail={hackathon.hostEmail}
     />

@@ -1226,16 +1226,26 @@ export async function getAllSubmissions(hackathonId?: string): Promise<Hackathon
   const list = Array.from(map.values());
   if (hackathonId) {
     const clean = hackathonId.replace(/^gh-/, "");
+    // Resolve the database id for this event (proposal-built events carry a
+    // different id than their database row), then match STRICTLY. Never let
+    // another event's projects bleed in.
+    const ids = new Set<string>([hackathonId, clean, `gh-${clean}`]);
+    if (isDbAvailable()) {
+      try {
+        const row = await prisma.hackathon.findFirst({
+          where: { OR: [{ id: hackathonId }, { id: `gh-${clean}` }, { slug: clean }, { slug: hackathonId }] },
+          select: { id: true },
+        });
+        if (row) ids.add(row.id);
+      } catch (e) {
+        console.warn("[getAllSubmissions] id resolve notice:", e);
+      }
+    }
+    const legacyFlagship = clean === "shipathon-2026" || clean === "shipathon";
     return list.filter(
       (s) =>
-        !s.hackathonId ||
-        s.hackathonId === hackathonId ||
-        s.hackathonId === clean ||
-        s.hackathonId === `gh-${clean}` ||
-        s.hackathonId === "gh-shipathon-2026" ||
-        s.hackathonId === "shipathon-2026" ||
-        s.hackathonId.startsWith("c") ||
-        s.hackathonId.startsWith("cm")
+        (s.hackathonId && ids.has(s.hackathonId)) ||
+        (legacyFlagship && (!s.hackathonId || s.hackathonId === "gh-shipathon-2026" || s.hackathonId === "shipathon-2026"))
     );
   }
   return list;

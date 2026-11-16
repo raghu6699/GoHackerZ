@@ -31,12 +31,31 @@ import {
 import type { HackathonParticipant, HackathonCertificate, CertificateType } from "@/lib/hackathons";
 import type { HostHackathonProposal } from "@/lib/host-proposals";
 
+export type AdminProjectRow = {
+  id: string;
+  title: string;
+  tagline?: string;
+  repoUrl: string;
+  demoUrl?: string;
+  videoUrl?: string;
+  pitchDeckUrl?: string;
+  trackId?: string;
+  teamName?: string;
+  createdAt: string;
+  ticketNumber?: string;
+  submitterName: string;
+  email?: string;
+  memberEmails: string[];
+  linked: boolean;
+};
+
 interface AdminControlClientProps {
   slug: string;
   initialStatus: string;
   hackathonTitle: string;
   participants: HackathonParticipant[];
   initialCertificates: HackathonCertificate[];
+  submissions?: AdminProjectRow[];
   isSuperAdmin?: boolean;
   hostEmail?: string;
 }
@@ -47,6 +66,7 @@ export function AdminControlClient({
   hackathonTitle,
   participants: initialParticipants,
   initialCertificates,
+  submissions: projects = [],
   isSuperAdmin = true,
   hostEmail,
 }: AdminControlClientProps) {
@@ -58,6 +78,78 @@ export function AdminControlClient({
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Project directory + certificate email state
+  const [projSearch, setProjSearch] = useState("");
+  const [mailRun, setMailRun] = useState<{ running: boolean; sent: number; total: number; failed: string[]; note?: string }>({
+    running: false, sent: 0, total: 0, failed: [],
+  });
+
+  const filteredProjects = projects.filter((pr) => {
+    const q = projSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [pr.title, pr.submitterName, pr.email, pr.teamName, pr.ticketNumber, ...pr.memberEmails]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(q));
+  });
+
+  function downloadProjectsCsv() {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const head = ["Project", "Track", "Submitter", "Email", "Squad", "Squad emails", "Ticket", "Repo", "Demo", "Video", "Deck", "Submitted", "Linked to registration"];
+    const rows = projects.map((pr) => [
+      pr.title, pr.trackId, pr.submitterName, pr.email, pr.teamName, pr.memberEmails.join("; "), pr.ticketNumber,
+      pr.repoUrl, pr.demoUrl, pr.videoUrl, pr.pitchDeckUrl, pr.createdAt, pr.linked ? "yes" : "NO",
+    ]);
+    const csv = [head, ...rows].map((r) => r.map(esc).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug}-projects.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function emailAllCertificates() {
+    if (mailRun.running || certificates.length === 0) return;
+    if (!window.confirm(`Email certificates to ${certificates.length} recipient(s)? Each person receives one email. Run this once.`)) return;
+    setMailRun({ running: true, sent: 0, total: certificates.length, failed: [] });
+    let offset = 0;
+    let sent = 0;
+    const failed: string[] = [];
+    try {
+      for (let guard = 0; guard < 200; guard++) {
+        const res = await fetch(`/api/hackathons/${slug}/certificates/email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ offset, limit: 8 }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Request failed");
+        sent += data.sent;
+        (data.failed || []).forEach((f: { certNumber: string; reason: string }) => failed.push(`${f.certNumber}: ${f.reason}`));
+        offset = data.nextOffset;
+        setMailRun({ running: !data.done, sent, total: data.total, failed: [...failed] });
+        if (data.done) break;
+      }
+      setMailRun({ running: false, sent, total: certificates.length, failed, note: "Finished." });
+    } catch (e: any) {
+      setMailRun({ running: false, sent, total: certificates.length, failed, note: `Stopped: ${e.message}` });
+    }
+  }
+
+  async function resendCertificate(certNumber: string) {
+    try {
+      const res = await fetch(`/api/hackathons/${slug}/certificates/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ certNumber }),
+      });
+      const data = await res.json();
+      window.alert(data.success && data.sent ? "Certificate email sent." : `Not sent: ${data.error || data.failed?.[0]?.reason || "unknown error"}`);
+    } catch {
+      window.alert("Could not send the email. Please try again.");
+    }
+  }
 
   // Award studio state
   const [selectedTicket, setSelectedTicket] = useState<string>("");
@@ -643,6 +735,101 @@ export function AdminControlClient({
           </div>
         </div>
 
+        {/* Section 2b: Project submissions, with the registrant's email */}
+        <div id="projects-section" className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <GitPullRequest className="w-5 h-5 text-[#C6FF3D]" />
+                Project Submissions ({projects.length})
+              </h2>
+              <p className="text-xs text-[#8e88b8] mt-0.5">
+                Every project with the submitter&apos;s registered email and their squad&apos;s emails. Projects not linked to a registration are flagged.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#8e88b8]" />
+                <input
+                  type="text"
+                  value={projSearch}
+                  onChange={(e) => setProjSearch(e.target.value)}
+                  placeholder="Search project, name, email..."
+                  className="w-full h-9 pl-9 pr-3 rounded-xl bg-[#161233] border border-[#2c2459] text-xs text-white placeholder:text-[#5d5687] focus:outline-none focus:border-[#7C5CFF]"
+                />
+              </div>
+              <button
+                onClick={downloadProjectsCsv}
+                disabled={projects.length === 0}
+                className="shrink-0 px-3 h-9 rounded-xl bg-[#251f52] hover:bg-[#342b73] disabled:opacity-40 text-[#C6FF3D] font-mono text-[11px] font-bold"
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#161233] text-[#8e88b8] uppercase font-mono text-[10px]">
+                <tr>
+                  <th className="py-3 px-4 rounded-l-xl">Project</th>
+                  <th className="py-3 px-4">Submitted by</th>
+                  <th className="py-3 px-4">Squad &amp; emails</th>
+                  <th className="py-3 px-4">Links</th>
+                  <th className="py-3 px-4 rounded-r-xl">Submitted</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e1942]">
+                {filteredProjects.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-[#8e88b8]">
+                      {projects.length === 0 ? "No projects submitted yet." : "No projects match your search."}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProjects.map((pr) => (
+                    <tr key={pr.id} className="hover:bg-[#141030] transition-colors align-top">
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-white max-w-[220px]">{pr.title}</div>
+                        {pr.tagline && <div className="text-[11px] text-[#8e88b8] max-w-[220px]">{pr.tagline}</div>}
+                        {pr.trackId && <div className="text-[10px] font-mono text-[#C6FF3D] mt-0.5">{pr.trackId}</div>}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-white">{pr.submitterName}</div>
+                        {pr.email ? (
+                          <a href={`mailto:${pr.email}`} className="text-[11px] font-mono text-[#a59fcf] hover:text-white">
+                            {pr.email}
+                          </a>
+                        ) : (
+                          <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            ⚠ Not linked to a registration
+                          </span>
+                        )}
+                        {pr.ticketNumber && <div className="text-[10px] font-mono text-[#645e8f]">{pr.ticketNumber}</div>}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-white">{pr.teamName || "Solo"}</div>
+                        {pr.memberEmails.length > 0 && (
+                          <div className="text-[10px] font-mono text-[#8e88b8] max-w-[220px] break-all">{pr.memberEmails.join(", ")}</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-0.5 text-[11px]">
+                          <a href={pr.repoUrl} target="_blank" rel="noopener noreferrer" className="text-[#C6FF3D] hover:underline">Repo ↗</a>
+                          {pr.demoUrl && <a href={pr.demoUrl} target="_blank" rel="noopener noreferrer" className="text-[#C6FF3D] hover:underline">Live demo ↗</a>}
+                          {pr.videoUrl && <a href={pr.videoUrl} target="_blank" rel="noopener noreferrer" className="text-[#C6FF3D] hover:underline">Video ↗</a>}
+                          {pr.pitchDeckUrl && <a href={pr.pitchDeckUrl} target="_blank" rel="noopener noreferrer" className="text-[#C6FF3D] hover:underline">Deck ↗</a>}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-[#8e88b8] whitespace-nowrap">{new Date(pr.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* Section 3: Special Winner & Awards Studio Form */}
         <div id="award-studio-form" className="p-6 rounded-2xl bg-[#0F0C24] border border-[#251F47] shadow-xl">
           <div className="mb-6">
@@ -767,6 +954,25 @@ export function AdminControlClient({
               </p>
             </div>
 
+            <div className="flex flex-col items-start gap-1.5">
+              <button
+                onClick={emailAllCertificates}
+                disabled={mailRun.running || certificates.length === 0}
+                className="px-3.5 h-9 rounded-xl bg-[#C6FF3D] hover:bg-[#d6ff6b] disabled:opacity-40 text-[#1A1440] font-mono text-[11px] font-black flex items-center gap-1.5"
+              >
+                {mailRun.running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                {mailRun.running ? `Sending ${mailRun.sent}/${mailRun.total}...` : "Email certificates to all"}
+              </button>
+              {(mailRun.note || mailRun.failed.length > 0) && (
+                <div className="text-[11px] text-[#a59fcf] max-w-[260px]">
+                  {mailRun.note} Sent {mailRun.sent} of {mailRun.total}.
+                  {mailRun.failed.length > 0 && (
+                    <span className="block text-amber-300">{mailRun.failed.length} failed: {mailRun.failed.slice(0, 2).join("; ")}{mailRun.failed.length > 2 ? "..." : ""}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Search filter */}
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#8e88b8]" />
@@ -834,6 +1040,13 @@ export function AdminControlClient({
                         {new Date(cert.issuedAt).toLocaleDateString("en-GB")}
                       </td>
                       <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => resendCertificate(cert.certNumber)}
+                          className="mr-1.5 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] text-[11px] font-medium transition-colors"
+                          title="Email this certificate to the recipient"
+                        >
+                          <Mail className="w-3 h-3" /> Email
+                        </button>
                         <Link
                           href={`/verify/${cert.certNumber}`}
                           target="_blank"
