@@ -45,8 +45,8 @@ export default async function HackathonAdminPage({ params, searchParams }: Admin
           Organizer Access Restricted
         </h1>
         <p className="text-sm text-body max-w-md mb-6 leading-relaxed">
-          The Admin & Judging Studio for <strong>{hackathon.title}</strong> is restricted to verified event organizers (
-          <code className="text-purple font-mono">{hackathon.hostEmail || "RepoRally Directors"}</code>).
+          The Admin & Judging Studio for <strong>{hackathon.title}</strong> is restricted to its verified event organizer and RepoRally
+          admins. If you are the organizer, sign in with the email address you used on your host proposal.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
