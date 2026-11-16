@@ -316,10 +316,10 @@ export default async function ProfilePage({
               </div>
               <h3 className="font-bold text-xl mb-2">No Hackathon Passports Yet</h3>
               <p className="text-sm text-muted max-w-md mx-auto mb-6 leading-relaxed">
-                You haven&apos;t registered for a RepoRally hackathon yet. Join our flagship hackathon to build with edge & AI tools, earn your official 3D Holographic Builder Passport, and win cash grants.
+                You haven&apos;t registered for a RepoRally hackathon yet. Join a live hackathon to build with edge & AI tools, earn your official 3D Holographic Builder Passport, and win cash grants.
               </p>
-              <Link href="/hackathons/shipathon-2026/register" className="btn btn-lime text-[#1A1440] font-bold">
-                Register for Shipathon 2026 🚀
+              <Link href="/hackathons" className="btn btn-lime text-[#1A1440] font-bold">
+                Browse hackathons 🚀
               </Link>
             </div>
           )}

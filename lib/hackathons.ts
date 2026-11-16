@@ -136,6 +136,9 @@ export type HackathonCertificate = {
 };
 
 // Flagship Inaugural Hackathon
+/** Set to true to bring back the built-in demo "Global Shipathon" event. */
+export const SHOW_BUILTIN_FLAGSHIP = false;
+
 export const FLAGSHIP_HACKATHON: HackathonData = {
   id: "gh-shipathon-2026",
   slug: "shipathon-2026",
@@ -627,11 +630,14 @@ async function loadHackathonBySlug(slug: string): Promise<HackathonData | null> 
     };
   }
 
+  // The built-in demo flagship event is retired: only real hackathons
+  // (database / approved host proposals) are served now.
   if (
-    slug === FLAGSHIP_HACKATHON.slug ||
-    cleanSlug === "shipathon-2026" ||
-    slug === "active" ||
-    slug === "current"
+    SHOW_BUILTIN_FLAGSHIP &&
+    (slug === FLAGSHIP_HACKATHON.slug ||
+      cleanSlug === "shipathon-2026" ||
+      slug === "active" ||
+      slug === "current")
   ) {
     return {
       ...FLAGSHIP_HACKATHON,
@@ -649,9 +655,11 @@ async function loadHackathonBySlug(slug: string): Promise<HackathonData | null> 
 export async function getAllHackathons(): Promise<HackathonData[]> {
   const map = new Map<string, HackathonData>();
 
-  // 1. Flagship
-  const flagship = await getHackathonBySlug(FLAGSHIP_HACKATHON.slug);
-  if (flagship) map.set(flagship.slug, flagship);
+  // 1. Flagship (retired demo event — hidden unless re-enabled)
+  if (SHOW_BUILTIN_FLAGSHIP) {
+    const flagship = await getHackathonBySlug(FLAGSHIP_HACKATHON.slug);
+    if (flagship) map.set(flagship.slug, flagship);
+  }
 
   // 2. Custom disk hackathons
   const customList = loadPersistedCustomHackathons();

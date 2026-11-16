@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getCurrentDbUser } from "@/lib/profile";
 import { getHackathonBySlug, getParticipantByEmail, FLAGSHIP_HACKATHON } from "@/lib/hackathons";
 import { HackathonRegisterClient } from "@/components/HackathonRegisterClient";
@@ -32,13 +33,10 @@ export default async function HackathonRegisterPage({
     getHackathonBySlug(slug),
   ]);
 
-  const isFlagshipSlug = slug === FLAGSHIP_HACKATHON.slug || slug === "shipathon-2026" || slug === "gh-shipathon-2026";
-  const hackathon = hackathonData || (isFlagshipSlug ? FLAGSHIP_HACKATHON : {
-    ...FLAGSHIP_HACKATHON,
-    id: slug.startsWith("gh-") ? slug : `gh-${slug}`,
-    slug: slug.replace(/^gh-/, ""),
-    title: slug.replace(/^gh-/, "").split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
-  });
+  // Never fabricate an event for an unknown slug — registering for it would
+  // attach the passport to the wrong hackathon.
+  if (!hackathonData) notFound();
+  const hackathon = hackathonData;
 
   const isClosed = hackathon.status === "COMPLETED" || hackathon.status === "JUDGING";
   const existingParticipant = user?.email

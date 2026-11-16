@@ -96,7 +96,7 @@ export function NavAuth() {
 
   const items = [
     ...(isAdmin
-      ? [{ href: "/hackathons/shipathon-2026/admin", label: "Hackathon Admin Studio", emoji: "🏆" }]
+      ? [{ href: "/admin/hackathons", label: "Hackathon Admin Studio", emoji: "🏆" }]
       : []),
     { href: "/hackathons/passport", label: "My Builder Passport", emoji: "🎫" },
     { href: "/profile", label: "Edit profile", emoji: "👤" },
