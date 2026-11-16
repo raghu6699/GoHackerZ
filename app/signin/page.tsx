@@ -3,13 +3,15 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentDbUser } from "@/lib/profile";
 import { AuthForm } from "@/components/AuthForm";
+import { safeNext } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = { title: "Sign in — RepoRally" };
 
-export default async function SignInPage() {
+export default async function SignInPage({ searchParams }: { searchParams?: Promise<{ next?: string; redirect?: string }> }) {
+  const sp = (await searchParams) || {};
   const user = await getCurrentDbUser();
   if (user) {
-    redirect("/profile");
+    redirect(safeNext(sp.next ?? sp.redirect, "/profile"));
   }
 
   return (

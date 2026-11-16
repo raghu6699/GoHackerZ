@@ -217,7 +217,11 @@ export function MobileMenu() {
                   </button>
                 ) : (
                   <Link
-                    href="/signin"
+                    href={
+                      pathname && pathname !== "/" && !/^\/(signin|signup|login|auth)/.test(pathname)
+                        ? `/signin?next=${encodeURIComponent(pathname)}`
+                        : "/signin"
+                    }
                     onClick={() => setOpen(false)}
                     className="btn btn-lime flex-1 py-3 font-bold flex items-center justify-center gap-2"
                   >

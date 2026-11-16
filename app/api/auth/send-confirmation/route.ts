@@ -2,17 +2,19 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { sendEmail, accountConfirmationEmail } from "@/lib/mailer";
 import { SITE_URL } from "@/lib/site";
+import { safeNext } from "@/lib/safe-redirect";
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json().catch(() => ({}));
+    const { email, next: rawNext } = await req.json().catch(() => ({} as { email?: string; next?: string }));
+    const next = safeNext(rawNext, "/");
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     const site = SITE_URL;
-    const redirectTo = `${site}/auth/callback`;
+    const redirectTo = `${site}/auth/callback${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`;
 
     const admin = createAdminClient();
     if (admin) {
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
       });
 
       if (!error && data?.properties?.hashed_token) {
-        const confirmUrl = `${site}/auth/callback?token_hash=${data.properties.hashed_token}&type=magiclink&next=/`;
+        const confirmUrl = `${site}/auth/callback?token_hash=${data.properties.hashed_token}&type=magiclink&next=${encodeURIComponent(next)}`;
         const mailRes = await sendEmail(accountConfirmationEmail(email, confirmUrl));
         return NextResponse.json({ ok: true, delivered: mailRes.delivered, provider: mailRes.provider });
       } else if (!error && data?.properties?.action_link) {

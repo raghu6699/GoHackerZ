@@ -6,11 +6,16 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { Logo } from "./Logo";
+import { safeNext } from "@/lib/safe-redirect";
 
 export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   const isSignup = mode === "signup";
   const searchParams = useSearchParams();
-  const redirectTarget = searchParams?.get("redirect") || "/";
+  // Where to go after auth. The register page and the route guard send ?next=;
+  // older links used ?redirect=. Both are accepted, and only same-site paths are allowed.
+  const redirectTarget = safeNext(searchParams?.get("next") ?? searchParams?.get("redirect"), "/");
+  const nextQuery = redirectTarget !== "/" ? `?next=${encodeURIComponent(redirectTarget)}` : "";
+  const callbackUrl = (origin: string) => `${origin}/auth/callback${nextQuery}`;
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -93,7 +98,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       type: "signup",
       email: typedEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: callbackUrl(window.location.origin),
       },
     });
 
@@ -130,7 +135,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name } },
+        options: { data: { name }, emailRedirectTo: callbackUrl(window.location.origin) },
       });
       if (error) {
         setError(error.message);
@@ -144,7 +149,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         await fetch("/api/auth/send-confirmation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, next: redirectTarget }),
         });
       } catch {
         // non-fatal: the "resend confirmation" button covers this
@@ -192,11 +197,10 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       return;
     }
 
-    const callbackNext = redirectTarget !== "/" ? `?next=${encodeURIComponent(redirectTarget)}` : "";
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback${callbackNext}`,
+        redirectTo: callbackUrl(window.location.origin),
       },
     });
 
@@ -227,7 +231,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
               </p>
             </div>
             <Link
-              href="/signin"
+              href={`/signin${nextQuery}`}
               onClick={() => setDone(false)}
               className="btn btn-purple w-full justify-center text-[15px]"
             >
@@ -367,7 +371,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
             <p className="text-center text-[14px] text-muted mt-6">
               {isSignup ? "Already have an account? " : "New to RepoRally? "}
               <Link
-                href={isSignup ? "/signin" : "/signup"}
+                href={`${isSignup ? "/signin" : "/signup"}${nextQuery}`}
                 className="font-semibold text-purple hover:underline"
               >
                 {isSignup ? "Sign in" : "Create one"}

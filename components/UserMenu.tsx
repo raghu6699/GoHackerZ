@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { Avatar } from "./Avatar";
 import { clearMyPassport } from "@/lib/passport-storage";
@@ -21,6 +21,11 @@ export function NavAuth() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const signInHref =
+    pathname && pathname !== "/" && !/^\/(signin|signup|login|auth)/.test(pathname)
+      ? `/signin?next=${encodeURIComponent(pathname)}`
+      : "/signin";
   const hosted = useHostedEvents(user?.email);
 
   useEffect(() => {
@@ -71,7 +76,7 @@ export function NavAuth() {
 
   if (!user) {
     return (
-      <Link href="/signin" className="tlink hidden sm:inline-block">
+      <Link href={signInHref} className="tlink hidden sm:inline-block">
         Sign in
       </Link>
     );

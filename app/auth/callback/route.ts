@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getCurrentDbUser } from "@/lib/profile";
+import { safeNext } from "@/lib/safe-redirect";
 
 /**
  * GET /auth/callback?code=… — exchanges the Supabase auth code (email
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/";
+  const next = safeNext(searchParams.get("next"), "/");
 
   const supabase = await createClient();
 
