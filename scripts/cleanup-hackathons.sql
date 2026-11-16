@@ -28,6 +28,13 @@ BEGIN;
 DELETE FROM "Hackathon" WHERE slug <> 'football-cup';
 DELETE FROM "HackathonHostProposal" WHERE lower("hackathonTitle") <> 'football cup';
 
+-- NOTE: these tables were created without ON DELETE CASCADE, so child rows must be
+-- removed explicitly (otherwise they linger as orphans and break admin pages).
+DELETE FROM "HackathonCertificate" WHERE "hackathonId" NOT IN (SELECT id FROM "Hackathon");
+DELETE FROM "HackathonSubmission"  WHERE "hackathonId" NOT IN (SELECT id FROM "Hackathon");
+DELETE FROM "HackathonParticipant" WHERE "hackathonId" NOT IN (SELECT id FROM "Hackathon");
+DELETE FROM "HackathonTeam"        WHERE "hackathonId" NOT IN (SELECT id FROM "Hackathon");
+
 -- Verify: only football-cup should remain.
 SELECT slug, title FROM "Hackathon";
 SELECT "refNumber", "hackathonTitle" FROM "HackathonHostProposal";
