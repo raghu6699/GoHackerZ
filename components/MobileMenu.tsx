@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { Avatar } from "./Avatar";
 import { useHostedEvents } from "./useHostedEvents";
+import { useHackathonBadge } from "./useHackathonBadge";
 import type { User } from "@supabase/supabase-js";
 import {
   BookOpen,
@@ -25,7 +26,7 @@ import {
 
 const links = [
   { href: "/read", label: "Feed", icon: BookOpen },
-  { href: "/hackathons", label: "Hackathons", icon: Trophy, badge: "LIVE" },
+  { href: "/hackathons", label: "Hackathons", icon: Trophy },
   { href: "/deep-dives", label: "Deep Dives", icon: Sparkles },
   { href: "/topics", label: "Topics", icon: Tag },
   { href: "/guestbook", label: "Guestbook Wall", icon: MessageSquare },
@@ -39,6 +40,7 @@ export function MobileMenu() {
   const pathname = usePathname();
   const router = useRouter();
   const hosted = useHostedEvents(user?.email);
+  const hackBadge = useHackathonBadge();
 
   // Listen to Supabase auth session state
   useEffect(() => {
@@ -184,10 +186,14 @@ export function MobileMenu() {
                       <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-purple"}`} />
                       <span>{l.label}</span>
                     </div>
-                    {("badge" in l) && (
-                      <span className="px-2 py-0.5 text-[10px] bg-[#E11D48] text-white font-mono font-black rounded-full shadow-sm inline-flex items-center gap-1 tracking-wider">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        {String(l.badge)}
+                    {l.href === "/hackathons" && hackBadge && (
+                      <span
+                        className={`px-2 py-0.5 text-[10px] text-white font-mono font-black rounded-full shadow-sm inline-flex items-center gap-1 tracking-wider ${
+                          hackBadge === "LIVE" ? "bg-[#E11D48]" : "bg-purple"
+                        }`}
+                      >
+                        {hackBadge === "LIVE" && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                        {hackBadge}
                       </span>
                     )}
                   </Link>

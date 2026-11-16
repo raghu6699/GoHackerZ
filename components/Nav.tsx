@@ -6,10 +6,11 @@ import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { NavAuth } from "./NavAuth";
 import { MobileMenu } from "./MobileMenu";
+import { useHackathonBadge } from "./useHackathonBadge";
 
 const links = [
   { href: "/read", label: "Feed" },
-  { href: "/hackathons", label: "Hackathons", badge: "LIVE" },
+  { href: "/hackathons", label: "Hackathons" },
   { href: "/deep-dives", label: "Deep Dives" },
   { href: "/topics", label: "Topics" },
   { href: "/guestbook", label: "Guestbook" },
@@ -19,6 +20,7 @@ const links = [
 
 export function Nav() {
   const pathname = usePathname();
+  const hackBadge = useHackathonBadge();
 
   return (
     <nav className="sticky top-0 z-50 py-2.5 md:py-3.5 bg-bg/95 backdrop-blur-md border-b border-ink/10">
@@ -42,10 +44,14 @@ export function Nav() {
                 }`}
               >
                 <span>{l.label}</span>
-                {l.badge && (
-                  <span className="px-2 py-0.5 text-[9.5px] bg-[#E11D48] text-white font-mono font-black rounded-full shadow-sm inline-flex items-center gap-1 tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    {l.badge}
+                {l.href === "/hackathons" && hackBadge && (
+                  <span
+                    className={`px-2 py-0.5 text-[9.5px] text-white font-mono font-black rounded-full shadow-sm inline-flex items-center gap-1 tracking-wider ${
+                      hackBadge === "LIVE" ? "bg-[#E11D48]" : "bg-purple"
+                    }`}
+                  >
+                    {hackBadge === "LIVE" && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                    {hackBadge}
                   </span>
                 )}
               </Link>

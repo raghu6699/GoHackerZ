@@ -1,8 +1,9 @@
 import Link from "next/link";
-import type { HackathonData } from "@/lib/hackathons";
+import type { HackathonData, HackathonCertificate } from "@/lib/hackathons";
 import { VoiceFlowPill } from "./VoiceFlowPill";
 import { EventCountdown } from "./EventCountdown";
 import { StickyRegisterBar } from "./StickyRegisterBar";
+import { WinnersSection } from "./WinnersSection";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
 const FLOW_URL = "https://wisprflow.ai";
 
@@ -188,10 +189,12 @@ export function BoloBuildPage({
   hackathon,
   isAdmin,
   submissionsCount,
+  winners = [],
 }: {
   hackathon: HackathonData;
   isAdmin: boolean;
   submissionsCount: number;
+  winners?: HackathonCertificate[];
 }) {
   const slug = hackathon.slug;
   const open = hackathon.status !== "COMPLETED" && hackathon.status !== "JUDGING";
@@ -310,6 +313,12 @@ export function BoloBuildPage({
           </div>
         </div>
       </section>
+
+      {hackathon.status === "COMPLETED" && (
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+          <WinnersSection certificates={winners} dark hackathonTitle={hackathon.title} />
+        </div>
+      )}
 
       {/* HOW IT WORKS */}
       <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">

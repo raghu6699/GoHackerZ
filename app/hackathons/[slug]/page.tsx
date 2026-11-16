@@ -5,6 +5,8 @@ import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
 import { getCurrentDbUser } from "@/lib/profile";
 import { isUserAdmin, canUserManageHackathon } from "@/lib/admin-auth";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
+import { WinnersSection } from "@/components/events/WinnersSection";
+import { getCertificatesForHackathon } from "@/lib/participant-store";
 import { BoloBuildPage } from "@/components/events/BoloBuildPage";
 import { BOLO_SLUG } from "@/lib/curated-events";
 import {
@@ -54,9 +56,22 @@ export default async function HackathonDetailPage({
   // Platform admins AND the approved host of this hackathon get the studio link.
   const isAdmin = isUserAdmin(user) || canUserManageHackathon(user, { hostEmail: hackathon.hostEmail });
   const submissions = await getAllSubmissions(hackathon.id);
+  const isConcluded = hackathon.status === "COMPLETED";
+  const certificates = isConcluded ? await getCertificatesForHackathon(hackathon.slug).catch(() => []) : [];
+
+  // Schedule badges follow the event's real phase, not the template's defaults.
+  const scheduleItems = hackathon.schedule.map((item) => ({
+    ...item,
+    status:
+      hackathon.status === "COMPLETED" || hackathon.status === "JUDGING"
+        ? ("completed" as const)
+        : hackathon.status === "UPCOMING"
+        ? ("upcoming" as const)
+        : item.status,
+  }));
 
   if (hackathon.slug === BOLO_SLUG) {
-    return <BoloBuildPage hackathon={hackathon} isAdmin={isAdmin} submissionsCount={submissions.length} />;
+    return <BoloBuildPage hackathon={hackathon} isAdmin={isAdmin} submissionsCount={submissions.length} winners={certificates} />;
   }
 
   return (
@@ -202,6 +217,10 @@ export default async function HackathonDetailPage({
           </div>
         </div>
 
+        {isConcluded && (
+          <WinnersSection certificates={certificates} hackathonTitle={hackathon.title} />
+        )}
+
         {/* Tracks & Prizes Section */}
         <section className="space-y-6">
           <div className="flex items-center gap-2">
@@ -255,7 +274,7 @@ export default async function HackathonDetailPage({
           </div>
 
           <div className="bg-card border-2 border-ink rounded-3xl p-6 sm:p-8 shadow-pop-sm space-y-4">
-            {hackathon.schedule.map((item, idx) => (
+            {scheduleItems.map((item, idx) => (
               <div
                 key={idx}
                 className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-bg border border-ink/10 hover:border-ink transition-all"
