@@ -216,9 +216,9 @@ export function CertificateCard({
             <div className="flex w-full items-center justify-between gap-2">
               {isBolo ? (
                 <div className="flex items-center gap-2 sm:gap-3 text-left">
-                  <img src="/logo/header-logo.png" alt="RepoRally" className="h-7 sm:h-10 w-auto object-contain mix-blend-multiply" />
+                  <img src="/logo/header-logo.png" alt="RepoRally" className="bg-transparent h-7 sm:h-10 w-auto object-contain mix-blend-multiply" />
                   <span className="text-[#7C5CFF] text-xs sm:text-sm font-bold">×</span>
-                  <img src="/events/flow-logo.png" alt="Wispr Flow" className="h-4 sm:h-6 w-auto object-contain" />
+                  <img src="/events/flow-logo.png" alt="Wispr Flow" className="bg-transparent h-4 sm:h-6 w-auto object-contain" />
                 </div>
               ) : (
               <div className="flex items-center gap-2 sm:gap-2.5 text-left">
@@ -309,7 +309,7 @@ export function CertificateCard({
                 <img
                   src="/logo/header-logo.png"
                   alt="RepoRally"
-                  className="h-5 sm:h-7 w-auto object-contain mix-blend-multiply mb-0.5"
+                  className="bg-transparent h-5 sm:h-7 w-auto object-contain mix-blend-multiply mb-0.5"
                 />
                 <div className="w-full h-px bg-[#1A1440] my-0.5 sm:my-1" />
                 <div className="text-[7px] sm:text-[8px] font-semibold uppercase tracking-wider text-[#4A4473] leading-tight">

@@ -36,7 +36,7 @@ function FlowWordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center rounded-xl bg-white px-3 py-1.5 ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/events/flow-logo.png" alt="Wispr Flow" className="h-6 w-auto" />
+      <img src="/events/flow-logo.png" alt="Wispr Flow" className="bg-transparent h-6 w-auto" />
     </span>
   );
 }
@@ -87,7 +87,7 @@ export function BoloBuildPage({
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pb-16 pt-10 sm:pt-16 text-center">
           <div className="mb-6 flex flex-wrap items-center justify-center gap-3 text-sm text-white/70">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <span className="inline-flex items-center rounded-xl bg-white px-2 py-0.5"><img src="/logo/header-logo.png" alt="RepoRally" className="h-10 w-auto" /></span>
+            <span className="inline-flex items-center rounded-xl bg-white px-2 py-0.5"><img src="/logo/header-logo.png" alt="RepoRally" className="bg-transparent h-10 w-auto" /></span>
             <span className="text-white/30">×</span>
             <FlowWordmark className="text-white" />
           </div>
