@@ -5,6 +5,7 @@ import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
 import { getCurrentDbUser } from "@/lib/profile";
 import { isUserAdmin, canUserManageHackathon } from "@/lib/admin-auth";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
+import { hackathonSocialMetadata } from "@/lib/hackathon-meta";
 import { WinnersSection } from "@/components/events/WinnersSection";
 import { getCertificatesForHackathon } from "@/lib/participant-store";
 import { BoloBuildPage } from "@/components/events/BoloBuildPage";
@@ -34,10 +35,7 @@ export async function generateMetadata({
   const hackathon = await getHackathonBySlug(slug);
   if (!hackathon) return { title: "Hackathon Not Found" };
 
-  return {
-    title: `${hackathon.title} — RepoRally`,
-    description: hackathon.tagline,
-  };
+  return hackathonSocialMetadata(hackathon);
 }
 
 export default async function HackathonDetailPage({

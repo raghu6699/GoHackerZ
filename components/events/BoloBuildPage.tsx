@@ -5,7 +5,7 @@ import { EventCountdown } from "./EventCountdown";
 import { StickyRegisterBar } from "./StickyRegisterBar";
 import { WinnersSection } from "./WinnersSection";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
-const FLOW_URL = "https://wisprflow.ai";
+const FLOW_URL = "https://wisprflow.ai/downloads";
 
 import { Download, ExternalLink, ArrowRight, Mic, Hammer, PenLine, Shield, Trophy, Clock, MapPin, Globe2 } from "lucide-react";
 

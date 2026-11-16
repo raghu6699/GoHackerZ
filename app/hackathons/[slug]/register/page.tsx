@@ -4,15 +4,25 @@ import { notFound } from "next/navigation";
 import { getCurrentDbUser } from "@/lib/profile";
 import { getHackathonBySlug, getParticipantByEmail, FLAGSHIP_HACKATHON } from "@/lib/hackathons";
 import { HackathonRegisterClient } from "@/components/HackathonRegisterClient";
+import { hackathonSocialMetadata } from "@/lib/hackathon-meta";
 import { Lock, Ticket, Trophy, UserCheck, ArrowRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const metadata: Metadata = {
-  title: "Register for Hackathon — RepoRally",
-  description: "Register for RepoRally hackathons, form a squad, and mint your 3D Holographic Builder Passport.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const hackathon = await getHackathonBySlug(slug);
+  if (!hackathon) return { title: "Register — RepoRally" };
+  return hackathonSocialMetadata(hackathon, {
+    path: "/register",
+    title: `Register for ${hackathon.title} | RepoRally`,
+  });
+}
 
 export default async function HackathonRegisterPage({
   params,
