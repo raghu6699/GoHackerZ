@@ -8,14 +8,6 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const user = await getCurrentDbUser();
-    if (!user || !user.email) {
-      return NextResponse.json(
-        { error: "Authentication required. Please sign in to register for hackathons." },
-        { status: 401 }
-      );
-    }
-
     const { slug } = await params;
     const hackathon = await getHackathonBySlug(slug);
     if (!hackathon) {
@@ -30,6 +22,14 @@ export async function POST(
           }).`,
         },
         { status: 400 }
+      );
+    }
+
+    const user = await getCurrentDbUser();
+    if (!user || !user.email) {
+      return NextResponse.json(
+        { error: "Authentication required. Please sign in to register for hackathons." },
+        { status: 401 }
       );
     }
 

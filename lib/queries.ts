@@ -489,6 +489,20 @@ export interface WithStatus extends Article {
   rejectionFeedback?: string | null;
 }
 
+export async function getUserProfileCounts(userId: string) {
+  if (!isDbAvailable()) {
+    return { posts: 0, published: 0, saved: 0, following: 0 };
+  }
+
+  const [posts, published, saved, following] = await Promise.all([
+    prisma.article.count({ where: { authorId: userId } }),
+    prisma.article.count({ where: { authorId: userId, status: "PUBLISHED" } }),
+    prisma.bookmark.count({ where: { userId } }),
+    prisma.follow.count({ where: { followerId: userId } }),
+  ]);
+  return { posts, published, saved, following };
+}
+
 export async function getUserArticles(userId: string): Promise<WithStatus[]> {
   if (!isDbAvailable()) return [];
   try {

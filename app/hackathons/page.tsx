@@ -228,12 +228,12 @@ export default async function HackathonsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {hIsCompleted ? (
+                      {hIsCompleted || hIsJudging ? (
                         <Link
                           href={`/hackathons/${h.slug}/submissions`}
                           className="btn btn-lime text-brand-dark font-extrabold text-xs px-3.5 py-2 rounded-xl shadow-sm"
                         >
-                          Showcase 🚀
+                          {hIsCompleted ? "Showcase 🚀" : "Submissions →"}
                         </Link>
                       ) : (
                         <Link

@@ -1315,3 +1315,47 @@ export async function getUserHackathonHistory(email: string): Promise<{ hackatho
   return results;
 }
 
+export async function getUserHackathonHistoryCount(email: string): Promise<{
+  passports: number;
+  certificates: number;
+}> {
+  if (!email) return { passports: 0, certificates: 0 };
+  const cleanEmail = email.trim().toLowerCase();
+  const participants = new Map<string, boolean>();
+
+  for (const participant of loadPersistedParticipants()) {
+    if (participant.email?.trim().toLowerCase() === cleanEmail) {
+      participants.set(participant.ticketNumber.toUpperCase(), !!participant.certificate);
+    }
+  }
+  for (const participant of memoryStore.participants.values()) {
+    if (participant.email?.trim().toLowerCase() === cleanEmail) {
+      participants.set(participant.ticketNumber.toUpperCase(), !!participant.certificate);
+    }
+  }
+
+  if (isDbAvailable()) {
+    try {
+      const rows = await prisma.hackathonParticipant.findMany({
+        where: { email: { equals: cleanEmail, mode: "insensitive" } },
+        select: {
+          ticketNumber: true,
+          certificates: { select: { id: true }, take: 1 },
+        },
+      });
+      for (const row of rows) {
+        participants.set(
+          row.ticketNumber.toUpperCase(),
+          (row.certificates?.length ?? 0) > 0
+        );
+      }
+    } catch (error) {
+      console.warn("Could not count user hackathon history:", error);
+    }
+  }
+
+  return {
+    passports: participants.size,
+    certificates: [...participants.values()].filter(Boolean).length,
+  };
+}

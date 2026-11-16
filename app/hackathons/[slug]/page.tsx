@@ -326,25 +326,26 @@ export default async function HackathonDetailPage({
           </div>
         </section>
 
-        {/* Bottom CTA Card */}
-        <div className="bg-brand-dark text-white rounded-3xl p-8 sm:p-12 border-2 border-ink shadow-pop-xl text-center space-y-4">
-          <h3 className="text-2xl sm:text-4xl font-extrabold text-white">
-            Ready to claim your Builder Passport?
-          </h3>
-          <p className="text-sm sm:text-base text-[#D4CEF5] max-w-xl mx-auto">
-            Registration takes less than 60 seconds. Form your team, get your scannable passport,
-            and build the future.
-          </p>
-          <div className="pt-2">
-            <Link
-              href={`/hackathons/${hackathon.slug}/register`}
-              className="btn btn-lime text-brand-dark font-extrabold text-base px-8 py-3.5 rounded-2xl shadow-pop inline-flex items-center gap-2"
-            >
-              <span>REGISTER NOW (FREE)</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+        {hackathon.status !== "COMPLETED" && hackathon.status !== "JUDGING" && (
+          <div className="bg-brand-dark text-white rounded-3xl p-8 sm:p-12 border-2 border-ink shadow-pop-xl text-center space-y-4">
+            <h3 className="text-2xl sm:text-4xl font-extrabold text-white">
+              Ready to claim your Builder Passport?
+            </h3>
+            <p className="text-sm sm:text-base text-[#D4CEF5] max-w-xl mx-auto">
+              Registration takes less than 60 seconds. Form your team, get your scannable passport,
+              and build the future.
+            </p>
+            <div className="pt-2">
+              <Link
+                href={`/hackathons/${hackathon.slug}/register`}
+                className="btn btn-lime text-brand-dark font-extrabold text-base px-8 py-3.5 rounded-2xl shadow-pop inline-flex items-center gap-2"
+              >
+                <span>REGISTER NOW (FREE)</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

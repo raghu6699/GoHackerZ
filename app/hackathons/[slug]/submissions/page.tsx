@@ -48,7 +48,7 @@ export default async function HackathonSubmissionsPage({
             <ArrowLeft className="w-3.5 h-3.5" />
             BACK TO EVENT OVERVIEW
           </Link>
-          <span className="font-mono text-xs text-lime font-bold">
+          <span className="inline-flex items-center rounded-full border border-ink/20 bg-lime px-3 py-1 font-mono text-xs font-bold text-[#1A1440]">
             {submissions.length} PROJECTS SUBMITTED
           </span>
         </div>

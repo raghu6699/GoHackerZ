@@ -40,6 +40,59 @@ export default async function HackathonRegisterPage({
     title: slug.replace(/^gh-/, "").split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
   });
 
+  const isClosed = hackathon.status === "COMPLETED" || hackathon.status === "JUDGING";
+  const existingParticipant = user?.email
+    ? await getParticipantByEmail(hackathon.id, user.email)
+    : null;
+
+  if (isClosed && !existingParticipant) {
+    return (
+      <div className="wrap max-w-4xl py-12">
+        <div className="rounded-3xl border-2 border-ink bg-card p-6 sm:p-10 shadow-pop-lg space-y-6 text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-mono text-xs font-bold uppercase tracking-wider">
+            <Lock className="w-3.5 h-3.5" />
+            <span>Registrations Closed</span>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink dark:text-white">
+              {hackathon.status === "COMPLETED"
+                ? "This Hackathon Has Concluded"
+                : "Registrations Are Closed for Judging"}
+            </h1>
+            <p className="mt-3 text-base text-muted leading-relaxed">
+              {hackathon.status === "COMPLETED"
+                ? `Registration for ${hackathon.title} is now closed. Official certificates and visa stamps have been minted for all participants.`
+                : `Registration for ${hackathon.title} is currently closed while projects are being evaluated by the judging panel.`}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+            <Link
+              href={`/hackathons/${slug}`}
+              className="btn btn-purple font-mono font-bold text-sm px-6 py-3 rounded-xl flex items-center gap-2"
+            >
+              <span>Back to Hackathon Overview</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href={`/hackathons/${slug}/submissions`}
+              className="btn btn-lime text-[#1A1440] font-mono font-bold text-sm px-6 py-3 rounded-xl"
+            >
+              <span>View Project Showcase 🚀</span>
+            </Link>
+            <Link
+              href="/passport"
+              className="btn bg-bg border-2 border-ink text-ink font-mono font-bold text-sm px-6 py-3 rounded-xl hover:bg-card"
+            >
+              <span>Check My Passport</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="wrap max-w-4xl py-12">
@@ -105,62 +158,6 @@ export default async function HackathonRegisterPage({
             <p className="mt-2 text-xs text-muted leading-relaxed">
               Your hackathon tickets & squad links are saved permanently to your profile history.
             </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if this specific logged-in user is already registered on the server
-  const existingParticipant = user.email
-    ? await getParticipantByEmail(hackathon.id, user.email)
-    : null;
-
-  // If hackathon is closed and user is NOT registered, show Closed State
-  const isClosed = hackathon.status === "COMPLETED" || hackathon.status === "JUDGING";
-
-  if (isClosed && !existingParticipant) {
-    return (
-      <div className="wrap max-w-4xl py-12">
-        <div className="rounded-3xl border-2 border-ink bg-card p-6 sm:p-10 shadow-pop-lg space-y-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-xs font-bold uppercase tracking-wider">
-            <Lock className="w-3.5 h-3.5" />
-            <span>Registrations Closed</span>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink dark:text-white">
-              {hackathon.status === "COMPLETED"
-                ? "This Hackathon Has Concluded"
-                : "Registrations Are Closed for Judging"}
-            </h1>
-            <p className="mt-3 text-base text-muted leading-relaxed">
-              {hackathon.status === "COMPLETED"
-                ? `Registration for ${hackathon.title} is now closed. Official certificates and visa stamps have been minted for all participants.`
-                : `Registration for ${hackathon.title} is currently closed while projects are being evaluated by the judging panel.`}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link
-              href={`/hackathons/${slug}`}
-              className="btn btn-purple font-mono font-bold text-sm px-6 py-3 rounded-xl flex items-center gap-2"
-            >
-              <span>Back to Hackathon Overview</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href={`/hackathons/${slug}/submissions`}
-              className="btn btn-lime text-[#1A1440] font-mono font-bold text-sm px-6 py-3 rounded-xl"
-            >
-              <span>View Project Showcase 🚀</span>
-            </Link>
-            <Link
-              href="/passport"
-              className="btn bg-bg border-2 border-ink text-ink font-mono font-bold text-sm px-6 py-3 rounded-xl hover:bg-card"
-            >
-              <span>Check My Passport</span>
-            </Link>
           </div>
         </div>
       </div>

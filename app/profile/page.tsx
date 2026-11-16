@@ -8,10 +8,14 @@ import {
   getFollowingFeed,
   getFollowedAuthors,
   getUserSavedArticles,
+  getUserProfileCounts,
   preloadCardData,
   type WithStatus,
 } from "@/lib/queries";
-import { getUserHackathonHistory } from "@/lib/hackathons";
+import {
+  getUserHackathonHistory,
+  getUserHackathonHistoryCount,
+} from "@/lib/hackathons";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ArticleCard } from "@/components/ArticleCard";
 import { DeleteArticleButton } from "@/components/DeleteArticleButton";
@@ -46,21 +50,42 @@ export default async function ProfilePage({
   const sp = await searchParams;
   const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "edit";
 
-  const [posts, followedAuthors, savedArticles, userPassports] = await Promise.all([
-    getUserArticles(user.id),
-    getFollowedAuthors(user.id),
-    getUserSavedArticles(user.id),
-    getUserHackathonHistory(user.email),
+  const [
+    profileCounts,
+    posts,
+    followedAuthors,
+    savedArticles,
+    userPassports,
+    passportCounts,
+    followingFeed,
+  ] = await Promise.all([
+    getUserProfileCounts(user.id),
+    tab === "posts" ? getUserArticles(user.id) : Promise.resolve([]),
+    tab === "following" ? getFollowedAuthors(user.id) : Promise.resolve([]),
+    tab === "saved" ? getUserSavedArticles(user.id) : Promise.resolve([]),
+    tab === "passports"
+      ? getUserHackathonHistory(user.email)
+      : Promise.resolve([]),
+    tab === "passports"
+      ? Promise.resolve(null)
+      : getUserHackathonHistoryCount(user.email),
+    tab === "following" ? getFollowingFeed(user.id) : Promise.resolve([]),
   ]);
-  const followingFeed =
-    tab === "following" ? await getFollowingFeed(user.id) : [];
-  const feedCardData = await preloadCardData(followingFeed);
-  const savedCardData =
-    tab === "saved" ? await preloadCardData(savedArticles) : { authors: new Map(), topics: new Map() };
+  const passportCount = passportCounts?.passports ?? userPassports.length;
+  const certificateCount =
+    passportCounts?.certificates ??
+    userPassports.filter((p) => !!p.participant.certificate).length;
+  const [feedCardData, savedCardData] = await Promise.all([
+    tab === "following"
+      ? preloadCardData(followingFeed)
+      : Promise.resolve({ authors: new Map(), topics: new Map() }),
+    tab === "saved"
+      ? preloadCardData(savedArticles)
+      : Promise.resolve({ authors: new Map(), topics: new Map() }),
+  ]);
 
-  const published = posts.filter((p) => p.status === "PUBLISHED").length;
-  const inProgress = posts.length - published;
-  const totalCerts = userPassports.filter((p) => !!p.participant.certificate).length;
+  const published = profileCounts.published;
+  const inProgress = profileCounts.posts - published;
   const initials = (user.name ?? user.email)
     .split(" ")
     .map((p) => p[0])
@@ -93,10 +118,10 @@ export default async function ProfilePage({
         <div className="relative flex gap-2.5 flex-wrap mt-5">
           <span className="chip bg-lime text-[#1A1440]">{published} published</span>
           <span className="chip bg-sky text-[#1A1440]">{inProgress} in progress</span>
-          <span className="chip bg-[#D4CEF5] text-[#1A1440]">{userPassports.length} passports</span>
-          {totalCerts > 0 && <span className="chip bg-lime text-[#1A1440] font-bold">🏆 {totalCerts} certified</span>}
-          <span className="chip bg-peach text-[#1A1440]">{savedArticles.length} saved</span>
-          <span className="chip bg-pink text-[#1A1440]">{followedAuthors.length} following</span>
+          <span className="chip bg-[#D4CEF5] text-[#1A1440]">{passportCount} passports</span>
+          {certificateCount > 0 && <span className="chip bg-lime text-[#1A1440] font-bold">🏆 {certificateCount} certified</span>}
+          <span className="chip bg-peach text-[#1A1440]">{profileCounts.saved} saved</span>
+          <span className="chip bg-pink text-[#1A1440]">{profileCounts.following} following</span>
         </div>
       </header>
 

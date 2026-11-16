@@ -206,7 +206,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   return (
     <div className="wrap max-w-[480px] py-16">
       <div className="relative card shadow-pop-lg p-5 sm:p-9">
-        <span className="absolute -top-4 -right-3 chip bg-lime rotate-6 shadow-pop-sm">
+        <span className="absolute -top-4 -right-3 chip bg-lime text-[#1A1440] border-[#1A1440]/20 rotate-6 shadow-pop-sm">
           {isSignup ? "free forever ✦" : "welcome back 👋"}
         </span>
 
@@ -255,7 +255,17 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
                     : ""
                 }`}
               >
-                <span className="font-bold">GH</span> Continue with GitHub
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-[18px] w-[18px]"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.05c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.83 1.23 1.83 1.23 1.07 1.83 2.8 1.3 3.49.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.62-2.8 5.65-5.48 5.95.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12.01 12.01 0 0 0 12 .5z"
+                  />
+                </svg>
+                Continue with GitHub
               </button>
               <button
                 type="button"
@@ -266,7 +276,29 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
                     : ""
                 }`}
               >
-                <span className="font-bold text-purple">G</span> Continue with Google
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 48 48"
+                  className="h-[18px] w-[18px]"
+                >
+                  <path
+                    fill="#EA4335"
+                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.75 7.18l7.27 5.64c4.25-3.92 7.52-9.71 7.52-17.29Z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.55 2.56 10.78l7.97-6.19Z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M24 48c6.48 0 11.93-2.13 15.9-5.8l-7.27-5.64c-2.02 1.36-4.6 2.17-8.63 2.17-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"
+                  />
+                </svg>
+                Continue with Google
               </button>
             </div>
 
