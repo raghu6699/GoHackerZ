@@ -590,7 +590,7 @@ export function WriteEditor({
       {/* ── Editor Header Controls ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
         <div>
-          <span className="chip bg-lime mb-1 text-[11px]">
+          <span className="chip bg-lime text-[#1A1440] border-[#1A1440]/20 mb-1 text-[11px]">
             {editing ? (initial?.status === "PUBLISHED" ? "✎ editing published post" : "✎ editing draft") : "✎ Draft"}
           </span>
           <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight">

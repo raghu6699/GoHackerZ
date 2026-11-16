@@ -123,7 +123,7 @@ export function ProfileEditor({ initial }: { initial: ProfileData }) {
 
   return (
     <>
-      <span className="chip bg-lime mb-3 inline-block">✦ your corner</span>
+      <span className="chip bg-lime text-[#1A1440] border-[#1A1440]/20 mb-3 inline-block">✦ your corner</span>
       <h1 className="text-[34px] font-bold mb-1">Edit profile</h1>
       <p className="text-muted text-[15px] mb-8">
         Signed in as <b>{initial.email}</b> ·{" "}
