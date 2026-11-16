@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { HackathonData } from "@/lib/hackathons";
 import { VoiceFlowPill } from "./VoiceFlowPill";
+import { EventCountdown } from "./EventCountdown";
+import { StickyRegisterBar } from "./StickyRegisterBar";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
 const FLOW_URL = "https://wisprflow.ai";
 
@@ -11,15 +13,6 @@ const CRITERIA = [
   { label: "Working demo", pts: 25, note: "It runs, it's clear, and judges can try it." },
   { label: "Build log quality", pts: 25, note: "The voice process, the mistakes and the lessons." },
   { label: "UX and UI", pts: 20, note: "Clear, accessible and pleasant to use." },
-];
-
-const AWARDS = [
-  { name: "1st place", note: "Overall winner" },
-  { name: "2nd place", note: "Overall runner-up" },
-  { name: "3rd place", note: "Overall third" },
-  { name: "Track winners", note: "One per track, five in total" },
-  { name: "Best UI", note: "Honorable mention for teams outside the winners" },
-  { name: "Best build log", note: "The write-up other builders most want to read" },
 ];
 
 const LOG_TEMPLATE = [
@@ -174,6 +167,14 @@ function TrackVisual({ id }: { id: string }) {
   );
 }
 
+const PAGE_STYLES = `
+@keyframes bb-reveal { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@supports (animation-timeline: view()) {
+  .bb-reveal { animation: bb-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 30%; }
+}
+@media (prefers-reduced-motion: reduce) { .bb-reveal { animation: none !important; } }
+`;
+
 function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
   return (
     <div className="space-y-2">
@@ -197,6 +198,8 @@ export function BoloBuildPage({
 
   return (
     <div className="bg-[#0B0820] text-white">
+      <style>{TRACK_STYLES + PAGE_STYLES}</style>
+      {open && <StickyRegisterBar href={`/hackathons/${slug}/register`} title={hackathon.title} dateLabel="Sat 28 Nov · 10am IST" />}
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="pt-6">
           <MyPassportBanner slug={slug} hackathonId={hackathon.id} />
@@ -217,6 +220,15 @@ export function BoloBuildPage({
           className="pointer-events-none absolute inset-0 opacity-[0.07] [background-size:28px_28px] bg-[radial-gradient(#fff_1px,transparent_1px)]"
           aria-hidden
         />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-end justify-center gap-[5px] opacity-[0.22]" aria-hidden>
+          {Array.from({ length: 64 }).map((_, i) => (
+            <span
+              key={i}
+              className="bb-bar w-[5px] rounded-full bg-gradient-to-t from-[#7C5CFF] to-[#C6FF3D]"
+              style={{ height: `${30 + ((i * 37) % 70)}%`, animationDelay: `${(i % 12) * 90}ms`, animationDuration: `${800 + (i % 7) * 140}ms` }}
+            />
+          ))}
+        </div>
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pb-16 pt-10 sm:pt-16 text-center">
           <div className="mb-6 flex flex-wrap items-center justify-center gap-3 text-sm text-white/70">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -238,7 +250,11 @@ export function BoloBuildPage({
             Build something useful for India without typing a line. Speak it into existence with Wispr Flow.
           </p>
 
-          <div className="mt-10 flex justify-center">
+          <div className="mt-8 flex justify-center">
+            <EventCountdown start={hackathon.startDate} end={hackathon.endDate} />
+          </div>
+
+          <div className="mt-8 flex justify-center">
             <VoiceFlowPill />
           </div>
 
@@ -296,7 +312,7 @@ export function BoloBuildPage({
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
+      <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
         <SectionTitle kicker="How it works" title="Speak. Build. Write it up." />
         <div className="grid gap-5 md:grid-cols-3">
           {[
@@ -316,7 +332,7 @@ export function BoloBuildPage({
       </section>
 
       {/* GET WISPR FLOW */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-6">
+      <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 pb-6">
         <div className="flex flex-col items-start justify-between gap-6 rounded-[28px] border border-[#B9A7FF]/30 bg-[#B9A7FF]/10 p-6 sm:flex-row sm:items-center sm:p-8">
           <div className="space-y-2">
             <FlowWordmark className="text-xl text-white" />
@@ -337,8 +353,7 @@ export function BoloBuildPage({
       </section>
 
       {/* TRACKS */}
-      <section id="tracks" className="mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
-        <style>{TRACK_STYLES}</style>
+      <section id="tracks" className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
         <SectionTitle kicker="Pick a problem" title="Five tracks. One real person in each." />
         <p className="max-w-2xl text-sm leading-relaxed text-white/70">
           Your app does not need voice features. The voice rule is about how you <strong className="text-white">build</strong> it: dictate to your coding agent with Wispr Flow. The phone screens below are just example ideas.
@@ -368,7 +383,7 @@ export function BoloBuildPage({
       </section>
 
       {/* RULES + JUDGING */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 grid gap-10 lg:grid-cols-2">
+      <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 grid gap-10 lg:grid-cols-2">
         <div className="space-y-6">
           <SectionTitle kicker="The rules" title="Simple, strict, fair." />
           <ol className="space-y-3">
@@ -383,6 +398,11 @@ export function BoloBuildPage({
 
         <div className="space-y-6">
           <SectionTitle kicker="How you're judged" title="What the judges look for" />
+          <div className="flex h-3 overflow-hidden rounded-full border border-white/10" aria-hidden>
+            {CRITERIA.map((c, i) => (
+              <div key={c.label} style={{ width: `${c.pts}%`, background: ["#7C5CFF", "#B9A7FF", "#C6FF3D", "#FFB84D"][i] }} />
+            ))}
+          </div>
           <div className="space-y-3">
             {CRITERIA.map((c) => (
               <div key={c.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -402,7 +422,7 @@ export function BoloBuildPage({
       </section>
 
       {/* BUILD LOG */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
+      <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16">
         <div className="grid gap-8 rounded-[32px] border border-[#B9A7FF]/30 bg-gradient-to-br from-[#7C5CFF]/25 via-transparent to-[#C6FF3D]/10 p-8 sm:p-12 lg:grid-cols-2">
           <div className="space-y-4">
             <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#C6FF3D]">Required deliverable</p>
@@ -429,10 +449,41 @@ export function BoloBuildPage({
       </section>
 
       {/* AWARDS */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
+      <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
         <SectionTitle kicker="Awards" title="Recognition for how you build, not just what" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {AWARDS.map((a) => (
+        {/* Podium: 2nd, 1st, 3rd */}
+        <div className="grid items-end gap-4 sm:grid-cols-3">
+          {[
+            { place: "2nd place", note: "Overall runner-up", medal: "linear-gradient(135deg,#F3F5FB,#AEB6CC)", pad: "sm:pt-10", order: "sm:order-1" },
+            { place: "1st place", note: "Overall winner", medal: "linear-gradient(135deg,#FFE27A,#E8A91A)", pad: "sm:pt-16", order: "sm:order-2" },
+            { place: "3rd place", note: "Overall third", medal: "linear-gradient(135deg,#F0B27A,#B86B2C)", pad: "sm:pt-6", order: "sm:order-3" },
+          ].map((m) => (
+            <div key={m.place} className={`${m.order} ${m.pad} relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] px-6 pb-8 pt-8 text-center`}>
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-[0_8px_30px_-6px_rgba(0,0,0,0.6)]" style={{ background: m.medal }}>
+                <Trophy className="h-8 w-8 text-[#1A1440]" />
+              </div>
+              <div className="text-2xl font-black">{m.place}</div>
+              <div className="mt-1 text-sm text-white/60">{m.note}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:col-span-1">
+            <div className="mb-3 font-bold">Track winners</div>
+            <div className="flex flex-wrap gap-1.5">
+              {hackathon.tracks.map((t) => (
+                <span key={t.id} className="rounded-full border px-2.5 py-1 text-xs font-semibold" style={{ borderColor: (TRACK_VIS[t.id]?.accent ?? "#B9A7FF") + "88", color: TRACK_VIS[t.id]?.accent ?? "#B9A7FF" }}>
+                  {t.title.split(":")[0]}
+                </span>
+              ))}
+            </div>
+            <div className="mt-3 text-sm text-white/60">One winner per track, five in total.</div>
+          </div>
+          {[
+            { name: "Best UI", note: "Honorable mention for teams outside the winners" },
+            { name: "Best build log", note: "The write-up other builders most want to read" },
+          ].map((a) => (
             <div key={a.name} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
               <Trophy className="mt-0.5 h-5 w-5 shrink-0 text-[#C6FF3D]" />
               <div>
@@ -448,20 +499,24 @@ export function BoloBuildPage({
       </section>
 
       {/* SCHEDULE + VENUE */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 grid gap-10 lg:grid-cols-[1.3fr_1fr]">
+      <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 grid gap-10 lg:grid-cols-[1.3fr_1fr]">
         <div className="space-y-6">
           <SectionTitle kicker="Saturday 28 Nov" title="The day" />
-          <div className="space-y-2.5">
-            {hackathon.schedule.map((s) => (
-              <div key={s.time + s.title} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <span className="w-24 shrink-0 font-mono text-xs font-black text-[#C6FF3D] pt-0.5">{s.time}</span>
-                <div>
-                  <div className="font-bold">{s.title}</div>
+          <ol className="relative ml-3 border-l border-white/15">
+            {hackathon.schedule.map((s) => {
+              const key = /Build starts|Submissions close|Awards/.test(s.title);
+              return (
+                <li key={s.time + s.title} className="relative pb-6 pl-8 last:pb-0">
+                  <span
+                    className={`absolute -left-[7px] top-1 h-3.5 w-3.5 rounded-full border-2 border-[#0B0820] ${key ? "bg-[#C6FF3D] shadow-[0_0_0_4px_rgba(198,255,61,0.18)]" : "bg-[#7C5CFF]"}`}
+                  />
+                  <div className={`font-mono text-xs font-black ${key ? "text-[#C6FF3D]" : "text-[#B9A7FF]"}`}>{s.time}</div>
+                  <div className="mt-0.5 text-lg font-bold leading-snug">{s.title}</div>
                   <div className="text-sm text-white/60">{s.description}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </li>
+              );
+            })}
+          </ol>
         </div>
         <div className="space-y-4">
           <SectionTitle kicker="Where" title="Join from anywhere" />
@@ -475,7 +530,7 @@ export function BoloBuildPage({
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-8">
+      <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-8">
         <SectionTitle kicker="Questions" title="FAQ" />
         <div className="grid gap-4 md:grid-cols-2">
           {hackathon.faqs.map((f) => (
@@ -488,7 +543,7 @@ export function BoloBuildPage({
       </section>
 
       {/* FINAL CTA */}
-      <section className="mx-auto max-w-4xl px-4 sm:px-6 pb-20 pt-6 text-center space-y-6">
+      <section className="bb-reveal mx-auto max-w-4xl px-4 sm:px-6 pb-20 pt-6 text-center space-y-6">
         <h2 className="text-4xl sm:text-5xl font-black tracking-tight">Ready to talk your way to a shipped app?</h2>
         <div className="flex flex-wrap items-center justify-center gap-4">
           {open && (
