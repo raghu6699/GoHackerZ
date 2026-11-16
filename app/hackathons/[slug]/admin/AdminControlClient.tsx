@@ -153,6 +153,33 @@ export function AdminControlClient({
     }
   }
 
+  async function revokeAward(cert: HackathonCertificate) {
+    if (
+      !window.confirm(
+        `Revoke "${cert.awardTitle}" from ${cert.recipientName}?\n\nIts certificate and verification link stop working immediately. You can then issue the award to the right person. If it was already emailed, tell them it was a mistake.`
+      )
+    )
+      return;
+    try {
+      const res = await fetch(`/api/hackathons/${slug}/awards`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ certNumber: cert.certNumber }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        window.alert(`Could not revoke: ${data.error || "unknown error"}`);
+        return;
+      }
+      setCertificates((prev) => prev.filter((c) => c.certNumber !== cert.certNumber));
+      setParticipants((prev) =>
+        prev.map((p) => (p.certificate?.certNumber === cert.certNumber ? { ...p, certificate: undefined } : p))
+      );
+    } catch {
+      window.alert("Could not revoke the award. Please check your connection and try again.");
+    }
+  }
+
   async function resendCertificate(certNumber: string) {
     try {
       const res = await fetch(`/api/hackathons/${slug}/certificates/deliver`, {
@@ -321,6 +348,23 @@ export function AdminControlClient({
     if (!selectedTicket) {
       alert("Please select a participant/ticket.");
       return;
+    }
+
+    // Podium places are unique: warn before a second 1st/2nd/3rd goes out, and
+    // before the same person gets the same award twice.
+    if (awardType === "WINNER_FIRST" || awardType === "WINNER_SECOND" || awardType === "WINNER_THIRD") {
+      const existing = certificates.find((c) => c.type === awardType);
+      if (
+        existing &&
+        !window.confirm(
+          `"${existing.awardTitle}" was already issued to ${existing.recipientName}.\n\nIssue another ${awardType.replace("WINNER_", "").toLowerCase()} place award anyway? (Use Revoke on the first one if it was a mistake.)`
+        )
+      ) {
+        return;
+      }
+    }
+    if (certificates.some((c) => c.ticketNumber === selectedTicket && c.type === awardType)) {
+      if (!window.confirm("This builder already has this exact award. Issue it again?")) return;
     }
 
     setIsIssuingAward(true);
@@ -1056,6 +1100,15 @@ export function AdminControlClient({
                         {new Date(cert.issuedAt).toLocaleDateString("en-GB")}
                       </td>
                       <td className="py-3 px-4 text-right">
+                        {cert.type !== "PARTICIPATION" && (
+                          <button
+                            onClick={() => revokeAward(cert)}
+                            className="mr-1.5 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium transition-colors"
+                            title="Revoke this award (issued by mistake)"
+                          >
+                            Revoke
+                          </button>
+                        )}
                         <button
                           onClick={() => resendCertificate(cert.certNumber)}
                           className="mr-1.5 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#251f52] hover:bg-[#342b73] text-[#C6FF3D] text-[11px] font-medium transition-colors"

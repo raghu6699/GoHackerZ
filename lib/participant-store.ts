@@ -68,7 +68,7 @@ export function getPersistedHackathonStatus(hackathonSlug = "shipathon-2026"): s
       const raw = fs.readFileSync(STATUS_FILE, "utf-8");
       if (raw.trim()) {
         const parsed = JSON.parse(raw);
-        const val = parsed[clean] || parsed[hackathonSlug] || parsed["shipathon-2026"];
+        const val = parsed[clean] || parsed[hackathonSlug];
         if (val) {
           if (!memoryStore.statuses) memoryStore.statuses = new Map();
           memoryStore.statuses.set(clean, val);
@@ -87,7 +87,6 @@ export function persistHackathonStatus(hackathonSlug: string, newStatus: string)
   if (!memoryStore.statuses) memoryStore.statuses = new Map();
   memoryStore.statuses.set(clean, newStatus);
   memoryStore.statuses.set(hackathonSlug, newStatus);
-  memoryStore.statuses.set("shipathon-2026", newStatus);
   try {
     ensureDirectoryExists();
     let data: Record<string, string> = {};
@@ -98,8 +97,6 @@ export function persistHackathonStatus(hackathonSlug: string, newStatus: string)
     }
     data[clean] = newStatus;
     data[hackathonSlug] = newStatus;
-    data["shipathon-2026"] = newStatus;
-    data["gh-shipathon-2026"] = newStatus;
     fs.writeFileSync(STATUS_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (e) {
     console.warn("[persistHackathonStatus] Disk write error:", e);
@@ -2424,3 +2421,66 @@ export async function persistSubmission(submission: HackathonSubmission): Promis
 }
 
 
+
+
+/**
+ * Organizer action: revoke a wrongly issued award certificate (e.g. issued to the wrong
+ * person in a hurry). Automatic participation certificates cannot be revoked here.
+ * The certificate's verification link stops working immediately.
+ */
+export async function revokeCertificate(
+  hackathonIdOrSlug: string,
+  certNumber: string
+): Promise<{ revoked: boolean; certificate?: HackathonCertificate; error?: string }> {
+  const certs = await getCertificatesForHackathon(hackathonIdOrSlug);
+  const cert = certs.find((c) => c.certNumber.toUpperCase() === certNumber.trim().toUpperCase());
+  if (!cert) return { revoked: false, error: "Certificate not found in this hackathon." };
+  if (cert.type === "PARTICIPATION") {
+    return { revoked: false, error: "Participation certificates are automatic and can't be revoked here." };
+  }
+
+  // Database (source of truth)
+  if (isDbAvailable()) {
+    try {
+      await prisma.hackathonCertificate.delete({ where: { certNumber: cert.certNumber } });
+    } catch (e) {
+      console.warn("[revokeCertificate] DB delete error:", e);
+      return { revoked: false, error: "Could not delete the certificate. Please try again." };
+    }
+  }
+
+  // Memory + disk caches
+  memoryStore.certificates.delete(cert.certNumber.toUpperCase());
+  const holder = memoryStore.certificates.get(cert.ticketNumber.toUpperCase());
+  if (holder && holder.certNumber === cert.certNumber) memoryStore.certificates.delete(cert.ticketNumber.toUpperCase());
+  try {
+    const list = loadPersistedCertificates().filter((c) => c.certNumber.toUpperCase() !== cert.certNumber.toUpperCase());
+    fs.writeFileSync(CERTIFICATES_FILE, JSON.stringify(list, null, 2), "utf-8");
+  } catch {
+    // read-only filesystem in production: the database delete above is what matters
+  }
+
+  // Passport: drop the badge that came with this award
+  try {
+    const participant = await getParticipantByTicket(cert.ticketNumber);
+    if (participant) {
+      const badge =
+        cert.type === "WINNER_FIRST"
+          ? "GRAND_CHAMPION_2026"
+          : cert.type === "WINNER_SECOND"
+          ? "FIRST_RUNNER_UP_2026"
+          : cert.type === "WINNER_THIRD"
+          ? "SECOND_RUNNER_UP_2026"
+          : cert.type === "TRACK_WINNER"
+          ? `TRACK_WINNER_${(cert.trackName || "").toUpperCase().replace(/\s+/g, "_")}`
+          : "HONORABLE_MENTION_2026";
+      participant.badges = (participant.badges || []).filter((b) => b !== badge);
+      if (participant.certificate?.certNumber === cert.certNumber) participant.certificate = undefined;
+      persistParticipant(participant);
+    }
+  } catch (e) {
+    console.warn("[revokeCertificate] passport cleanup notice:", e);
+  }
+
+  return { revoked: true, certificate: cert };
+}

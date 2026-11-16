@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { issueSpecialAward, getParticipantByTicket } from "@/lib/participant-store";
+import { issueSpecialAward, revokeCertificate } from "@/lib/participant-store";
 import { getHackathonBySlug } from "@/lib/hackathons";
 import { getCurrentDbUser } from "@/lib/profile";
 import { canUserManageHackathon } from "@/lib/admin-auth";
@@ -60,5 +60,35 @@ export async function POST(
       { success: false, error: error.message || "Failed to issue award" },
       { status: 500 }
     );
+  }
+}
+
+/** DELETE /api/hackathons/[slug]/awards  { certNumber }  (organizer only): revoke a wrongly issued award. */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  try {
+    const hackathon = await getHackathonBySlug(slug);
+    if (!hackathon) {
+      return NextResponse.json({ success: false, error: "Hackathon not found" }, { status: 404 });
+    }
+    const user = await getCurrentDbUser();
+    if (!canUserManageHackathon(user, hackathon)) {
+      return NextResponse.json({ success: false, error: "Unauthorized organizer access." }, { status: 403 });
+    }
+    const body = await request.json().catch(() => ({}));
+    const certNumber = typeof body.certNumber === "string" ? body.certNumber : "";
+    if (!certNumber) {
+      return NextResponse.json({ success: false, error: "certNumber is required" }, { status: 400 });
+    }
+    const result = await revokeCertificate(slug, certNumber);
+    if (!result.revoked) {
+      return NextResponse.json({ success: false, error: result.error || "Could not revoke" }, { status: 400 });
+    }
+    return NextResponse.json({ success: true, message: `Award ${certNumber} revoked.` });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message || "Failed to revoke award" }, { status: 500 });
   }
 }

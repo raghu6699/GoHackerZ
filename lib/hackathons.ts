@@ -472,11 +472,14 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonData | 
           { id: `gh-${clean}` },
         ],
       },
-      select: { _count: { select: { participants: true, teams: true } } },
+      select: { status: true, _count: { select: { participants: true, teams: true } } },
     });
     if (row) {
       return {
         ...base,
+        // The database is the source of truth for the event's phase. Proposal-built
+        // events used to read it from per-server memory, so a close never showed up.
+        status: (row.status as HackathonData["status"]) || base.status,
         participantCount:
           base.slug === FLAGSHIP_HACKATHON.slug
             ? Math.max(row._count.participants, base.participantCount)
