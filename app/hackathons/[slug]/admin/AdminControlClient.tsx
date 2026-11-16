@@ -118,12 +118,28 @@ export function AdminControlClient({
     const failed: string[] = [];
     try {
       for (let guard = 0; guard < 200; guard++) {
-        const res = await fetch(`/api/hackathons/${slug}/certificates/email`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ offset, limit: 8 }),
-        });
-        const data = await res.json();
+        let data: any = null;
+        let lastErr = "";
+        for (let attempt = 0; attempt < 2 && !data; attempt++) {
+          try {
+            const res = await fetch(`/api/hackathons/${slug}/certificates/deliver`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ offset, limit: 4 }),
+            });
+            const text = await res.text();
+            try {
+              data = JSON.parse(text);
+            } catch {
+              lastErr = `Server replied ${res.status} (not JSON)`;
+              await new Promise((r) => setTimeout(r, 1500));
+            }
+          } catch (netErr: any) {
+            lastErr = `Network error (${netErr?.message || "request failed"})`;
+            await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+          }
+        }
+        if (!data) throw new Error(`${lastErr}. Check your connection, disable any content blocker for this site, and press the button again.`);
         if (!data.success) throw new Error(data.error || "Request failed");
         sent += data.sent;
         (data.failed || []).forEach((f: { certNumber: string; reason: string }) => failed.push(`${f.certNumber}: ${f.reason}`));
@@ -139,7 +155,7 @@ export function AdminControlClient({
 
   async function resendCertificate(certNumber: string) {
     try {
-      const res = await fetch(`/api/hackathons/${slug}/certificates/email`, {
+      const res = await fetch(`/api/hackathons/${slug}/certificates/deliver`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ certNumber }),

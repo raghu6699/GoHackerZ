@@ -13,7 +13,7 @@ export const maxDuration = 60;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * POST /api/hackathons/[slug]/certificates/email  (organizer only)
+ * POST /api/hackathons/[slug]/certificates/deliver  (organizer only)
  * Body: { offset?: number, limit?: number }  -> sends one batch, returns the next offset.
  *       { certNumber: string }               -> (re)sends a single certificate.
  * Batched so a big event never hits a function timeout; the studio loops until done.
@@ -39,7 +39,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const sorted = [...certs].sort((a, b) => a.certNumber.localeCompare(b.certNumber));
     const single = typeof body.certNumber === "string" ? body.certNumber.trim() : "";
     const offset = single ? 0 : Math.max(0, Number(body.offset) || 0);
-    const limit = single ? 1 : Math.min(10, Math.max(1, Number(body.limit) || 8));
+    const limit = single ? 1 : Math.min(6, Math.max(1, Number(body.limit) || 4));
     const batch = single ? sorted.filter((c) => c.certNumber === single) : sorted.slice(offset, offset + limit);
 
     let sent = 0;
@@ -52,18 +52,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
         failed.push({ certNumber: c.certNumber, reason: "No email on file for this ticket" });
         continue;
       }
-      const res = await sendEmail(
-        certificateEmail({
-          to,
-          name: c.recipientName,
-          hackathonTitle: hackathon.title,
-          awardTitle: c.awardTitle,
-          certNumber: c.certNumber,
-          certUrl: `${SITE_URL}/hackathons/${hackathon.slug}/certificate/${encodeURIComponent(c.ticketNumber)}`,
-        })
-      );
-      if (res.delivered) sent++;
-      else failed.push({ certNumber: c.certNumber, reason: res.error || `Not delivered (${res.provider})` });
+      try {
+        const res = await Promise.race([
+          sendEmail(
+            certificateEmail({
+              to,
+              name: c.recipientName,
+              hackathonTitle: hackathon.title,
+              awardTitle: c.awardTitle,
+              certNumber: c.certNumber,
+              certUrl: `${SITE_URL}/hackathons/${hackathon.slug}/certificate/${encodeURIComponent(c.ticketNumber)}`,
+            })
+          ),
+          new Promise<{ delivered: false; provider: string; error: string }>((resolve) =>
+            setTimeout(() => resolve({ delivered: false, provider: "timeout", error: "Email provider timed out" }), 12000)
+          ),
+        ]);
+        if (res.delivered) sent++;
+        else failed.push({ certNumber: c.certNumber, reason: res.error || `Not delivered (${res.provider})` });
+        console.info(`[certificates/deliver] ${slug} ${c.certNumber} -> ${res.delivered ? "sent" : "FAILED: " + (res.error || res.provider)}`);
+      } catch (err: any) {
+        failed.push({ certNumber: c.certNumber, reason: err?.message || "Send error" });
+        console.error(`[certificates/deliver] ${slug} ${c.certNumber} threw`, err);
+      }
       // Stay under the email provider's per-second rate limit.
       if (i < batch.length - 1) await sleep(600);
     }
