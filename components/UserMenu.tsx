@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { Avatar } from "./Avatar";
 import { clearMyPassport } from "@/lib/passport-storage";
 import { isUserAdmin } from "@/lib/admin-auth";
+import { useHostedEvents } from "./useHostedEvents";
 import type { User } from "@supabase/supabase-js";
 
 /**
@@ -20,6 +21,7 @@ export function NavAuth() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const hosted = useHostedEvents(user?.email);
 
   useEffect(() => {
     // Unconfigured env → stay signed-out view instead of crashing the layout.
@@ -98,6 +100,11 @@ export function NavAuth() {
     ...(isAdmin
       ? [{ href: "/admin/hackathons", label: "Hackathon Admin Studio", emoji: "🏆" }]
       : []),
+    ...hosted.map((h) => ({
+      href: `/hackathons/${h.slug}/admin`,
+      label: `Organizer studio: ${h.title.length > 22 ? h.title.slice(0, 21) + "…" : h.title}`,
+      emoji: "🎛",
+    })),
     { href: "/hackathons/passport", label: "My Builder Passport", emoji: "🎫" },
     { href: "/profile", label: "Edit profile", emoji: "👤" },
     { href: "/profile?tab=posts", label: "Your posts", emoji: "📝" },

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { Avatar } from "./Avatar";
+import { useHostedEvents } from "./useHostedEvents";
 import type { User } from "@supabase/supabase-js";
 import {
   BookOpen,
@@ -37,6 +38,7 @@ export function MobileMenu() {
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const hosted = useHostedEvents(user?.email);
 
   // Listen to Supabase auth session state
   useEffect(() => {
@@ -132,6 +134,18 @@ export function MobileMenu() {
                     </div>
                     <UserIcon className="w-4 h-4 text-purple shrink-0" />
                   </Link>
+
+                  {hosted.map((h) => (
+                    <Link
+                      key={h.slug}
+                      href={`/hackathons/${h.slug}/admin`}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center justify-between gap-2 rounded-xl border-2 border-purple bg-purple px-3 py-2.5 font-mono text-[12px] font-bold text-white"
+                    >
+                      <span className="truncate">🎛 Organizer studio: {h.title}</span>
+                      <span aria-hidden>→</span>
+                    </Link>
+                  ))}
 
                   <div className="grid grid-cols-2 gap-1.5 font-mono text-[12px] font-bold">
                     <Link
