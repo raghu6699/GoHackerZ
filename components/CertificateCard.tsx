@@ -116,9 +116,10 @@ export function CertificateCard({
       <style>{`
         @media print {
           @page { size: A4 landscape; margin: 0; }
-          html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
-          .certificate-shell { width: 297mm !important; max-width: none !important; height: 210mm !important; margin: 0 !important; page-break-inside: avoid; break-inside: avoid; }
-          .certificate-shell article { width: 297mm !important; height: 210mm !important; min-height: 0 !important; aspect-ratio: auto !important; padding: 14mm 18mm !important; border-radius: 0 !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; height: auto !important; min-height: 0 !important; }
+          main#main { padding: 0 !important; margin: 0 !important; min-height: 0 !important; }
+          .certificate-shell { width: 297mm !important; max-width: none !important; height: 209mm !important; overflow: hidden !important; margin: 0 !important; page-break-inside: avoid; break-inside: avoid; }
+          .certificate-shell article { width: 297mm !important; height: 209mm !important; min-height: 0 !important; aspect-ratio: auto !important; overflow: hidden !important; padding: 14mm 18mm !important; border-radius: 0 !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .certificate-shell article h1 { font-size: 44pt !important; }
           .certificate-shell article p.italic { font-size: 30pt !important; }
           .certificate-shell article p.max-w-xl { font-size: 13pt !important; max-width: 52rem !important; }
@@ -194,7 +195,7 @@ export function CertificateCard({
       {/* The Authentic Certificate Frame */}
       <div className="certificate-shell w-full max-w-4xl">
         <article
-          className={`relative isolation-isolate w-full overflow-hidden p-5 sm:p-[4.4%_5.2%] bg-white text-[#1A1440] shadow-2xl rounded-sm min-h-[500px] sm:min-h-0 sm:aspect-[1.414/1] print:aspect-auto print:min-h-0 print:shadow-none print:w-full print:m-0 print:p-8 ${
+          className={`relative isolation-isolate w-full flex flex-col p-5 sm:p-[4.4%_5.2%] bg-white text-[#1A1440] shadow-2xl rounded-sm min-h-[500px] sm:min-h-0 sm:aspect-[1.414/1] print:aspect-auto print:min-h-0 print:shadow-none print:w-full print:m-0 print:p-8 ${
             isWinner ? "border-2 border-[#5B3EE8]" : "border border-[#D7D3EA]"
           }`}
           style={{
@@ -211,7 +212,7 @@ export function CertificateCard({
           <span className="absolute bottom-[10px] sm:bottom-[16px] left-[10px] sm:left-[16px] w-[20px] sm:w-[32px] h-[20px] sm:h-[32px] border-b-2 border-l-2 border-[#7C5CFF]" />
           <span className="absolute bottom-[10px] sm:bottom-[16px] right-[10px] sm:right-[16px] w-[20px] sm:w-[32px] h-[20px] sm:h-[32px] border-b-2 border-r-2 border-[#7C5CFF]" />
 
-          <div className="flex h-full flex-col items-center justify-between text-center relative z-10 gap-4 sm:gap-2">
+          <div className="flex flex-1 flex-col items-center justify-between text-center relative z-10 gap-4 sm:gap-2">
             {/* Top Brand & Metadata Bar */}
             <div className="flex w-full items-center justify-between gap-2">
               {isBolo ? (
@@ -303,7 +304,7 @@ export function CertificateCard({
             </div>
 
             {/* Bottom Bar: Signatures, QR Code & Date */}
-            <div className="flex w-full items-end justify-between px-1 sm:px-2 pt-2 sm:pt-1 border-t border-[#D7D3EA]/60 gap-2">
+            <div className="flex w-full shrink-0 items-end justify-between px-1 sm:px-2 pt-2 sm:pt-1 border-t border-[#D7D3EA]/60 gap-2">
               {/* Director Signature */}
               <div className="w-24 sm:w-36 text-center flex flex-col items-center justify-end">
                 <img
