@@ -29,18 +29,18 @@ export const BOLO_AND_BUILD: HackathonData = {
   tracks: [
     {
       id: "health",
-      title: "Health: say it, understand it",
+      title: "Health: understand your care",
       prize: "Track Winner",
       description:
-        "Help a patient or caregiver understand a prescription, describe symptoms or find the nearest care, in their own language, without typing.",
+        "Help a patient or caregiver understand a prescription, describe symptoms or find the nearest care, in their own language.",
       tags: ["healthcare", "accessibility", "multilingual"],
     },
     {
       id: "farm",
-      title: "Farmers: advice at the speed of speech",
+      title: "Farmers: advice when it matters",
       prize: "Track Winner",
       description:
-        "Mandi prices, weather alerts and crop guidance for people who can't type on a small screen with muddy hands.",
+        "Mandi prices, weather alerts and crop guidance for people working in the field with a basic phone.",
       tags: ["agritech", "weather", "markets"],
     },
     {
@@ -53,10 +53,10 @@ export const BOLO_AND_BUILD: HackathonData = {
     },
     {
       id: "shops",
-      title: "Small business: run a kirana by talking",
+      title: "Small business: run a kirana faster",
       prize: "Track Winner",
       description:
-        "Billing, stock and GST for the shopkeeper who has ten customers waiting and no time to type.",
+        "Billing, stock and GST for the shopkeeper who has ten customers waiting and no time to spare.",
       tags: ["msme", "billing", "inventory"],
     },
     {
@@ -80,7 +80,7 @@ export const BOLO_AND_BUILD: HackathonData = {
   ],
   rules: [
     "Teams of 1 to 4. Mixed skills are welcome: developers, designers, data people and first-time builders.",
-    "Pick one of the five tracks and build an app for that problem.",
+    "Pick one of the five tracks and build an app for that problem. Your app does not need voice features: the voice rule is about how you build it.",
     "Use Wispr Flow to dictate your prompts and instructions to your coding agent. Typing is allowed for small fixes, but the build should be driven by voice.",
     "Any coding agent and any model is fine: Claude Code, Codex, Cursor, GitHub Copilot, Open Code, Antigravity and others.",
     "Start from a blank repository. Templates and boilerplate are fine, previously built projects are not.",

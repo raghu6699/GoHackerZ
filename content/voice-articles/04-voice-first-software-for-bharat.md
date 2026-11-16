@@ -1,11 +1,11 @@
 title: Voice-first software for Bharat: five problems worth building for
 slug: voice-first-software-for-bharat
 topic: culture
-dek: Typing is a barrier for a lot of people. Five everyday problems where speaking is the better interface, and what to think about before you build.
+dek: Typing is a barrier for a lot of people. Five everyday problems worth solving for them, and where voice can help, if you choose to use it.
 ---
-A lot of software assumes the user can read a small screen, type quickly and write in one language. For a large number of people in India, that assumption does not hold. They may prefer to speak in their own language, or they may be doing something else with their hands. Voice removes that barrier.
+A lot of software assumes the user can read a small screen, type quickly and write in one language. For a large number of people in India, that assumption does not hold. They may prefer to speak in their own language, or they may be doing something else with their hands. Voice is one way to remove that barrier, though not the only one.
 
-Here are five problem areas where a voice-first approach can help, followed by the design questions that matter for each. They are the same five tracks used in the Bolo and Build hackathon.
+Here are five problem areas worth building for, with notes on where voice can help and the design questions that matter for each. They are the same five tracks used in the Bolo and Build hackathon. Your own app does not have to use voice, but it should work for people like these.
 
 ## 1. Health: understand it and ask for help
 

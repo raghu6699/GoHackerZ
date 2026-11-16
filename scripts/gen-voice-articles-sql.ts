@@ -30,7 +30,7 @@ files.forEach((f, i) => {
   out.push(`insert into "Article" ("id","slug","title","dek","content","status","readingTime","tags","featured","isSponsored","publishedAt","authorId","topicId","createdAt","updatedAt")
 select ${q(id)}, ${q(meta.slug)}, ${q(meta.title)}, ${q(meta.dek)}, $j$${JSON.stringify(blocks)}$j$::jsonb, 'PUBLISHED', ${rt}, ARRAY['voice','wispr-flow','bolo-and-build']::text[], false, false, now() - interval '${minutesAgo} minutes', (select id from "User" where email='ud.ai.journey@gmail.com'), (select id from "Topic" where slug=${q(meta.topic)}), now(), now()
 where exists (select 1 from "User" where email='ud.ai.journey@gmail.com') and exists (select 1 from "Topic" where slug=${q(meta.topic)})
-on conflict ("slug") do nothing;`);
+on conflict ("slug") do update set "title"=excluded."title","dek"=excluded."dek","content"=excluded."content","updatedAt"=now();`);
 });
 
 console.log(out.join("\n"));

@@ -16,9 +16,9 @@ Coding agents have changed what a day of building looks like. Much of your time 
 ## The five tracks
 
 - **Health:** help people understand a prescription, describe symptoms or find care in their own language.
-- **Farmers:** prices, weather and crop advice for people who cannot type easily.
+- **Farmers:** prices, weather and crop advice for people working in the field.
 - **Learning:** tools for students and teachers in smaller towns.
-- **Small business:** billing, stock and tax records for a shopkeeper who has no time to type.
+- **Small business:** billing, stock and tax records for a shopkeeper with no time to spare.
 - **Citizens:** find government schemes, fill forms and file complaints.
 
 For ideas on what to consider in each, read our guide on [voice-first software for Bharat](/article/voice-first-software-for-bharat).
@@ -27,6 +27,7 @@ For ideas on what to consider in each, read our guide on [voice-first software f
 
 - Teams of one to four. Developers, designers and first-time builders are all welcome.
 - Use any coding agent and any model. Dictate your prompts with Wispr Flow. Typing is fine for small fixes, but the build should be driven by voice.
+- Your app does not need voice features. The voice rule is about how you build it.
 - Start from a blank repository. Your repo must be public.
 - Submit a repo link, a demo video of three minutes or less, and the link to your build log.
 - Publish your build log on RepoRally. It counts toward your score and is required for prizes.

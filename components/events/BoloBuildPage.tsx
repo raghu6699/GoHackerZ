@@ -157,6 +157,7 @@ function TrackVisual({ id }: { id: string }) {
             <span key={i} className="bb-bar h-6 w-[3px] rounded-full" style={{ background: v.accent, animationDelay: `${(i % 6) * 110}ms`, opacity: 0.9 }} />
           ))}
         </div>
+        <div className="font-mono text-[9px] font-bold uppercase tracking-wider text-white/50">A user might say</div>
         <div className="rounded-2xl rounded-tl-sm border border-white/15 bg-black/45 px-3 py-2 text-[12px] font-semibold leading-snug text-white backdrop-blur-md">
           &ldquo;{v.phrase}&rdquo;
         </div>
@@ -339,6 +340,9 @@ export function BoloBuildPage({
       <section id="tracks" className="mx-auto max-w-6xl px-4 sm:px-6 py-16 space-y-10">
         <style>{TRACK_STYLES}</style>
         <SectionTitle kicker="Pick a problem" title="Five tracks. One real person in each." />
+        <p className="max-w-2xl text-sm leading-relaxed text-white/70">
+          Your app does not need voice features. The voice rule is about how you <strong className="text-white">build</strong> it: dictate to your coding agent with Wispr Flow. The phone screens below are just example ideas.
+        </p>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {hackathon.tracks.map((t, i) => (
             <div key={t.id} className="group flex flex-col justify-between rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-6 transition hover:border-[#B9A7FF]/60">
