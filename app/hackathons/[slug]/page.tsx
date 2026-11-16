@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getHackathonBySlug, getAllSubmissions } from "@/lib/hackathons";
 import { getCurrentDbUser } from "@/lib/profile";
-import { isUserAdmin } from "@/lib/admin-auth";
+import { isUserAdmin, canUserManageHackathon } from "@/lib/admin-auth";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
 import {
   Trophy,
@@ -49,7 +49,8 @@ export default async function HackathonDetailPage({
   }
 
   const user = await getCurrentDbUser();
-  const isAdmin = isUserAdmin(user);
+  // Platform admins AND the approved host of this hackathon get the studio link.
+  const isAdmin = isUserAdmin(user) || canUserManageHackathon(user, { hostEmail: hackathon.hostEmail });
   const submissions = await getAllSubmissions(hackathon.id);
 
   return (

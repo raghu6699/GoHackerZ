@@ -447,7 +447,46 @@ export function savePersistedCustomHackathon(hackathon: HackathonData): void {
   }
 }
 
+/**
+ * Public loader: resolves the hackathon, then overlays LIVE registration and
+ * team counts from Postgres. Counts used to be hardcoded (0) or read from
+ * per-instance memory, which is empty on serverless — so real registrations
+ * never showed up.
+ */
 export async function getHackathonBySlug(slug: string): Promise<HackathonData | null> {
+  const base = await loadHackathonBySlug(slug);
+  if (!base || !isDbAvailable()) return base;
+  try {
+    const clean = slug.replace(/^gh-/, "");
+    const row = await prisma.hackathon.findFirst({
+      where: {
+        OR: [
+          { id: base.id },
+          { slug: base.slug },
+          { slug },
+          { slug: clean },
+          { id: `gh-${clean}` },
+        ],
+      },
+      select: { _count: { select: { participants: true, teams: true } } },
+    });
+    if (row) {
+      return {
+        ...base,
+        participantCount:
+          base.slug === FLAGSHIP_HACKATHON.slug
+            ? Math.max(row._count.participants, base.participantCount)
+            : row._count.participants,
+        teamCount: Math.max(row._count.teams, base.teamCount),
+      };
+    }
+  } catch (e) {
+    console.warn("[getHackathonBySlug] live count notice:", e);
+  }
+  return base;
+}
+
+async function loadHackathonBySlug(slug: string): Promise<HackathonData | null> {
   const cleanSlug = slug.replace(/^gh-/, "");
   let liveStatus = FLAGSHIP_HACKATHON.status;
 
