@@ -83,13 +83,19 @@ const rootJsonLd = [
     url: SITE_URL,
     logo: `${SITE_URL}/logo/header-logo.png`,
     description:
-      "RepoRally is a software engineering publishing platform for developers, system architects, and technical writers.",
+      "RepoRally is a free publishing platform and hackathon home for software builders: engineering essays, build logs, post-mortems and community hackathons such as Bolo & Build.",
+    foundingLocation: "Hyderabad, India",
+    areaServed: "Worldwide",
+    contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "hi@loratechsolutions.com", url: `${SITE_URL}/contact` },
     knowsAbout: [
       "Software Engineering",
       "System Architecture",
       "DevOps",
       "Web Development",
       "Programming Languages",
+      "Hackathons",
+      "Voice coding",
+      "Technical writing",
     ],
   },
   {
@@ -98,6 +104,8 @@ const rootJsonLd = [
     name: "RepoRally",
     alternateName: ["Repo Rally"],
     url: SITE_URL,
+    inLanguage: "en",
+    publisher: { "@type": "Organization", name: "RepoRally", url: SITE_URL },
     potentialAction: {
       "@type": "SearchAction",
       target: `${SITE_URL}/search?q={search_term_string}`,

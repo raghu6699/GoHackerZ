@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getAllHackathons } from "@/lib/hackathons";
@@ -22,9 +23,19 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Hackathons Directory — RepoRally",
+  title: "Hackathons for Builders: Bolo & Build and More | RepoRally",
   description:
-    "Explore and compete in premier engineering hackathons on RepoRally. Build bleeding-edge software, earn your animated Holographic Builder Passport, and win cash prizes.",
+    "Community hackathons on RepoRally. Join Bolo & Build, a one-day voice-only hackathon in Hyderabad and online, build for India, and publish your build log. Free to join, with verifiable certificates.",
+  alternates: { canonical: `${SITE_URL}/hackathons` },
+  openGraph: {
+    type: "website",
+    siteName: "RepoRally",
+    url: `${SITE_URL}/hackathons`,
+    title: "Hackathons for Builders | RepoRally",
+    description: "Community hackathons on RepoRally: build, publish your build log, earn verifiable certificates.",
+    images: [{ url: `${SITE_URL}/og/bolo-and-build.png`, width: 1200, height: 630, alt: "RepoRally hackathons" }],
+  },
+  twitter: { card: "summary_large_image", images: [`${SITE_URL}/og/bolo-and-build.png`] },
 };
 
 export default async function HackathonsPage() {

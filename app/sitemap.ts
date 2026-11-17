@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getLatest, getAllTopics, getAllAuthors } from "@/lib/queries";
 import { SITE_URL } from "@/lib/site";
+import { getAllHackathons } from "@/lib/hackathons";
 
 export const revalidate = 3600;
 
@@ -8,10 +9,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Degrade gracefully when the DB is unreachable (e.g. Docker image builds
   // without a database) — an empty sitemap beats a failed build.
   try {
-    const [articles, topics, authors] = await Promise.all([
+    const [articles, topics, authors, hackathons] = await Promise.all([
       getLatest(500),
       getAllTopics(),
       getAllAuthors(),
+      getAllHackathons().catch(() => []),
     ]);
 
     return [
@@ -29,6 +31,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${SITE_URL}/terms`, changeFrequency: "monthly", priority: 0.4 },
       { url: `${SITE_URL}/contact`, changeFrequency: "monthly", priority: 0.4 },
       { url: `${SITE_URL}/search`, changeFrequency: "weekly", priority: 0.3 },
+      ...hackathons.flatMap((h) => [
+        {
+          url: `${SITE_URL}/hackathons/${h.slug}`,
+          lastModified: new Date(),
+          changeFrequency: "daily" as const,
+          priority: 0.9,
+        },
+        {
+          url: `${SITE_URL}/hackathons/${h.slug}/register`,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        },
+      ]),
       ...topics.map((t) => ({
         url: `${SITE_URL}/topic/${t.slug}`,
         changeFrequency: "daily" as const,

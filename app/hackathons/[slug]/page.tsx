@@ -10,6 +10,7 @@ import { WinnersSection } from "@/components/events/WinnersSection";
 import { getCertificatesForHackathon } from "@/lib/participant-store";
 import { BoloBuildPage } from "@/components/events/BoloBuildPage";
 import { BOLO_SLUG } from "@/lib/curated-events";
+import { hackathonJsonLd, ldJson } from "@/lib/seo";
 import {
   Trophy,
   Calendar,
@@ -69,11 +70,17 @@ export default async function HackathonDetailPage({
   }));
 
   if (hackathon.slug === BOLO_SLUG) {
-    return <BoloBuildPage hackathon={hackathon} isAdmin={isAdmin} submissionsCount={submissions.length} winners={certificates} />;
+    return (
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(hackathonJsonLd(hackathon)) }} />
+        <BoloBuildPage hackathon={hackathon} isAdmin={isAdmin} submissionsCount={submissions.length} winners={certificates} />
+      </>
+    );
   }
 
   return (
     <div className="min-h-screen py-8 sm:py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(hackathonJsonLd(hackathon)) }} />
       <div className="wrap max-w-5xl mx-auto space-y-10">
         {/* Active Passport Banner if visitor has already registered */}
         <MyPassportBanner slug={hackathon.slug} hackathonId={hackathon.id} />
