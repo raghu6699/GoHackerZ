@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentDbUser } from "@/lib/profile";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, articleApprovedEmail, articleRejectedEmail } from "@/lib/mailer";
+import { pingIndexNow } from "@/lib/indexnow";
 import { revalidateArticlePaths } from "@/lib/revalidate";
 
 /**
@@ -56,6 +57,7 @@ export async function POST(
     }
 
     revalidateArticlePaths(slug);
+    if (targetPublishedAt <= new Date()) pingIndexNow([`/article/${slug}`, "/read", "/sitemap.xml"]);
 
     return NextResponse.json({ ok: true, status: "PUBLISHED" });
   }

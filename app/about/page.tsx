@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { FaqSection } from "@/components/FaqSection";
+import { SITE_FAQS } from "@/lib/seo-faqs";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Learn what RepoRally is, who we are, and why we publish engineering writing.",
+  description: "RepoRally is a free publishing platform and hackathon home for software builders, run from Hyderabad, India. Learn who we are and why we publish engineering writing.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {
@@ -14,7 +17,10 @@ export default function AboutPage() {
           RepoRally publishes the essays that engineering teams actually need.
         </h1>
 
-        <p className="mt-6 text-lg leading-relaxed text-muted">
+        <p className="mt-6 text-lg font-semibold leading-relaxed text-ink">
+          RepoRally is a free publishing platform and hackathon home for software builders, run from Hyderabad, India. Developers publish engineering essays, build logs and post-mortems, and join community hackathons like Bolo &amp; Build.
+        </p>
+        <p className="mt-4 text-lg leading-relaxed text-muted">
           We are a publication for engineers who are tired of hype cycles and polished-but-useless product writing. We favor durable lessons: architecture trade-offs, incident reports, tuning work, AI systems, and the daily realities of building software at scale.
         </p>
 
@@ -46,6 +52,7 @@ export default function AboutPage() {
           <p className="mt-3 text-muted">hi@loratechsolutions.com</p>
           <p className="mt-2 text-muted">For pitches, partnerships, and corrections.</p>
         </div>
+        <FaqSection faqs={SITE_FAQS} />
       </article>
     </div>
   );

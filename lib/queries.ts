@@ -77,6 +77,7 @@ function mapArticle(a: any): Article {
     comments: a.commentCount,
     bookmarks: a.bookmarkCount,
     publishedAt: (a.publishedAt ?? a.createdAt).toISOString(),
+    updatedAt: a.updatedAt ? a.updatedAt.toISOString() : undefined,
     tags: a.tags,
     featured: a.featured,
     coverImage: a.coverImage,

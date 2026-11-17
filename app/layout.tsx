@@ -5,7 +5,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Footer } from "@/components/Footer";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/context/ToastContext";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, SOCIAL_LINKS } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -85,6 +85,7 @@ const rootJsonLd = [
     description:
       "RepoRally is a free publishing platform and hackathon home for software builders: engineering essays, build logs, post-mortems and community hackathons such as Bolo & Build.",
     foundingLocation: "Hyderabad, India",
+    ...(SOCIAL_LINKS.length ? { sameAs: SOCIAL_LINKS } : {}),
     areaServed: "Worldwide",
     contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "hi@loratechsolutions.com", url: `${SITE_URL}/contact` },
     knowsAbout: [

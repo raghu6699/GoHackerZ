@@ -100,6 +100,18 @@ export const BOLO_AND_BUILD: HackathonData = {
   ],
   faqs: [
     {
+      q: "What is Bolo & Build?",
+      a: "Bolo & Build is a free, one-day hackathon run by RepoRally where you build an app for India entirely by voice. You dictate to a coding agent with Wispr Flow, pick one of five tracks (health, farmers, learning, small business, citizens), and publish your build log on RepoRally.",
+    },
+    {
+      q: "When and where is Bolo & Build?",
+      a: "Saturday 28 November 2026, 10:00 to 18:00 IST, in Hyderabad, India and online. You can join in person or from anywhere.",
+    },
+    {
+      q: "What do I need to take part?",
+      a: "A laptop, a free Wispr Flow install (wisprflow.ai/downloads), a coding agent of your choice, and a RepoRally account. You can join solo or with a squad.",
+    },
+    {
       q: "Do I have to use Wispr Flow?",
       a: "Yes. The whole point is building by voice with Wispr Flow. Typing is fine for small fixes, but the build should be driven by dictation.",
     },

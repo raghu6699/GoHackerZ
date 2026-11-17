@@ -55,6 +55,7 @@ export interface Article {
   comments: number;
   bookmarks: number;
   publishedAt: string; // ISO
+  updatedAt?: string; // ISO
   tags: string[];
   featured?: boolean;
   content: Block[];

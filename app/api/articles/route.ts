@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { parseBlocks } from "@/lib/content";
 import type { Block } from "@/lib/data";
 
+import { pingIndexNow } from "@/lib/indexnow";
 import { topics } from "@/lib/data";
 
 /**
@@ -159,6 +160,9 @@ export async function POST(req: Request) {
     });
 
     revalidateArticlePaths(article.slug, topic.slug, dbAuthor.username);
+    if (article.status === "PUBLISHED" && (!scheduledAt || scheduledAt <= new Date())) {
+      pingIndexNow([`/article/${article.slug}`, `/writer/${dbAuthor.username}`, "/read", "/sitemap.xml"]);
+    }
 
     return NextResponse.json({
       ok: true,

@@ -19,6 +19,8 @@ import {
   preloadCardData,
 } from "@/lib/queries";
 import { formatCount, formatDate } from "@/lib/data";
+import { FaqSection } from "@/components/FaqSection";
+import { SITE_FAQS } from "@/lib/seo-faqs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -381,6 +383,17 @@ export default async function HomePage({
             <NewsletterForm variant="lime" />
           </div>
         </section>
+
+        {/* ── Answer-first definition + FAQ (AEO/GEO) ── */}
+        <section className="mt-12 rounded-2xl border-2 border-ink bg-card p-5 sm:p-7">
+          <h2 className="text-[24px] font-bold tracking-tight">What is RepoRally?</h2>
+          <p className="mt-2 leading-relaxed text-muted">
+            RepoRally is a free publishing platform and hackathon home for software builders. Developers publish engineering essays, build logs and post-mortems here, and join community hackathons such as{" "}
+            <Link href="/hackathons/bolo-and-build" className="font-bold text-purple underline underline-offset-2">Bolo &amp; Build</Link>
+            , a one-day voice-only hackathon in Hyderabad and online on 28 November 2026.
+          </p>
+        </section>
+        <FaqSection faqs={SITE_FAQS} />
       </div>
       </div>
     </>

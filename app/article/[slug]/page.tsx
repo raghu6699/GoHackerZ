@@ -80,6 +80,7 @@ export async function generateMetadata({
       siteName: "RepoRally",
       type: "article",
       publishedTime: new Date(article.publishedAt).toISOString(),
+      modifiedTime: new Date(article.updatedAt || article.publishedAt).toISOString(),
       images: [
         {
           url: ogImageUrl,
@@ -138,7 +139,7 @@ export default async function ArticlePage({
       url: articleUrl,
       mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
       datePublished: new Date(article.publishedAt).toISOString(),
-      dateModified: new Date(article.publishedAt).toISOString(),
+      dateModified: new Date(article.updatedAt || article.publishedAt).toISOString(),
       image: [article.coverImage || `${SITE_URL}/api/og/cover?slug=${encodeURIComponent(article.slug)}`],
       inLanguage: "en",
       articleSection: topic.name,
@@ -232,7 +233,11 @@ export default async function ArticlePage({
               <div>
                 <b className="text-[17px]">{author.name}</b>
                 <div className="font-mono text-[12px] text-subtle">
-                  {formatDate(article.publishedAt)} · {article.readingTime} min read
+                  {formatDate(article.publishedAt)}
+                  {article.updatedAt && new Date(article.updatedAt).getTime() - new Date(article.publishedAt).getTime() > 86400000
+                    ? ` · Updated ${formatDate(article.updatedAt)}`
+                    : ""}{" "}
+                  · {article.readingTime} min read
                 </div>
               </div>
             </Link>

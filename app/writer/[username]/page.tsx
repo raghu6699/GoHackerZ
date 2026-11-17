@@ -80,6 +80,9 @@ export default async function WriterPage({
         },
         description: author.bio,
         url: writerUrl,
+        ...(author.avatarUrl ? { image: author.avatarUrl } : {}),
+        knowsAbout: ["Software Engineering"],
+        memberOf: { "@type": "Organization", name: "RepoRally", url: SITE_URL },
       },
     },
   ];

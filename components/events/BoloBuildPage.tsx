@@ -252,6 +252,9 @@ export function BoloBuildPage({
           <p className="mx-auto mt-5 max-w-2xl text-lg sm:text-2xl text-white/80 leading-snug">
             Build something useful for India without typing a line. Speak it into existence with Wispr Flow.
           </p>
+          <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base text-white/60 leading-relaxed">
+            Bolo &amp; Build is a free, one-day voice-only hackathon on Saturday 28 November 2026 (10:00 to 18:00 IST) in Hyderabad and online. Builders dictate to a coding agent, ship an app for one of five India tracks, and publish their build log on RepoRally.
+          </p>
 
           <div className="mt-8 flex justify-center">
             <EventCountdown start={hackathon.startDate} end={hackathon.endDate} />
