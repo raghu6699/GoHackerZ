@@ -486,11 +486,11 @@ export function BoloBuildPage({
             <img src="/events/careconnect-logo.png" alt="CareConnect" width={1864} height={512} className="h-9 w-auto bg-transparent" />
           </a>
           <div className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#C6FF3D]">Top winner opportunity</div>
-          <div className="mt-2 text-2xl sm:text-3xl font-black tracking-tight">An offer to join the Founder&apos;s Office at CareConnect</div>
+          <div className="mt-2 text-2xl sm:text-3xl font-black tracking-tight">An opportunity to receive an offer from CareConnect</div>
           <p className="mx-auto mt-2 max-w-2xl text-sm sm:text-base text-white/70">
-            The overall winner receives an offer for a role in the Founder&apos;s Office at{" "}
+            The overall winner gets an opportunity to receive an offer for a role in the Founder&apos;s Office at{" "}
             <a href="https://www.careconnect.in/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#C6FF3D] underline underline-offset-2">CareConnect</a>
-            , an AI-powered telemedicine company.
+            , an AI-powered telemedicine company. Any offer is at CareConnect&apos;s discretion.
           </p>
         </div>
 
