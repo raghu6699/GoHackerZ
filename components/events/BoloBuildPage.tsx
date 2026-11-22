@@ -480,6 +480,20 @@ export function BoloBuildPage({
           ))}
         </div>
 
+        <div className="rounded-3xl border border-[#C6FF3D]/40 bg-[#C6FF3D]/[0.07] p-6 sm:p-8 text-center">
+          <a href="https://www.careconnect.in/" target="_blank" rel="noopener noreferrer" className="mx-auto mb-4 inline-flex h-16 items-center rounded-2xl bg-white px-6" aria-label="CareConnect">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/events/careconnect-logo.png" alt="CareConnect" width={1864} height={512} className="h-9 w-auto bg-transparent" />
+          </a>
+          <div className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#C6FF3D]">Top winner opportunity</div>
+          <div className="mt-2 text-2xl sm:text-3xl font-black tracking-tight">An offer to join the Founder&apos;s Office at CareConnect</div>
+          <p className="mx-auto mt-2 max-w-2xl text-sm sm:text-base text-white/70">
+            The overall winner receives an offer for a role in the Founder&apos;s Office at{" "}
+            <a href="https://www.careconnect.in/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#C6FF3D] underline underline-offset-2">CareConnect</a>
+            , an AI-powered telemedicine company.
+          </p>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:col-span-1">
             <div className="mb-3 font-bold">Track winners</div>
@@ -506,7 +520,7 @@ export function BoloBuildPage({
           ))}
         </div>
         <p className="text-sm text-white/50">
-          Prize details, including any Wispr Flow rewards, will be confirmed on this page. Every finisher gets a RepoRally Builder Passport and certificate.
+          Wispr Flow is not providing prizes or credits for this event. Every finisher gets a RepoRally Builder Passport and certificate.
         </p>
       </section>
 

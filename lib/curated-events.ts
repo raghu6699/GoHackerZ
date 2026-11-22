@@ -137,7 +137,7 @@ export const BOLO_AND_BUILD: HackathonData = {
     },
     {
       q: "Is this an official Wispr Flow event?",
-      a: "It is a community event hosted by RepoRally, built around Wispr Flow. We are reaching out to Wispr and will update this page when anything is confirmed.",
+      a: "No. It is a community event hosted by RepoRally, built around Wispr Flow. Wispr Flow is not a sponsor and is not providing prizes or credits. Participants can use Flow on its free plan or their own subscription.",
     },
   ],
 };
