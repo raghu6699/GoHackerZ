@@ -122,9 +122,7 @@ export function HostHackathonSection() {
             </h2>
 
             <p className="text-base text-[#D4CEF5] leading-relaxed">
-              Power your developer competition with industry-leading tooling. From custom 3D
-              holographic passports to instant cryptographically verifiable certificates and judging
-              studios — we handle the infrastructure so you can focus on developer adoption.
+              Run your developer event on RepoRally. We provide registration, Builder Passports, a judging studio, and certificates with public verification links, so you can focus on your participants.
             </p>
 
             {/* Feature Highlights */}
@@ -134,7 +132,7 @@ export function HostHackathonSection() {
                   <Ticket className="w-5 h-5 text-[#C6FF3D]" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-white">3D Holographic Passports</h4>
+                  <h4 className="font-bold text-sm text-white">Builder Passports</h4>
                   <p className="text-xs text-[#a59fcf] mt-0.5 leading-relaxed">
                     Custom-branded interactive builder credentials with scannable verification QR codes.
                   </p>
@@ -169,8 +167,8 @@ export function HostHackathonSection() {
             {/* Quick Stat / Testimonial Box */}
             <div className="p-4 rounded-2xl bg-[#130E29] border border-white/10 flex items-center justify-between">
               <div>
-                <span className="font-mono text-xs text-[#8B84AD] block uppercase">Response Time</span>
-                <span className="font-bold text-sm text-white">&lt; 24h Partner Onboarding</span>
+                <span className="font-mono text-xs text-[#8B84AD] block uppercase">How it works</span>
+                <span className="font-bold text-sm text-white">Proposals are reviewed by the RepoRally team</span>
               </div>
               <ShieldCheck className="w-6 h-6 text-[#C6FF3D]" />
             </div>

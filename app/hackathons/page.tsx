@@ -4,20 +4,9 @@ import type { Metadata } from "next";
 import { getAllHackathons } from "@/lib/hackathons";
 import { MyPassportBanner } from "@/components/MyPassportBanner";
 import { HostHackathonSection } from "@/components/HostHackathonSection";
-import {
-  Trophy,
-  Users,
-  Sparkles,
-  ArrowRight,
-  Zap,
-  Flame,
-  Shield,
-  Code,
-  Calendar,
-  Layers,
-  CheckCircle2,
-  ExternalLink,
-} from "lucide-react";
+import { hackathonShareImage } from "@/lib/hackathon-meta";
+import { EventCountdown } from "@/components/events/EventCountdown";
+import { ArrowRight, Users, Calendar, Clock, Layers, Ticket, Link2, BadgeCheck, PenLine, Rocket, Mic } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -38,286 +27,221 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", images: [`${SITE_URL}/og/bolo-and-build.png`] },
 };
 
+const IST = "Asia/Kolkata";
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", { timeZone: IST, weekday: "short", day: "numeric", month: "short", year: "numeric" });
+const fmtTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-IN", { timeZone: IST, hour: "numeric", minute: "2-digit", hour12: false });
+
+const STATUS_LABEL: Record<string, string> = {
+  UPCOMING: "Registration open",
+  ACTIVE: "Live now",
+  JUDGING: "Judging",
+  COMPLETED: "Concluded",
+};
+const STATUS_STYLE: Record<string, string> = {
+  UPCOMING: "bg-lime text-brand-dark",
+  ACTIVE: "bg-[#E11D48] text-white",
+  JUDGING: "bg-amber-400 text-brand-dark",
+  COMPLETED: "bg-purple text-white",
+};
+
+const STEPS = [
+  { icon: Ticket, title: "Register", text: "Free account, solo or squad. You get a Builder Passport with a scannable verification code." },
+  { icon: Mic, title: "Build", text: "Build the project during the event window. Each event sets its own rules and tracks." },
+  { icon: PenLine, title: "Publish your build log", text: "Write how you built it on RepoRally. The write-up is part of the entry, and it stays online as an article." },
+  { icon: BadgeCheck, title: "Get a verifiable certificate", text: "Participation and award certificates with a public link anyone can use to check them." },
+];
+
 export default async function HackathonsPage() {
   const hackathons = await getAllHackathons();
-  const activeHackathon = hackathons.find((h) => h.status === "ACTIVE") || hackathons[0];
-  const isCompleted = activeHackathon?.status === "COMPLETED";
-  const isJudging = activeHackathon?.status === "JUDGING";
-
-  const liveCount = hackathons.filter((h) => h.status === "ACTIVE").length;
-  const totalBuilders = hackathons.reduce((acc, h) => acc + (h.participantCount || 0), 0);
+  const featured =
+    hackathons.find((h) => h.status === "ACTIVE") ||
+    hackathons.find((h) => h.status === "UPCOMING") ||
+    hackathons[0];
+  const others = hackathons.filter((h) => h.slug !== featured?.slug);
+  const registered = hackathons.reduce((acc, h) => acc + (h.participantCount || 0), 0);
+  const fImage = featured ? hackathonShareImage(featured) : null;
+  const fOpen = featured && (featured.status === "UPCOMING" || featured.status === "ACTIVE");
 
   return (
     <div className="min-h-screen py-8 sm:py-14">
-      <div className="wrap max-w-6xl mx-auto space-y-10 sm:space-y-14">
-        {/* Active Passport Banner if visitor has already registered */}
-        {activeHackathon && (
-          <MyPassportBanner slug={activeHackathon.slug} hackathonId={activeHackathon.id} />
-        )}
+      <div className="wrap max-w-6xl mx-auto space-y-12 sm:space-y-16">
+        {featured && <MyPassportBanner slug={featured.slug} hackathonId={featured.id} />}
 
-        {/* Hero Section */}
+        {/* Hero */}
         <section className="relative overflow-hidden bg-brand-dark text-white rounded-3xl p-7 sm:p-14 border-2 border-ink shadow-pop-xl">
-          {/* Cyber matrix background accents */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(#C6FF3D_1px,transparent_1px)] [background-size:24px_24px]"
-            aria-hidden
-          />
+          <div className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(#C6FF3D_1px,transparent_1px)] [background-size:24px_24px]" aria-hidden />
           <div className="relative z-10 max-w-3xl space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-lime/15 border border-lime text-lime font-mono text-[12px] font-bold tracking-wider">
-              {liveCount > 0 && <span className="w-2.5 h-2.5 rounded-full bg-lime animate-ping" />}
-              <span>
-                {liveCount > 0
-                  ? `⚡ ${liveCount} LIVE SPRINT${liveCount > 1 ? "S" : ""} ACTIVE IN ARENA`
-                  : "OFFICIAL REPORALLY ARENA"}
-              </span>
+              {featured?.status === "ACTIVE" && <span className="w-2.5 h-2.5 rounded-full bg-lime animate-ping" />}
+              <span>REPORALLY HACKATHONS</span>
             </div>
-
-            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.08] text-white">
-              Ship Bleeding-Edge Code. <br />
-              <span className="text-lime underline decoration-wavy decoration-purple/60">
-                Claim Cash & Glory.
-              </span>
+            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.08]">
+              Build in a day. <br />
+              <span className="text-lime">Publish how you did it.</span>
             </h1>
-
             <p className="text-lg sm:text-xl text-[#D4CEF5] leading-relaxed max-w-2xl">
-              Welcome to the premier platform for software engineers who ship. Form a squad, earn
-              your 3D holographic Builder Passport, submit lightweight project links, and compete in
-              flagship and partner hackathons.
+              Free community hackathons where the write-up counts as much as the build. Register, ship a project, publish your build log on RepoRally, and earn a certificate anyone can verify.
             </p>
-
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              {activeHackathon && (
+              {featured && (
                 <Link
-                  href={`/hackathons/${activeHackathon.slug}`}
+                  href={`/hackathons/${featured.slug}`}
                   className="btn btn-lime text-brand-dark font-extrabold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop flex items-center gap-2 group"
                 >
-                  <span>EXPLORE FEATURED SPRINT</span>
+                  <span>{fOpen ? `Join ${featured.title}` : `See ${featured.title}`}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               )}
-
               <a
-                href="#all-hackathons"
+                href="#host-a-hackathon"
                 className="btn bg-purple text-white hover:bg-purple-dark font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-pop border-2 border-ink"
               >
-                VIEW ALL ARENAS ({hackathons.length}) ⚡
+                Host a hackathon
               </a>
             </div>
-
-            {/* Live Stats Strip */}
-            <div className="pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <div>
-                <span className="font-mono text-xs text-[#8e88b8] block">ACTIVE & HOSTED ARENAS</span>
-                <span className="text-2xl font-black text-white font-mono">{hackathons.length}</span>
-              </div>
-              <div>
-                <span className="font-mono text-xs text-[#8e88b8] block">TOTAL GLOBAL BUILDERS</span>
-                <span className="text-2xl font-black text-lime font-mono">
-                  {Math.max(1240, totalBuilders)}+
-                </span>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <span className="font-mono text-xs text-[#8e88b8] block">PRIZES & CASH GRANTS</span>
-                <span className="text-2xl font-black text-purple font-mono">$50,000+</span>
-              </div>
-            </div>
           </div>
         </section>
 
-        {/* Directory Grid: All Live, Upcoming & Partner Hackathons */}
-        <section id="all-hackathons" className="space-y-6 pt-2">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <Flame className="w-6 h-6 text-purple" />
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
-                  All Hackathon Arenas
-                </h2>
-                <p className="text-xs sm:text-sm text-muted">
-                  Discover active sprints, partner hackathons, and past showcases on RepoRally
-                </p>
-              </div>
-            </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-bg rounded-xl border border-ink/15 font-mono text-xs text-subtle">
-              <Layers className="w-4 h-4 text-purple" />
-              <span>{hackathons.length} Hackathon{hackathons.length !== 1 ? "s" : ""} Available</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-            {hackathons.map((h) => {
-              const hIsCompleted = h.status === "COMPLETED";
-              const hIsJudging = h.status === "JUDGING";
-              const hIsActive = h.status === "ACTIVE";
-              const sponsorName = h.sponsors?.[0]?.name;
-
-              return (
-                <div
-                  key={h.id || h.slug}
-                  className="bg-card border-2 border-ink shadow-pop-lg rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all hover:-translate-y-1 hover:border-purple group relative overflow-hidden"
-                >
-                  <div className="space-y-4">
-                    {/* Header Badges */}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`px-2.5 py-0.5 font-mono text-[11px] font-extrabold rounded-md ${
-                            hIsCompleted
-                              ? "bg-purple text-white"
-                              : hIsJudging
-                              ? "bg-amber-400 text-brand-dark"
-                              : hIsActive
-                              ? "bg-lime text-brand-dark"
-                              : "bg-sky text-brand-dark"
-                          }`}
-                        >
-                          {hIsCompleted
-                            ? "🏆 CONCLUDED"
-                            : hIsJudging
-                            ? "⚖️ JUDGING"
-                            : hIsActive
-                            ? "● LIVE SPRINT"
-                            : "📅 UPCOMING"}
-                        </span>
-                        {sponsorName && sponsorName !== "RepoRally" && (
-                          <span className="px-2 py-0.5 bg-[#141030] text-[#ded8ff] font-mono text-[11px] font-bold rounded-md border border-purple/30">
-                            Partner: {sponsorName}
-                          </span>
-                        )}
-                      </div>
-
-                      <span className="px-2.5 py-0.5 bg-purple/10 text-purple font-mono text-[11px] font-black rounded-md border border-purple/20">
-                        {h.prizePool}
-                      </span>
-                    </div>
-
-                    {/* Title & Tagline */}
-                    <div>
-                      <Link href={`/hackathons/${h.slug}`} className="group-hover:text-purple transition-colors">
-                        <h3 className="text-xl sm:text-2xl font-black text-ink tracking-tight">
-                          {h.title}
-                        </h3>
-                      </Link>
-                      <p className="text-xs sm:text-sm text-body mt-1.5 line-clamp-2 leading-relaxed">
-                        {h.tagline || h.description}
-                      </p>
-                    </div>
-
-                    {/* Tracks Preview */}
-                    {h.tracks && h.tracks.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <span className="font-mono text-[10px] font-bold text-subtle uppercase tracking-wider block">
-                          TRACKS & PRIZES:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {h.tracks.slice(0, 3).map((t) => (
-                            <span
-                              key={t.id}
-                              className="px-2 py-0.5 rounded-md bg-bg border border-ink/15 font-mono text-[10px] text-ink font-semibold flex items-center gap-1"
-                            >
-                              <span className="text-purple font-bold">#</span>
-                              <span>{t.title}</span>
-                            </span>
-                          ))}
-                          {h.tracks.length > 3 && (
-                            <span className="px-1.5 py-0.5 font-mono text-[10px] text-muted">
-                              +{h.tracks.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer & Actions */}
-                  <div className="pt-6 mt-6 border-t border-ink/10 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 text-muted font-mono text-[11px]">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-purple" />
-                        {h.participantCount || 0} Registered
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {hIsCompleted || hIsJudging ? (
-                        <Link
-                          href={`/hackathons/${h.slug}/submissions`}
-                          className="btn btn-lime text-brand-dark font-extrabold text-xs px-3.5 py-2 rounded-xl shadow-sm"
-                        >
-                          {hIsCompleted ? "Showcase 🚀" : "Submissions →"}
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/hackathons/${h.slug}/register`}
-                          className="btn btn-lime text-brand-dark font-extrabold text-xs px-3.5 py-2 rounded-xl shadow-sm"
-                        >
-                          Get Passport 🎫
-                        </Link>
-                      )}
-
-                      <Link
-                        href={`/hackathons/${h.slug}`}
-                        className="btn bg-bg hover:bg-brand-dark hover:text-white text-ink border border-ink/20 font-mono text-xs px-3 py-2 rounded-xl transition-all"
-                      >
-                        Enter Arena →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Feature Grid: Differentiator Platform Highlights */}
-        <section className="space-y-6 pt-4">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink">
-              The Pure Builder Experience
+        {/* Featured event */}
+        {featured && fImage && (
+          <section aria-labelledby="featured-heading" className="space-y-5">
+            <h2 id="featured-heading" className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-purple">
+              {featured.status === "COMPLETED" ? "Latest event" : "Next up"}
             </h2>
-            <p className="text-body text-sm sm:text-base">
-              Engineered from the ground up to respect developer time and spotlight high-craft
-              engineering.
-            </p>
-          </div>
+            <div className="grid lg:grid-cols-[1.1fr_1fr] gap-0 overflow-hidden rounded-3xl border-2 border-ink bg-card shadow-pop-lg">
+              <Link href={`/hackathons/${featured.slug}`} className="flex items-center bg-brand-dark">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={fImage.url} alt={fImage.alt} width={1200} height={630} className="h-auto w-full" />
+              </Link>
+              <div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
+                <div className="space-y-4">
+                  <span className={`inline-block px-2.5 py-0.5 font-mono text-[11px] font-extrabold rounded-md ${STATUS_STYLE[featured.status]}`}>
+                    {STATUS_LABEL[featured.status]}
+                  </span>
+                  <div>
+                    <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-ink">{featured.title}</h3>
+                    <p className="mt-2 text-body leading-relaxed">{featured.tagline}</p>
+                  </div>
+                  <ul className="space-y-2 text-sm text-body">
+                    <li className="flex items-center gap-2.5"><Calendar className="h-4 w-4 text-purple" />{fmtDate(featured.startDate)}</li>
+                    <li className="flex items-center gap-2.5"><Clock className="h-4 w-4 text-purple" />{fmtTime(featured.startDate)} to {fmtTime(featured.endDate)} IST</li>
+                    {featured.tracks.length > 0 && (
+                      <li className="flex items-center gap-2.5"><Layers className="h-4 w-4 text-purple" />{featured.tracks.length} tracks</li>
+                    )}
+                    {featured.participantCount > 0 && (
+                      <li className="flex items-center gap-2.5"><Users className="h-4 w-4 text-purple" />{featured.participantCount} registered so far</li>
+                    )}
+                  </ul>
+                  {featured.status === "UPCOMING" && (
+                    <div className="rounded-2xl bg-brand-dark p-4 flex justify-center">
+                      <EventCountdown start={featured.startDate} end={featured.endDate} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {fOpen ? (
+                    <Link href={`/hackathons/${featured.slug}/register`} className="btn btn-lime text-brand-dark font-extrabold px-5 py-3 rounded-2xl shadow-sm">
+                      Register free
+                    </Link>
+                  ) : (
+                    <Link href={`/hackathons/${featured.slug}/submissions`} className="btn btn-lime text-brand-dark font-extrabold px-5 py-3 rounded-2xl shadow-sm">
+                      See submissions
+                    </Link>
+                  )}
+                  <Link href={`/hackathons/${featured.slug}`} className="btn bg-bg text-ink border border-ink/20 font-bold px-5 py-3 rounded-2xl">
+                    Event details
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
+        {/* How it works */}
+        <section className="space-y-6">
+          <div className="max-w-2xl space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink">How a RepoRally hackathon works</h2>
+            <p className="text-body text-sm sm:text-base">Four steps, from signing up to a certificate you can show anyone.</p>
+          </div>
+          <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {STEPS.map((st, i) => (
+              <li key={st.title} className="bg-card border-2 border-ink rounded-2xl p-5 shadow-pop-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-purple/15 border border-purple/40 flex items-center justify-center text-purple">
+                    <st.icon className="w-5 h-5" />
+                  </div>
+                  <span className="font-mono text-xs font-bold text-subtle">0{i + 1}</span>
+                </div>
+                <h3 className="font-bold text-lg text-ink">{st.title}</h3>
+                <p className="text-sm text-body leading-relaxed">{st.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* More events */}
+        <section id="all-hackathons" className="space-y-6 scroll-mt-10">
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
+              {others.length > 0 ? "More hackathons" : "What's next"}
+            </h2>
+            {registered > 0 && (
+              <span className="font-mono text-xs text-subtle">{registered} builder{registered !== 1 ? "s" : ""} registered across events</span>
+            )}
+          </div>
+          {others.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {others.map((h) => (
+                <Link
+                  key={h.id || h.slug}
+                  href={`/hackathons/${h.slug}`}
+                  className="bg-card border-2 border-ink shadow-pop-lg rounded-3xl p-6 sm:p-8 space-y-3 transition-all hover:-translate-y-1 hover:border-purple"
+                >
+                  <span className={`inline-block px-2.5 py-0.5 font-mono text-[11px] font-extrabold rounded-md ${STATUS_STYLE[h.status]}`}>
+                    {STATUS_LABEL[h.status]}
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-ink tracking-tight">{h.title}</h3>
+                  <p className="text-sm text-body line-clamp-2 leading-relaxed">{h.tagline || h.description}</p>
+                  <div className="font-mono text-[11px] text-muted">{fmtDate(h.startDate)}</div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-3xl border-2 border-dashed border-ink/25 bg-card p-8 sm:p-10 text-center space-y-3">
+              <p className="text-lg font-bold text-ink">More hackathons are on the way.</p>
+              <p className="text-body text-sm max-w-xl mx-auto">
+                Bolo &amp; Build is our first. If you run a community, company or college and want to host one on RepoRally, send us a proposal below.
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* What you get */}
+        <section className="space-y-6">
+          <div className="max-w-2xl space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink">What you get</h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-card border-2 border-ink rounded-2xl p-6 shadow-pop-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-purple/20 border border-purple flex items-center justify-center text-purple font-bold">
-                🎫
-              </div>
-              <h3 className="font-bold text-lg text-ink">Holographic 3D Passports</h3>
-              <p className="text-sm text-body leading-relaxed">
-                Receive an interactive cyber-boarding pass with custom themes, scannable QR verification,
-                and one-click export for Twitter & LinkedIn.
-              </p>
+              <Ticket className="w-6 h-6 text-purple" />
+              <h3 className="font-bold text-lg text-ink">A Builder Passport</h3>
+              <p className="text-sm text-body leading-relaxed">A personal pass for each event with a scannable QR code and a theme you pick, ready to share.</p>
             </div>
-
             <div className="bg-card border-2 border-ink rounded-2xl p-6 shadow-pop-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-purple/20 border border-purple flex items-center justify-center text-purple font-bold">
-                ⚡
-              </div>
-              <h3 className="font-bold text-lg text-ink">Zero-Bloat Submissions</h3>
-              <p className="text-sm text-body leading-relaxed">
-                No painful multi-gigabyte video uploads. Just drop your GitHub repo, live URL, Gamma
-                pitch deck, and YouTube walkthrough.
-              </p>
+              <Link2 className="w-6 h-6 text-purple" />
+              <h3 className="font-bold text-lg text-ink">Link-only submissions</h3>
+              <p className="text-sm text-body leading-relaxed">No large uploads. Submit your repo, a live link and an optional demo or deck.</p>
             </div>
-
             <div className="bg-card border-2 border-ink rounded-2xl p-6 shadow-pop-sm space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-pink/20 border border-pink flex items-center justify-center text-pink font-bold">
-                🏆
-              </div>
-              <h3 className="font-bold text-lg text-ink">Community Credential</h3>
-              <p className="text-sm text-body leading-relaxed">
-                Winners and shippers receive permanent verified badges on their RepoRally profile,
-                plus direct introductions to sponsors and dev funds.
-              </p>
+              <Rocket className="w-6 h-6 text-purple" />
+              <h3 className="font-bold text-lg text-ink">A public build log</h3>
+              <p className="text-sm text-body leading-relaxed">Your write-up lives on RepoRally as a real article under your profile, long after the event ends.</p>
             </div>
           </div>
         </section>
 
-        {/* Host a Hackathon Proposal Section */}
         <HostHackathonSection />
       </div>
     </div>
