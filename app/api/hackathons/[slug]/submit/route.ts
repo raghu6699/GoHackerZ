@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { submitProject, getHackathonBySlug, getAllSubmissions, getParticipantByTicket } from "@/lib/hackathons";
 import { prisma } from "@/lib/prisma";
 import { requireTicketOwner } from "@/lib/ticket-auth";
+import { getSubmissionWindow } from "@/lib/submission-window";
+import { getCurrentDbUser } from "@/lib/profile";
+import { canUserManageHackathon } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,6 +29,28 @@ export async function POST(
         },
         { status: 400 }
       );
+    }
+
+    // Submissions are only accepted during the build window. Organizers and
+    // admins can still submit (e.g. to test the flow or fix a late entry).
+    const win = getSubmissionWindow(hackathon);
+    if (!win.open) {
+      const manager = canUserManageHackathon(await getCurrentDbUser(), hackathon);
+      if (!manager) {
+        const when = new Date(win.opensAt).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
+        });
+        return NextResponse.json(
+          {
+            error:
+              win.reason === "not-started"
+                ? `Submissions open when the build starts (${when} IST). Build on the day, then submit here.`
+                : "The submission deadline has passed for this hackathon.",
+            window: win,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const body = await req.json();

@@ -4,6 +4,7 @@ import { getHackathonBySlug } from "@/lib/hackathons";
 import { getCurrentDbUser } from "@/lib/profile";
 import { canUserManageHackathon } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { getSubmissionWindow } from "@/lib/submission-window";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,6 +25,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       status: hackathon.status,
+      submissions: getSubmissionWindow(hackathon),
       hackathon: {
         id: hackathon.id,
         slug: hackathon.slug,

@@ -34,6 +34,7 @@ export default function HackathonSubmitPage() {
   const [tracks, setTracks] = useState<Array<{ id: string; title: string; prize?: string }>>([]);
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [notStartedAt, setNotStartedAt] = useState<string | null>(null);
 
   useEffect(() => {
     // 1. Fetch Hackathon Status & Tracks
@@ -42,6 +43,9 @@ export default function HackathonSubmitPage() {
       .then((d) => {
         if (d.success && d.hackathon) {
           setHackathonStatus(d.status || d.hackathon.status || "ACTIVE");
+          if (d.submissions && !d.submissions.open && d.submissions.reason === "not-started") {
+            setNotStartedAt(d.submissions.opensAt);
+          }
           setHackathonTitle(d.hackathon.title || "Hackathon");
           if (Array.isArray(d.hackathon.tracks) && d.hackathon.tracks.length > 0) {
             setTracks(d.hackathon.tracks);
@@ -207,8 +211,23 @@ export default function HackathonSubmitPage() {
           </p>
         </div>
 
-        {/* Closed or Judging State */}
-        {(hackathonStatus === "COMPLETED" || hackathonStatus === "JUDGING") ? (
+        {/* Build has not started yet */}
+        {notStartedAt ? (
+          <div className="bg-card border-2 border-ink shadow-pop-xl rounded-3xl p-6 sm:p-10 space-y-5 text-center">
+            <div className="p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl flex items-center justify-center gap-3 text-sm text-amber-700 dark:text-amber-300 font-bold">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span>Submissions are not open yet.</span>
+            </div>
+            <p className="text-lg font-bold text-ink">
+              Submissions open when the build starts:{" "}
+              {new Date(notStartedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" })} IST.
+            </p>
+            <p className="text-sm text-body">Build your project on the day, then come back here to submit it.</p>
+            <Link href={`/hackathons/${slug}`} className="btn btn-lime inline-flex text-brand-dark font-extrabold px-5 py-3 rounded-2xl">
+              Back to the event
+            </Link>
+          </div>
+        ) : (hackathonStatus === "COMPLETED" || hackathonStatus === "JUDGING") ? (
           <div className="bg-card border-2 border-ink shadow-pop-xl rounded-3xl p-6 sm:p-10 space-y-6">
             <div className="p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl flex items-center gap-3 text-sm text-amber-300 font-bold">
               <AlertCircle className="w-5 h-5 shrink-0 text-amber-400" />
