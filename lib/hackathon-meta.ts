@@ -10,7 +10,7 @@ export function hackathonShareImage(hackathon: Pick<HackathonData, "slug" | "tit
       url: `${SITE_URL}/og/bolo-and-build.png`,
       width: 1200,
       height: 630,
-      alt: `${hackathon.title}: a voice-only hackathon, Sat 28 Nov 2026, Hyderabad and online`,
+      alt: `${hackathon.title}: a voice-only hackathon, Sun 13 Dec 2026, Hyderabad and online`,
     };
   }
   return {
@@ -35,7 +35,7 @@ export function hackathonSocialMetadata(
   const title = opts.title ?? `${hackathon.title}: ${hackathon.tagline} | RepoRally`;
   const description =
     hackathon.slug === BOLO_SLUG
-      ? "Sat 28 Nov, Hyderabad + online. Build an app for India with any coding agent, driven entirely by voice with Wispr Flow, then publish your build log. Free to join."
+      ? "Sun 13 Dec, Hyderabad + online. Build an app for India with any coding agent, driven entirely by voice with Wispr Flow, then publish your build log. Free to join."
       : clip(hackathon.description || hackathon.tagline);
   const image = hackathonShareImage(hackathon);
   return {

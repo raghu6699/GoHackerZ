@@ -390,7 +390,7 @@ export default async function HomePage({
           <p className="mt-2 leading-relaxed text-muted">
             RepoRally is a free publishing platform and hackathon home for software builders. Developers publish engineering essays, build logs and post-mortems here, and join community hackathons such as{" "}
             <Link href="/hackathons/bolo-and-build" className="font-bold text-purple underline underline-offset-2">Bolo &amp; Build</Link>
-            , a one-day voice-only hackathon in Hyderabad and online on 28 November 2026.
+            , a one-day voice-only hackathon in Hyderabad and online on 13 December 2026.
           </p>
         </section>
         <FaqSection faqs={SITE_FAQS} />

@@ -11,7 +11,7 @@ import type { HackathonData } from "./hackathons";
 
 export const BOLO_SLUG = "bolo-and-build";
 
-// 28 Nov 2026, 10:00–18:00 IST (= 04:30–12:30 UTC)
+// 13 Dec 2026 (Sunday), 10:00–18:00 IST (= 04:30–12:30 UTC)
 export const BOLO_AND_BUILD: HackathonData = {
   id: "gh-bolo-and-build",
   slug: BOLO_SLUG,
@@ -20,9 +20,9 @@ export const BOLO_AND_BUILD: HackathonData = {
   description:
     "A one-day, voice-only build, 10am to 6pm IST. Pick a problem for India, build the app with any coding agent, and drive it entirely by voice with Wispr Flow. Then publish your build log on RepoRally so the next builder can learn from it.",
   status: "UPCOMING",
-  startDate: "2026-11-28T04:30:00.000Z",
-  endDate: "2026-11-28T12:30:00.000Z",
-  submissionDeadline: "2026-11-28T12:30:00.000Z",
+  startDate: "2026-12-13T04:30:00.000Z",
+  endDate: "2026-12-13T12:30:00.000Z",
+  submissionDeadline: "2026-12-13T12:30:00.000Z",
   prizePool: "Awards, certificates and recognition",
   participantCount: 0,
   teamCount: 0,
@@ -105,7 +105,7 @@ export const BOLO_AND_BUILD: HackathonData = {
     },
     {
       q: "When and where is Bolo & Build?",
-      a: "Saturday 28 November 2026, 10:00 to 18:00 IST, in Hyderabad, India and online. You can join in person or from anywhere.",
+      a: "Sunday 13 December 2026, 10:00 to 18:00 IST, in Hyderabad, India and online. You can join in person or from anywhere.",
     },
     {
       q: "What do I need to take part?",

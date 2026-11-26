@@ -1,9 +1,9 @@
-title: Introducing Bolo and Build: a voice-only hackathon on 28 November
+title: Introducing Bolo and Build: a voice-only hackathon on 13 December
 slug: introducing-bolo-and-build-voice-hackathon
 topic: culture
 dek: One day, five problems for India, and a rule that sounds simple: build the app by voice. Here is how Bolo and Build works and how to take part.
 ---
-On Saturday 28 November 2026, RepoRally is hosting Bolo and Build, a one-day hackathon with an unusual rule. You build your app by voice.
+On Sunday 13 December 2026, RepoRally is hosting Bolo and Build, a one-day hackathon with an unusual rule. You build your app by voice.
 
 Teams will use Wispr Flow to dictate their prompts to a coding agent, ship a working app for one of five problems, and then publish their build log on RepoRally so the next builder can learn from it. "Bolo" means "speak" in Hindi.
 

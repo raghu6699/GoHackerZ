@@ -202,7 +202,7 @@ export function BoloBuildPage({
   return (
     <div className="bg-[#0B0820] text-white">
       <style>{TRACK_STYLES + PAGE_STYLES}</style>
-      {open && <StickyRegisterBar href={`/hackathons/${slug}/register`} title={hackathon.title} dateLabel="Sat 28 Nov · 10am IST" />}
+      {open && <StickyRegisterBar href={`/hackathons/${slug}/register`} title={hackathon.title} dateLabel="Sun 13 Dec · 10am IST" />}
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="pt-6">
           <MyPassportBanner slug={slug} hackathonId={hackathon.id} />
@@ -241,7 +241,7 @@ export function BoloBuildPage({
           </div>
 
           <div className="mb-6 flex flex-wrap items-center justify-center gap-2 font-mono text-xs font-bold">
-            <span className="rounded-full border border-[#C6FF3D]/40 bg-[#C6FF3D]/10 px-3 py-1 text-[#C6FF3D]">SAT 28 NOV 2026</span>
+            <span className="rounded-full border border-[#C6FF3D]/40 bg-[#C6FF3D]/10 px-3 py-1 text-[#C6FF3D]">SUN 13 DEC 2026</span>
             <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/80">HYDERABAD + ONLINE</span>
             <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/80">10AM–6PM IST · VOICE-ONLY</span>
           </div>
@@ -253,7 +253,7 @@ export function BoloBuildPage({
             Build something useful for India without typing a line. Speak it into existence with Wispr Flow.
           </p>
           <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base text-white/60 leading-relaxed">
-            Bolo &amp; Build is a free, one-day voice-only hackathon on Saturday 28 November 2026 (10:00 to 18:00 IST) in Hyderabad and online. Builders dictate to a coding agent, ship an app for one of five India tracks, and publish their build log on RepoRally.
+            Bolo &amp; Build is a free, one-day voice-only hackathon on Sunday 13 December 2026 (10:00 to 18:00 IST) in Hyderabad and online. Builders dictate to a coding agent, ship an app for one of five India tracks, and publish their build log on RepoRally.
           </p>
 
           <div className="mt-8 flex justify-center">
@@ -527,7 +527,7 @@ export function BoloBuildPage({
       {/* SCHEDULE + VENUE */}
       <section className="bb-reveal mx-auto max-w-6xl px-4 sm:px-6 py-16 grid gap-10 lg:grid-cols-[1.3fr_1fr]">
         <div className="space-y-6">
-          <SectionTitle kicker="Saturday 28 Nov" title="The day" />
+          <SectionTitle kicker="Sunday 13 Dec" title="The day" />
           <ol className="relative ml-3 border-l border-white/15">
             {hackathon.schedule.map((s) => {
               const key = /Build starts|Submissions close|Awards/.test(s.title);

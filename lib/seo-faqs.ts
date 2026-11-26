@@ -20,7 +20,7 @@ export const SITE_FAQS: Faq[] = [
   },
   {
     q: "What is Bolo & Build?",
-    a: "Bolo & Build is RepoRally's one-day, voice-only hackathon on Saturday 28 November 2026, 10:00 to 18:00 IST, in Hyderabad and online. Builders use Wispr Flow to dictate to a coding agent, build an app for India in one of five tracks, and publish their build log on RepoRally.",
+    a: "Bolo & Build is RepoRally's one-day, voice-only hackathon on Sunday 13 December 2026, 10:00 to 18:00 IST, in Hyderabad and online. Builders use Wispr Flow to dictate to a coding agent, build an app for India in one of five tracks, and publish their build log on RepoRally.",
   },
   {
     q: "Who can join a RepoRally hackathon?",
