@@ -47,7 +47,7 @@ export function PartnerBanner({ campaign }: { campaign: Campaign | null }) {
               {campaign.logoUrl && (
                 <span className="inline-flex h-11 items-center rounded-xl bg-white px-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={campaign.logoUrl} alt={campaign.sponsor} className="h-6 w-auto" />
+                  <img src={campaign.logoUrl} alt={campaign.sponsor} className="h-6 w-auto bg-transparent" />
                 </span>
               )}
               <h3 className="text-[22px] sm:text-[28px] font-bold leading-tight text-ink">{campaign.headline}</h3>

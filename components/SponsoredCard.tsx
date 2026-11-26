@@ -41,7 +41,7 @@ export function SponsoredCard({ campaign }: { campaign: Campaign | null }) {
           {campaign.logoUrl && (
             <div className="mb-3 inline-flex h-11 items-center rounded-xl bg-white px-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={campaign.logoUrl} alt={campaign.sponsor} className="h-6 w-auto" />
+              <img src={campaign.logoUrl} alt={campaign.sponsor} className="h-6 w-auto bg-transparent" />
             </div>
           )}
           <h4 className="text-[19px] font-bold leading-tight mb-2">{campaign.headline}</h4>
