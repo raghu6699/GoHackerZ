@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
+import { detectBot, visitKey } from "@/lib/ai-bots";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -8,13 +9,34 @@ import { logger } from "@/lib/logger";
  * cookies stay valid (recommended pattern for @supabase/ssr).
  * Also rate-limits mutating /api/* traffic per IP.
  */
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   const pathname = request.nextUrl.pathname;
+
+  // Record AI / search crawler page views (fire-and-forget, never blocks the page).
+  if ((request.method === "GET" || request.method === "HEAD") && !pathname.startsWith("/api/")) {
+    const bot = detectBot(request.headers.get("user-agent"));
+    if (bot) {
+      event.waitUntil(
+        visitKey()
+          .then((key) =>
+            key
+              ? fetch(new URL("/api/ai-visit", request.url), {
+                  method: "POST",
+                  headers: { "content-type": "application/json", "x-ai-visit-key": key, "user-agent": "reporally-internal" },
+                  body: JSON.stringify({ bot: bot.name, path: pathname, ua: request.headers.get("user-agent") }),
+                })
+              : undefined
+          )
+          .catch(() => undefined)
+      );
+    }
+  }
 
   // Rate limit write traffic to the API: 30 mutations/min per IP.
   if (
     !["GET", "HEAD", "OPTIONS"].includes(request.method) &&
-    pathname.startsWith("/api/")
+    pathname.startsWith("/api/") &&
+    pathname !== "/api/ai-visit"
   ) {
     const rl = checkRateLimit(`api:${getClientIp(request)}`, 30, 60_000);
     if (!rl.ok) {

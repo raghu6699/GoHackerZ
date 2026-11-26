@@ -370,3 +370,15 @@ model HackathonCertificate {
 }
 
 
+
+/// Page views by AI and search crawlers (see /admin/ai-visits). No visitor data.
+model AiBotVisit {
+  id        String   @id @default(cuid())
+  bot       String
+  path      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([bot])
+}
