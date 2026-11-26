@@ -382,3 +382,42 @@ model AiBotVisit {
   @@index([createdAt])
   @@index([bot])
 }
+
+/// A paid placement on the site (see /admin/sponsors). `placement` is "card"
+/// (sidebar sponsored card) or "banner" (homepage partner banner).
+model SponsorCampaign {
+  id        String         @id @default(cuid())
+  sponsor   String
+  placement String
+  headline  String
+  body      String
+  ctaLabel  String
+  url       String
+  logoUrl   String?
+  tagline   String?
+  tags      String[]       @default([])
+  startsAt  DateTime       @default(now())
+  endsAt    DateTime?
+  priceInr  Int?
+  active    Boolean        @default(true)
+  notes     String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  events    SponsorEvent[]
+
+  @@index([placement, active])
+}
+
+/// One viewable impression or click on a sponsor placement. Bots are excluded.
+/// No visitor data: only the campaign, the kind and the page path.
+model SponsorEvent {
+  id         String          @id @default(cuid())
+  campaignId String
+  campaign   SponsorCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  kind       String
+  path       String?
+  createdAt  DateTime        @default(now())
+
+  @@index([campaignId, kind, createdAt])
+  @@index([createdAt])
+}

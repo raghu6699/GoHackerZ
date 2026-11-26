@@ -58,6 +58,7 @@ export function Footer() {
       links: [
         { label: "Manifesto", href: "/manifesto" },
         { label: "RSS", href: "/rss.xml" },
+        { label: "Advertise", href: "/advertise" },
         { label: "Contact", href: "/contact" },
       ],
     },

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 
-const PRIVATE = ["/api/", "/profile", "/write", "/review", "/drafts", "/settings", "/passport", "/admin", "/reset-password", "/forgot-password", "/auth/"];
+const PRIVATE = ["/api/", "/profile", "/write", "/review", "/drafts", "/settings", "/passport", "/admin", "/reset-password", "/forgot-password", "/auth/", "/go/"];
 
 /** AI search and answer-engine crawlers we explicitly welcome (AEO / GEO). */
 const AI_BOTS = [

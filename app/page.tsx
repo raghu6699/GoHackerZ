@@ -21,6 +21,7 @@ import {
 import { formatCount, formatDate } from "@/lib/data";
 import { FaqSection } from "@/components/FaqSection";
 import { SITE_FAQS } from "@/lib/seo-faqs";
+import { getActiveCampaign } from "@/lib/sponsors";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,12 +33,14 @@ export default async function HomePage({
 }) {
   const { page: pageParam } = await searchParams;
   // Independent queries run in parallel; each round trip to the DB is costly.
-  const [allTopics, featured, userCount, allArticles, trendingRaw] = await Promise.all([
+  const [allTopics, featured, userCount, allArticles, trendingRaw, bannerAd, cardAd] = await Promise.all([
     getAllTopics(),
     getFeatured(),
     getUserCount(),
     getLatest(),
     getTrending(6),
+    getActiveCampaign("banner"),
+    getActiveCampaign("card"),
   ]);
 
   // ── Clean Empty State when no articles exist yet ──
@@ -266,7 +269,7 @@ export default async function HomePage({
           )}
 
           {/* ── Native Sponsored Partner Banner ── */}
-          <PartnerBanner />
+          <PartnerBanner campaign={bannerAd} />
 
         {/* ── Trending ── */}
         {trending.length > 0 && (
@@ -321,7 +324,7 @@ export default async function HomePage({
                 ))}
               </div>
               <div className="space-y-6 lg:sticky lg:top-24">
-                <SponsoredCard />
+                <SponsoredCard campaign={cardAd} />
                 <NewsletterForm variant="card" />
               </div>
             </section>
